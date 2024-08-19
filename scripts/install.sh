@@ -7,6 +7,31 @@ else
     set -eu
 fi
 
+# Function for logging with timestamp
+log() {
+    local LEVEL="$1"
+    shift
+    local MESSAGE="$*"
+    local TIMESTAMP
+    TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+    if [ "$LEVEL" = "ERROR" ] || { [ "$LEVEL" = "WARNING" ] && [ "$LOG_LEVEL" != "ERROR" ]; } || { [ "$LEVEL" = "INFO" ] && [ "$LOG_LEVEL" = "INFO" ]; }; then
+        echo "$TIMESTAMP [$LEVEL] $MESSAGE"
+    fi
+}
+
+# Logging helpers
+info_message() {
+    log INFO "$*"
+}
+
+error_message() {
+    log ERROR "$*"
+}
+
+success_message() {
+    log INFO "$*"
+}
+
 # Variables
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'master.wazuh.adorsys.team'}
@@ -44,31 +69,6 @@ else
     error_message "Unsupported operating system: $OS_NAME"
     exit 1
 fi
-
-# Function for logging with timestamp
-log() {
-    local LEVEL="$1"
-    shift
-    local MESSAGE="$*"
-    local TIMESTAMP
-    TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    if [ "$LEVEL" = "ERROR" ] || { [ "$LEVEL" = "WARNING" ] && [ "$LOG_LEVEL" != "ERROR" ]; } || { [ "$LEVEL" = "INFO" ] && [ "$LOG_LEVEL" = "INFO" ]; }; then
-        echo "$TIMESTAMP [$LEVEL] $MESSAGE"
-    fi
-}
-
-# Logging helpers
-info_message() {
-    log INFO "$*"
-}
-
-error_message() {
-    log ERROR "$*"
-}
-
-success_message() {
-    log INFO "$*"
-}
 
 # Ensure root privileges, either directly or through sudo
 maybe_sudo() {

@@ -13,13 +13,13 @@ WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.8.0-1'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-}
 
 # Step 0: Ensure Curl and JQ are installed
-if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh/main/scripts/deps.sh | sh) >/dev/null 2>&1; then
+if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/deps.sh | sh) >/dev/null 2>&1; then
     echo "Failed to ensure deps"
     exit 1
 fi
 
 # Step 1: Download and install Wazuh agent
-if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh/main/scripts/install.sh | sh) >/dev/null 2>&1; then
+if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh | sh) >/dev/null 2>&1; then
     echo "Failed to install wazuh-agent"
     exit 1
 fi

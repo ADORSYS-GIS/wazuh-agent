@@ -85,7 +85,7 @@ case "$OS_NAME" in
     "Darwin")
         info_message "Detected macOS"
         if command_exists brew; then
-            maybe_sudo brew install curl jq
+            brew install curl jq
         else
             error_message "Homebrew is not installed. Please install Homebrew first."
             exit 1
