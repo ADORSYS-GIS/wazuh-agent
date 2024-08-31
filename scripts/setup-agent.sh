@@ -9,7 +9,7 @@ USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'master.wazuh.adorsys.team'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.8.0-1'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.8.2-1'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-}
 
 # Step 0: Ensure Curl and JQ are installed

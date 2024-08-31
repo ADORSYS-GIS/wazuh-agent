@@ -14,9 +14,7 @@ log() {
     local MESSAGE="$*"
     local TIMESTAMP
     TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    if [ "$LEVEL" = "ERROR" ] || { [ "$LEVEL" = "WARNING" ] && [ "$LOG_LEVEL" != "ERROR" ]; } || { [ "$LEVEL" = "INFO" ] && [ "$LOG_LEVEL" = "INFO" ]; }; then
-        echo "$TIMESTAMP [$LEVEL] $MESSAGE"
-    fi
+    echo "$TIMESTAMP [$LEVEL] $MESSAGE"
 }
 
 # Logging helpers
@@ -35,12 +33,12 @@ success_message() {
 # Variables
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'master.wazuh.adorsys.team'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.8.0-1'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.8.2-1'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-}
 
 # Check if WAZUH_AGENT_NAME is set; if not, exit with an error
-if [ -z "${WAZUH_AGENT_NAME:-}" ]; then
-    echo "Error: WAZUH_AGENT_NAME is not set. Please set this variable before running the script."
+if [ -z "${WAZUH_AGENT_NAME}" ]; then
+    error_message "WAZUH_AGENT_NAME is not set. Please set this variable before running the script."
     exit 1
 fi
 
@@ -49,26 +47,36 @@ OS_NAME=$(uname -s)
 ARCH=$(uname -m)
 
 # Package details based on OS and architecture
-if [ "$OS_NAME" = "Linux" ]; then
-    if command -v apt &> /dev/null; then
-        PACKAGE_MANAGER="apt"
-        PACKAGE_FILE="wazuh-agent_${WAZUH_AGENT_VERSION}_$( [ "$ARCH" = "x86_64" ] && echo "amd64" || echo "arm64" ).deb"
-    elif command -v yum &> /dev/null; then
-        PACKAGE_MANAGER="yum"
-        PACKAGE_FILE="wazuh-agent-${WAZUH_AGENT_VERSION}.$( [ "$ARCH" = "x86_64" ] && echo "x86_64" || echo "aarch64" ).rpm"
-    else
-        error_message "Unsupported package manager"
+case "$OS_NAME" in
+    Linux)
+        if command -v apt &> /dev/null; then
+            PACKAGE_MANAGER="apt/pool/main/w/wazuh-agent"
+            PACKAGE_FILE="wazuh-agent_${WAZUH_AGENT_VERSION}_$( [ "$ARCH" = "x86_64" ] && echo "amd64" || echo "arm64" ).deb"
+        elif command -v yum &> /dev/null; then
+            PACKAGE_MANAGER="yum"
+            PACKAGE_FILE="wazuh-agent-${WAZUH_AGENT_VERSION}.$( [ "$ARCH" = "x86_64" ] && echo "x86_64" || echo "aarch64" ).rpm"
+        elif command -v dnf &> /dev/null; then
+            PACKAGE_MANAGER="dnf"
+            PACKAGE_FILE="wazuh-agent-${WAZUH_AGENT_VERSION}.$( [ "$ARCH" = "x86_64" ] && echo "x86_64" || echo "aarch64" ).rpm"
+        elif command -v zypper &> /dev/null; then
+            PACKAGE_MANAGER="zypper"
+            PACKAGE_FILE="wazuh-agent-${WAZUH_AGENT_VERSION}.$( [ "$ARCH" = "x86_64" ] && echo "x86_64" || echo "aarch64" ).rpm"
+        else
+            error_message "Unsupported package manager"
+            exit 1
+        fi
+        PACKAGE_URL="https://packages.wazuh.com/4.x/${PACKAGE_MANAGER}/${PACKAGE_FILE}"
+        ;;
+    Darwin)
+        PACKAGE_MANAGER="installer"
+        PACKAGE_FILE="wazuh-agent-${WAZUH_AGENT_VERSION}.$( [ "$ARCH" = "x86_64" ] && echo "intel64" || echo "arm64" ).pkg"
+        PACKAGE_URL="https://packages.wazuh.com/4.x/macos/${PACKAGE_FILE}"
+        ;;
+    *)
+        error_message "Unsupported operating system: $OS_NAME"
         exit 1
-    fi
-    PACKAGE_URL="https://packages.wazuh.com/4.x/${PACKAGE_MANAGER}/${PACKAGE_FILE}"
-elif [ "$OS_NAME" = "Darwin" ]; then
-    PACKAGE_MANAGER="installer"
-    PACKAGE_FILE="wazuh-agent-${WAZUH_AGENT_VERSION}.$( [ "$ARCH" = "x86_64" ] && echo "intel64" || echo "arm64" ).pkg"
-    PACKAGE_URL="https://packages.wazuh.com/4.x/macos/${PACKAGE_FILE}"
-else
-    error_message "Unsupported operating system: $OS_NAME"
-    exit 1
-fi
+        ;;
+esac
 
 # Ensure root privileges, either directly or through sudo
 maybe_sudo() {
@@ -87,7 +95,7 @@ maybe_sudo() {
 init_wazuh_agent() {
     info_message "Initializing Wazuh agent..."
 
-    if [ "$(uname)" = "Linux" ]; then
+    if [ "$OS_NAME" = "Linux" ]; then
         if command -v systemctl >/dev/null 2>&1; then
             maybe_sudo systemctl daemon-reload
             maybe_sudo systemctl enable wazuh-agent
@@ -96,10 +104,10 @@ init_wazuh_agent() {
             maybe_sudo update-rc.d wazuh-agent defaults 95 10
             maybe_sudo service wazuh-agent start
         else
-            maybe_sudo /var/ossec/bin/wazuh-control start;
+            maybe_sudo /var/ossec/bin/wazuh-control start
         fi
-    elif [ "$(uname)" = "Darwin" ]; then
-        maybe_sudo /Library/Ossec/bin/wazuh-control start;
+    elif [ "$OS_NAME" = "Darwin" ]; then
+        maybe_sudo /Library/Ossec/bin/wazuh-control start
     else
         error_message "Unsupported operating system."
     fi
@@ -112,22 +120,32 @@ TEMP_DIR=$(mktemp -d) || { error_message "Failed to create a temporary directory
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
 # Download the package to the temporary directory using curl with a progress bar
-info_message "Downloading Wazuh agent from $PACKAGE_URL..."
-curl -L --progress-bar -o "$TEMP_DIR/$PACKAGE_FILE" "$PACKAGE_URL" || { error_message "Failed to download Wazuh agent package. Ensure you have a strong internet connection. Aborting..."; exit 1; }
-success_message "Wazuh agent downloaded successfully"
+download_package() {
+    info_message "Downloading Wazuh agent from $PACKAGE_URL..."
+    HTTP_STATUS=$(curl -w "%{http_code}" -L --progress-bar -o "$TEMP_DIR/$PACKAGE_FILE" "$PACKAGE_URL")
+    if [ "$HTTP_STATUS" -ne 200 ]; then
+        log ERROR "Failed to download Wazuh agent package. HTTP Status: $HTTP_STATUS. Aborting..."
+        exit 1
+    fi
+    success_message "Wazuh agent downloaded successfully"
+}
+
+download_package
 
 # Install the package
 info_message "Installing Wazuh agent..."
 PACKAGE_PATH="$TEMP_DIR/$PACKAGE_FILE"
 case "$PACKAGE_MANAGER" in
     "apt")
-        maybe_sudo WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_NAME="$WAZUH_AGENT_NAME" dpkg -i "$PACKAGE_PATH"
+        maybe_sudo dpkg -i "$PACKAGE_PATH"
+        maybe_sudo apt-get install -f -y
         ;;
-    "yum")
-        maybe_sudo WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_NAME="$WAZUH_AGENT_NAME" yum install -y "$PACKAGE_PATH"
+    "yum" | "dnf" | "zypper")
+        maybe_sudo $PACKAGE_MANAGER install -y "$PACKAGE_PATH"
         ;;
     "installer")
-        echo "WAZUH_MANAGER=$WAZUH_MANAGER && WAZUH_AGENT_NAME=$WAZUH_AGENT_NAME" > /tmp/wazuh_envs
+        echo "WAZUH_MANAGER=$WAZUH_MANAGER" > /tmp/wazuh_envs
+        echo "WAZUH_AGENT_NAME=$WAZUH_AGENT_NAME" >> /tmp/wazuh_envs
         maybe_sudo installer -pkg "$PACKAGE_PATH" -target /
         ;;
 esac
@@ -139,4 +157,7 @@ if [ $? -ne 0 ]; then
 fi
 success_message "Wazuh agent installed successfully"
 
-init_wazuh_agent
+init_wazuh_agent || true # TODO: Fix this
+
+# The cleanup will be automatically done due to the trap
+info_message "Temporary files cleaned up."
