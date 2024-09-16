@@ -7,6 +7,19 @@ else
     set -eu
 fi
 
+# Variables
+LOG_LEVEL=${LOG_LEVEL:-INFO}
+OSSEC_CONF_PATH=${OSSEC_CONF_PATH:-"/var/ossec/etc/ossec.conf"}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'master.wazuh.adorsys.team'}
+
+# Define text formatting
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+NORMAL='\033[0m'
+
 # Function for logging with timestamp
 log() {
     local LEVEL="$1"
@@ -26,138 +39,145 @@ error_message() {
     log ERROR "$*"
 }
 
-success_message() {
-    log INFO "$*"
-}
-
-# Variables
-LOG_LEVEL=${LOG_LEVEL:-INFO}
-WAZUH_MANAGER=${WAZUH_MANAGER:-'master.wazuh.adorsys.team'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.8.2-1'}
-WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-}
-
-# Check if WAZUH_AGENT_NAME is set; if not, exit with an error
-if [ -z "${WAZUH_AGENT_NAME}" ]; then
-    error_message "WAZUH_AGENT_NAME is not set. Please set this variable before running the script."
+## WAZUH_MANAGER is required
+if [ -z "$WAZUH_MANAGER" ]; then
+    error_message "WAZUH_MANAGER is required"
     exit 1
 fi
 
-# Detect OS and architecture
-OS_NAME=$(uname -s)
-ARCH=$(uname -m)
-
-# Package details based on OS and architecture
-case "$OS_NAME" in
-    Linux)
-        if command -v apt &> /dev/null; then
-            PACKAGE_MANAGER="apt/pool/main/w/wazuh-agent"
-            PACKAGE_FILE="wazuh-agent_${WAZUH_AGENT_VERSION}_$( [ "$ARCH" = "x86_64" ] && echo "amd64" || echo "arm64" ).deb"
-        elif command -v yum &> /dev/null; then
-            PACKAGE_MANAGER="yum"
-            PACKAGE_FILE="wazuh-agent-${WAZUH_AGENT_VERSION}.$( [ "$ARCH" = "x86_64" ] && echo "x86_64" || echo "aarch64" ).rpm"
-        elif command -v dnf &> /dev/null; then
-            PACKAGE_MANAGER="dnf"
-            PACKAGE_FILE="wazuh-agent-${WAZUH_AGENT_VERSION}.$( [ "$ARCH" = "x86_64" ] && echo "x86_64" || echo "aarch64" ).rpm"
-        elif command -v zypper &> /dev/null; then
-            PACKAGE_MANAGER="zypper"
-            PACKAGE_FILE="wazuh-agent-${WAZUH_AGENT_VERSION}.$( [ "$ARCH" = "x86_64" ] && echo "x86_64" || echo "aarch64" ).rpm"
-        else
-            error_message "Unsupported package manager"
-            exit 1
-        fi
-        PACKAGE_URL="https://packages.wazuh.com/4.x/${PACKAGE_MANAGER}/${PACKAGE_FILE}"
-        ;;
-    Darwin)
-        PACKAGE_MANAGER="installer"
-        PACKAGE_FILE="wazuh-agent-${WAZUH_AGENT_VERSION}.$( [ "$ARCH" = "x86_64" ] && echo "intel64" || echo "arm64" ).pkg"
-        PACKAGE_URL="https://packages.wazuh.com/4.x/macos/${PACKAGE_FILE}"
-        ;;
-    *)
-        error_message "Unsupported operating system: $OS_NAME"
-        exit 1
-        ;;
-esac
-
-# Ensure root privileges, either directly or through sudo
-maybe_sudo() {
-    if [ "$(id -u)" -ne 0 ]; then
-        if command -v sudo >/dev/null 2>&1; then
-            sudo "$@"
-        else
-            error_message "This script requires root privileges. Please run with sudo or as root."
-            exit 1
-        fi
-    else
-        "$@"
-    fi
-}
-
-init_wazuh_agent() {
-    info_message "Initializing Wazuh agent..."
-
-    if [ "$OS_NAME" = "Linux" ]; then
-        if command -v systemctl >/dev/null 2>&1; then
-            maybe_sudo systemctl daemon-reload
-            maybe_sudo systemctl enable wazuh-agent
-            maybe_sudo systemctl start wazuh-agent
-        elif command -v service >/dev/null 2>&1; then
-            maybe_sudo update-rc.d wazuh-agent defaults 95 10
-            maybe_sudo service wazuh-agent start
-        else
-            maybe_sudo /var/ossec/bin/wazuh-control start
-        fi
-    elif [ "$OS_NAME" = "Darwin" ]; then
-        maybe_sudo /Library/Ossec/bin/wazuh-control start
-    else
-        error_message "Unsupported operating system."
-    fi
-}
-
-info_message "Starting Wazuh agent installation..."
-
-# Create a temporary directory and ensure it is cleaned up on exit
-TEMP_DIR=$(mktemp -d) || { error_message "Failed to create a temporary directory"; exit 1; }
-trap 'rm -rf "$TEMP_DIR"' EXIT
-
-# Download the package to the temporary directory using curl with a progress bar
-download_package() {
-    info_message "Downloading Wazuh agent from $PACKAGE_URL..."
-    HTTP_STATUS=$(curl -w "%{http_code}" -L --progress-bar -o "$TEMP_DIR/$PACKAGE_FILE" "$PACKAGE_URL")
-    if [ "$HTTP_STATUS" -ne 200 ]; then
-        log ERROR "Failed to download Wazuh agent package. HTTP Status: $HTTP_STATUS. Aborting..."
-        exit 1
-    fi
-    success_message "Wazuh agent downloaded successfully"
-}
-
-download_package
-
-# Install the package
-info_message "Installing Wazuh agent..."
-PACKAGE_PATH="$TEMP_DIR/$PACKAGE_FILE"
-case "$PACKAGE_MANAGER" in
-    "apt")
-        maybe_sudo dpkg -i "$PACKAGE_PATH"
-        maybe_sudo apt-get install -f -y
-        ;;
-    "yum" | "dnf" | "zypper")
-        maybe_sudo $PACKAGE_MANAGER install -y "$PACKAGE_PATH"
-        ;;
-    "installer")
-        echo "WAZUH_MANAGER=$WAZUH_MANAGER" > /tmp/wazuh_envs
-        echo "WAZUH_AGENT_NAME=$WAZUH_AGENT_NAME" >> /tmp/wazuh_envs
-        maybe_sudo installer -pkg "$PACKAGE_PATH" -target /
-        ;;
-esac
-
-# Check installation status
-if [ $? -ne 0 ]; then
-    error_message "Failed to install Wazuh agent package. Aborting..."
+# Determine OS type and package manager or set for macOS
+if [ "$(uname)" = "Darwin" ]; then
+    OS="macOS"
+elif [ -f /etc/debian_version ]; then
+    OS="Linux"
+    PACKAGE_MANAGER="apt"
+    REPO_FILE="/etc/apt/sources.list.d/wazuh.list"
+    GPG_KEYRING="/usr/share/keyrings/wazuh.gpg"
+    GPG_IMPORT_CMD="gpg --no-default-keyring --keyring $GPG_KEYRING --import"
+elif [ -f /etc/redhat-release ]; then
+    OS="Linux"
+    PACKAGE_MANAGER="yum"
+    REPO_FILE="/etc/yum.repos.d/wazuh.repo"
+elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
+    OS="Linux"
+    PACKAGE_MANAGER="zypper"
+    REPO_FILE="/etc/zypp/repos.d/wazuh.repo"
+else
+    error_message "Unsupported OS"
     exit 1
 fi
-success_message "Wazuh agent installed successfully"
 
-init_wazuh_agent || true # TODO: Fix this
+import_keys() {
+  info_message "Importing GPG key and setting up the repository for $OS"
+  # Import GPG key and set up the repository for Linux
+  GPG_KEY_URL="https://packages.wazuh.com/key/GPG-KEY-WAZUH"
+  if [ "$OS" = "Linux" ]; then
+      if [ "$PACKAGE_MANAGER" = "yum" ]; then
+        if ! rpm -q gpg-pubkey --qf '%{SUMMARY}\n' | grep -q "Wazuh"; then
+            curl -s $GPG_KEY_URL | $GPG_IMPORT_CMD
+            info_message "GPG key imported successfully."
+        fi
+      fi
 
-# The cleanup will be automatically done due to the trap
-info_message "Temporary files cleaned up."
+      if [ "$PACKAGE_MANAGER" = "apt" ]; then
+          if [ ! -f $GPG_KEYRING ]; then
+              curl -s $GPG_KEY_URL | gpg --no-default-keyring --keyring $GPG_KEYRING --import && chmod 644 $GPG_KEYRING
+              info_message "GPG key imported successfully."
+          fi
+          if ! grep -q "wazuh" $REPO_FILE; then
+              echo "deb [signed-by=$GPG_KEYRING] https://packages.wazuh.com/4.x/apt/ stable main" | tee $REPO_FILE
+              info_message "Wazuh repository configured successfully."
+          fi
+      elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
+          if ! grep -q "wazuh" $REPO_FILE; then
+              cat > $REPO_FILE << EOF
+[wazuh]
+gpgcheck=1
+gpgkey=$GPG_KEY_URL
+enabled=1
+name=EL-\$releasever - Wazuh
+baseurl=https://packages.wazuh.com/4.x/yum/
+protect=1
+EOF
+              info_message "Wazuh repository configured successfully."
+          fi
+      fi
+  fi
+  info_message "GPG key and repository configured successfully."
+}
+
+installation() {
+  info_message "Installing Wazuh agent for $OS"
+  # Update and install Wazuh agent for Linux or download and install for macOS
+  if [ "$OS" = "Linux" ]; then
+      $PACKAGE_MANAGER update
+      WAZUH_MANAGER="$WAZUH_MANAGER" $PACKAGE_MANAGER install wazuh-agent
+  elif [ "$OS" = "macOS" ]; then
+      ARCH=$(uname -m)
+      BASE_URL="https://packages.wazuh.com/4.x/macos"
+      PKG_NAME="wazuh-agent-4.9.0-1.${ARCH}64.pkg"
+      PKG_URL="$BASE_URL/$PKG_NAME"
+      TMP_DIR="$(mktemp)"
+      mkdir -p "$TMP_DIR"
+      if [ ! -f "$TMP_DIR/$PKG_NAME" ]; then
+          curl -o "$TMP_DIR/$PKG_NAME" "$PKG_URL"
+          info_message "Wazuh agent downloaded successfully."
+      fi
+      echo "WAZUH_MANAGER='$WAZUH_MANAGER'" > /tmp/wazuh_envs
+      installer -pkg "$TMP_DIR/$PKG_NAME" -target /
+  fi
+  info_message "Wazuh agent installed successfully."
+}
+
+disable_repo() {
+  # Disable Wazuh repository after installation for Linux
+  if [ "$OS" = "Linux" ]; then
+      if [ "$PACKAGE_MANAGER" = "apt" ]; then
+          sed -i "s/^deb/#deb/" $REPO_FILE
+      elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
+          sed -i "s/^enabled=1/enabled=0/" $REPO_FILE
+      fi
+      info_message "Wazuh repository disabled successfully."
+  fi
+}
+
+config() {
+  # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for Linux
+  if [ "$OS" = "Linux" ] && [ -n "$WAZUH_MANAGER" ]; then
+      sed -i "s/MANAGER_IP/$WAZUH_MANAGER/" "$OSSEC_CONF_PATH"
+      info_message "Wazuh manager IP configured successfully."
+  fi
+}
+
+start_agent() {
+  # Reload systemd daemon and enable/start services based on init system for Linux
+  if [ "$OS" = "Linux" ]; then
+      SYSTEMD_RUNNING=$(ps -C systemd > /dev/null 2>&1 && echo "yes" || echo "no")
+      if [ "$SYSTEMD_RUNNING" = "yes" ]; then
+          systemctl daemon-reload
+          systemctl enable wazuh-agent
+          systemctl start wazuh-agent
+      elif [ -f /etc/init.d/wazuh-agent ]; then
+          if [ "$PACKAGE_MANAGER" = "yum" ]; then
+              chkconfig --add wazuh-agent
+              service wazuh-agent start
+          elif [ "$PACKAGE_MANAGER" = "apt" ]; then
+              update-rc.d wazuh-agent defaults 95 10
+              service wazuh-agent start
+          fi
+      else
+          /var/ossec/bin/wazuh-control start
+      fi
+  elif [ "$OS" = "macOS" ]; then
+      /Library/Ossec/bin/wazuh-control start
+  fi
+  info_message "Wazuh agent started successfully."
+}
+
+
+import_keys
+installation
+# disable_repo
+disable_repo
+config
+start_agent

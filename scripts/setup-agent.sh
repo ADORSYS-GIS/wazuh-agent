@@ -19,13 +19,13 @@ if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazu
 fi
 
 # Step 1: Download and install Wazuh agent
-if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh | sh) >/dev/null 2>&1; then
+if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh | LOG_LEVEL=$LOG_LEVEL OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER=$WAZUH_MANAGER sh) >/dev/null 2>&1; then
     echo "Failed to install wazuh-agent"
     exit 1
 fi
 
 # Step 2: Download and install wazuh-cert-oauth2-client
-if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/main/scripts/install.sh | sh) >/dev/null 2>&1; then
+if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/main/scripts/install.sh | LOG_LEVEL=$LOG_LEVEL OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME=$APP_NAME WOPS_VERSION=$WOPS_VERSION sh) >/dev/null 2>&1; then
     echo "Failed to install 'wazuh-cert-oauth2-client'"
     exit 1
 fi
