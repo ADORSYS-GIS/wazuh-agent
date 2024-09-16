@@ -26,16 +26,16 @@ log() {
     local MESSAGE="$*"
     local TIMESTAMP
     TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    echo "$TIMESTAMP [$LEVEL] $MESSAGE"
+    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
 }
 
 # Logging helpers
 info_message() {
-    log INFO "$*"
+    log "${BLUE}${BOLD}[===========> INFO]${NORMAL}" "$*"
 }
 
 error_message() {
-    log ERROR "$*"
+    log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
 }
 
 # Step 0: Ensure Curl and JQ are installed
@@ -54,7 +54,7 @@ fi
 
 # Step 2: Download and install wazuh-cert-oauth2-client
 info_message "Installing wazuh-cert-oauth2-client"
-if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/main/scripts/install.sh | LOG_LEVEL=$LOG_LEVEL OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME=$APP_NAME WOPS_VERSION=$WOPS_VERSION sudo bash) 2>&1; then
+if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/main/scripts/install.sh | LOG_LEVEL=$LOG_LEVEL OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME=$APP_NAME WOPS_VERSION=$WOPS_VERSION sudo sh) 2>&1; then
     error_message "Failed to install 'wazuh-cert-oauth2-client'"
     exit 1
 fi
