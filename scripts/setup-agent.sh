@@ -37,7 +37,7 @@ if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazu
 fi
 
 # Step 4: Download and install snort
-if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/install.sh | sudo sh) >/dev/null 2>&1; then
+if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/install.sh | sudo bash) >/dev/null 2>&1; then
     echo "Failed to install 'snort'"
     exit 1
 fi
