@@ -8,7 +8,7 @@ chmod +x /app/scripts/install.sh
 @test "script runs without errors" {
   export WAZUH_AGENT_NAME="test-agent-123"
   export WAZUH_MANAGER="10.0.0.2"
-  run /app/scripts/install.sh
+  run sudo bash /app/scripts/install.sh
   [ "$status" -eq 0 ]
 }
 
