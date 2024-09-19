@@ -113,27 +113,44 @@ installation() {
       $PACKAGE_MANAGER update
       WAZUH_MANAGER="$WAZUH_MANAGER" $PACKAGE_MANAGER install wazuh-agent
   elif [ "$OS" = "macOS" ]; then
+      # Detect architecture (Intel or Apple Silicon)
       ARCH=$(uname -m)
       BASE_URL="https://packages.wazuh.com/4.x/macos"
+      
       if [ "$ARCH" = "x86_64" ]; then
-          PKG_NAME="wazuh-agent-4.9.0-1.intel64.pkg"
+          # Intel architecture
+          PKG_NAME="wazuh-agent-4.9.0-1.x86_64.pkg"
       elif [ "$ARCH" = "arm64" ]; then
+          # Apple Silicon (M1/M2)
           PKG_NAME="wazuh-agent-4.9.0-1.arm64.pkg"
       else
-          error_message "Unsupported macOS architecture"
+          error_message "Unsupported architecture: $ARCH"
           exit 1
       fi
+
       PKG_URL="$BASE_URL/$PKG_NAME"
-      TMP_DIR="$(mktemp -d -t wazuh.XXXXXX)"
+
+      # Create a unique temporary directory
+      TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'wazuh_install')
       info_message "Using temporary directory: $TMP_DIR"
+
+      # Download the correct Wazuh agent package based on architecture
       curl -o "$TMP_DIR/$PKG_NAME" "$PKG_URL"
       info_message "Wazuh agent downloaded successfully."
+
+      # Set environment variable for Wazuh manager
       echo "WAZUH_MANAGER='$WAZUH_MANAGER'" > /tmp/wazuh_envs
-      sudo installer -pkg "$TMP_DIR/$PKG_NAME" -target /
-      rm -rf "$TMP_DIR"  # Clean up the temporary directory after installation
+
+      # Install Wazuh agent using the package
+      installer -pkg "$TMP_DIR/$PKG_NAME" -target /
+
+      # Clean up the temporary directory after installation
+      rm -rf "$TMP_DIR"
+      info_message "Temporary directory cleaned up."
   fi
   info_message "Wazuh agent installed successfully."
 }
+
 
 
 disable_repo() {
