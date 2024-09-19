@@ -61,14 +61,14 @@ fi
 
 # Step 3: Download and install yara
 info_message "Installing yara"
-if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/main/scripts/install.sh | sudo bash) 2>&1; then
+if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/main/scripts/install.sh |  bash) 2>&1; then
     error_message "Failed to install 'yara'"
     exit 1
 fi
 
 # Step 4: Download and install snort
 info_message "Installing snort"
-if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/install.sh | sudo bash) 2>&1; then
+if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/install.sh |  bash) 2>&1; then
     error_message "Failed to install 'snort'"
     exit 1
 fi
