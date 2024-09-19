@@ -39,7 +39,7 @@ error_message() {
     log ERROR "$*"
 }
 
-## WAZUH_MANAGER is required
+# WAZUH_MANAGER is required
 if [ -z "$WAZUH_MANAGER" ]; then
     error_message "WAZUH_MANAGER is required"
     exit 1
@@ -69,14 +69,13 @@ fi
 
 import_keys() {
   info_message "Importing GPG key and setting up the repository for $OS"
-  # Import GPG key and set up the repository for Linux
   GPG_KEY_URL="https://packages.wazuh.com/key/GPG-KEY-WAZUH"
   if [ "$OS" = "Linux" ]; then
       if [ "$PACKAGE_MANAGER" = "yum" ]; then
-        if ! rpm -q gpg-pubkey --qf '%{SUMMARY}\n' | grep -q "Wazuh"; then
-            curl -s $GPG_KEY_URL | $GPG_IMPORT_CMD
-            info_message "GPG key imported successfully."
-        fi
+          if ! rpm -q gpg-pubkey --qf '%{SUMMARY}\n' | grep -q "Wazuh"; then
+              curl -s $GPG_KEY_URL | $GPG_IMPORT_CMD
+              info_message "GPG key imported successfully."
+          fi
       fi
 
       if [ "$PACKAGE_MANAGER" = "apt" ]; then
@@ -108,14 +107,21 @@ EOF
 
 installation() {
   info_message "Installing Wazuh agent for $OS"
-  # Update and install Wazuh agent for Linux or download and install for macOS
   if [ "$OS" = "Linux" ]; then
       $PACKAGE_MANAGER update
       WAZUH_MANAGER="$WAZUH_MANAGER" $PACKAGE_MANAGER install wazuh-agent
   elif [ "$OS" = "macOS" ]; then
       ARCH=$(uname -m)
       BASE_URL="https://packages.wazuh.com/4.x/macos"
-      PKG_NAME="wazuh-agent-4.9.0-1.${ARCH}64.pkg"
+      
+      if [ "$ARCH" = "arm64" ]; then
+          # For Apple Silicon (M1/M2)
+          PKG_NAME="wazuh-agent-4.9.0-1.arm64.pkg"
+      else
+          # For Intel-based Macs
+          PKG_NAME="wazuh-agent-4.9.0-1.x86_64.pkg"
+      fi
+
       PKG_URL="$BASE_URL/$PKG_NAME"
       TMP_DIR="$(mktemp -d)"
       info_message "Using temporary directory: $TMP_DIR"
@@ -128,9 +134,7 @@ installation() {
   info_message "Wazuh agent installed successfully."
 }
 
-
 disable_repo() {
-  # Disable Wazuh repository after installation for Linux
   if [ "$OS" = "Linux" ]; then
       if [ "$PACKAGE_MANAGER" = "apt" ]; then
           sed -i "s/^deb/#deb/" $REPO_FILE
@@ -142,7 +146,6 @@ disable_repo() {
 }
 
 config() {
-  # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for Linux
   if [ "$OS" = "Linux" ] && [ -n "$WAZUH_MANAGER" ]; then
       sed -i "s/MANAGER_IP/$WAZUH_MANAGER/" "$OSSEC_CONF_PATH"
       info_message "Wazuh manager IP configured successfully."
@@ -150,7 +153,6 @@ config() {
 }
 
 start_agent() {
-  # Reload systemd daemon and enable/start services based on init system for Linux
   if [ "$OS" = "Linux" ]; then
       SYSTEMD_RUNNING=$(ps -C systemd > /dev/null 2>&1 && echo "yes" || echo "no")
       if [ "$SYSTEMD_RUNNING" = "yes" ]; then
