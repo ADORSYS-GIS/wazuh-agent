@@ -113,21 +113,45 @@ installation() {
       $PACKAGE_MANAGER update
       WAZUH_MANAGER="$WAZUH_MANAGER" $PACKAGE_MANAGER install wazuh-agent
   elif [ "$OS" = "macOS" ]; then
+      # Detect architecture (Intel or Apple Silicon)
       ARCH=$(uname -m)
       BASE_URL="https://packages.wazuh.com/4.x/macos"
-      PKG_NAME="wazuh-agent-4.9.0-1.${ARCH}64.pkg"
-      PKG_URL="$BASE_URL/$PKG_NAME"
-      TMP_DIR="$(mktemp)"
-      mkdir -p "$TMP_DIR"
-      if [ ! -f "$TMP_DIR/$PKG_NAME" ]; then
-          curl -o "$TMP_DIR/$PKG_NAME" "$PKG_URL"
-          info_message "Wazuh agent downloaded successfully."
+      
+      if [ "$ARCH" = "x86_64" ]; then
+          # Intel architecture
+          PKG_NAME="wazuh-agent-4.9.0-1.x86_64.pkg"
+      elif [ "$ARCH" = "arm64" ]; then
+          # Apple Silicon (M1/M2)
+          PKG_NAME="wazuh-agent-4.9.0-1.arm64.pkg"
+      else
+          error_message "Unsupported architecture: $ARCH"
+          exit 1
       fi
+
+      PKG_URL="$BASE_URL/$PKG_NAME"
+
+      # Create a unique temporary directory
+      TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'wazuh_install')
+      info_message "Using temporary directory: $TMP_DIR"
+
+      # Download the correct Wazuh agent package based on architecture
+      curl -o "$TMP_DIR/$PKG_NAME" "$PKG_URL"
+      info_message "Wazuh agent downloaded successfully."
+
+      # Set environment variable for Wazuh manager
       echo "WAZUH_MANAGER='$WAZUH_MANAGER'" > /tmp/wazuh_envs
+
+      # Install Wazuh agent using the package
       installer -pkg "$TMP_DIR/$PKG_NAME" -target /
+
+      # Clean up the temporary directory after installation
+      rm -rf "$TMP_DIR"
+      info_message "Temporary directory cleaned up."
   fi
   info_message "Wazuh agent installed successfully."
 }
+
+
 
 disable_repo() {
   # Disable Wazuh repository after installation for Linux
@@ -174,10 +198,11 @@ start_agent() {
   info_message "Wazuh agent started successfully."
 }
 
-
+# Main execution
 import_keys
 installation
-# disable_repo
 disable_repo
 config
-start_agent
+start_agent 
+
+# End of script
