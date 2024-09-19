@@ -8,20 +8,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-      include:
+        include:
         - os: ubuntu
-        version: latest
+          version: latest
         - os: ubuntu
-        version: jammy
+          version: jammy
         - os: ubuntu
-        version: focal
+          version: focal
         - os: ubuntu
-        version: noble
+          version: noble
 
         - os: debian
-        version: latest
+          version: latest
         - os: debian
-        version: buster
+          version: buster
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
