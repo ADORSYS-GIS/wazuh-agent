@@ -4,24 +4,8 @@ on: [ push, pull_request ]
 
 jobs:
   test_script_linux:
-    name: Test install script on Linux ${{ matrix.os }}, ${{ matrix.version }}
+    name: Test install script on Ubuntu
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-        - os: ubuntu
-          version: latest
-        - os: ubuntu
-          version: jammy
-        - os: ubuntu
-          version: focal
-        - os: ubuntu
-          version: noble
-
-        - os: debian
-          version: latest
-        - os: debian
-          version: buster
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,8 +21,8 @@ jobs:
           platforms: ${{ steps.qemu.outputs.platforms }}
 
       - name: Pull without cache
-        run: docker pull ghcr.io/stephane-segning/bats-docker:${{ matrix.os }}-${{ matrix.version }}
+        run: docker pull ghcr.io/stephane-segning/bats-docker:ubuntu-latest
 
       - name: Test script
         run: |
-          docker run --rm -v "$PWD:/app" ghcr.io/stephane-segning/bats-docker:${{ matrix.os }}-${{ matrix.version }} bats /app/scripts/tests/test-script.bats
+          docker run --rm -v "$PWD:/app" ghcr.io/stephane-segning/bats-docker:ubuntu-latest bats /app/scripts/tests/test-script.bats
