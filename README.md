@@ -12,5 +12,5 @@ This script automates the installation and setup of the Wazuh agent along with n
 ## Installation
 To run the script and install all these components, use the following command:
 ```bash
-curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | sudo sh
+curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | sh
 ```
