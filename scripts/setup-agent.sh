@@ -4,7 +4,15 @@
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
 WOPS_VERSION=${WOPS_VERSION:-"0.2.1"}
-OSSEC_CONF_PATH=${OSSEC_CONF_PATH:-"/var/ossec/etc/ossec.conf"}
+# Define the OSSEC configuration path
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
+else
+    # Linux
+    OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
+fi
+
 USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
 
