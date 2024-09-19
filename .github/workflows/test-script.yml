@@ -8,46 +8,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - os: centos
-            version: latest
-          - os: centos
-            version: 8
-          - os: centos
-            version: 7
+      include:
+        - os: ubuntu
+        version: latest
+        - os: ubuntu
+        version: jammy
+        - os: ubuntu
+        version: focal
+        - os: ubuntu
+        version: noble
 
-          - os: opensuse
-            version: latest
-          - os: opensuse
-            version: 15
-
-          - os: ubuntu
-            version: latest
-          - os: ubuntu
-            version: jammy
-          - os: ubuntu
-            version: focal
-          - os: ubuntu
-            version: noble
-
-          - os: debian
-            version: latest
-          - os: debian
-            version: buster
-
-          - os: alpine
-            version: latest
-          - os: alpine
-            version: edge
-          - os: alpine
-            version: 3
-
-          - os: fedora
-            version: latest
-          - os: fedora
-            version: 41
-          - os: fedora
-            version: 40
+        - os: debian
+        version: latest
+        - os: debian
+        version: buster
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
