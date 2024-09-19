@@ -117,7 +117,7 @@ installation() {
       BASE_URL="https://packages.wazuh.com/4.x/macos"
       PKG_NAME="wazuh-agent-4.9.0-1.${ARCH}64.pkg"
       PKG_URL="$BASE_URL/$PKG_NAME"
-      TMP_DIR="$(mktemp)"
+      TMP_DIR="$(mktemp -d)"
       mkdir -p "$TMP_DIR"
       if [ ! -f "$TMP_DIR/$PKG_NAME" ]; then
           curl -o "$TMP_DIR/$PKG_NAME" "$PKG_URL"
@@ -174,10 +174,11 @@ start_agent() {
   info_message "Wazuh agent started successfully."
 }
 
-
+# Main execution
 import_keys
 installation
-# disable_repo
 disable_repo
 config
-start_agent
+start_agent 
+info_message "Wazuh agent installation completed successfully."
+# End of script
