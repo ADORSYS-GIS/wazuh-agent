@@ -4,14 +4,10 @@
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
 WOPS_VERSION=${WOPS_VERSION:-"0.2.1"}
-# Set OSSEC_CONF_PATH based on the operating system
-OSSEC_CONF_PATH=$(
-    case $(uname) in
-        Darwin) echo "${OSSEC_CONF_PATH:-"/Library/Ossec/etc/ossec.conf"}" ;;
-        Linux)  echo "${OSSEC_CONF_PATH:-"/var/ossec/etc/ossec.conf"}" ;;
-        *)      echo "Unsupported operating system." && exit 1 ;;
-    esac
-)
+# Detect the operating system and set OSSEC_CONF_PATH
+OSSEC_CONF_PATH=$(uname | grep -q Darwin && echo "${OSSEC_CONF_PATH:-"/Library/Ossec/etc/ossec.conf"}" || echo "${OSSEC_CONF_PATH:-"/var/ossec/etc/ossec.conf"}")
+
+echo "OSSEC configuration path: $OSSEC_CONF_PATH"
 
 echo "OSSEC configuration path: $OSSEC_CONF_PATH"
 USER=${USER:-"root"}
