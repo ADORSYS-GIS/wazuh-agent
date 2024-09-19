@@ -118,16 +118,16 @@ installation() {
       PKG_NAME="wazuh-agent-4.9.0-1.${ARCH}64.pkg"
       PKG_URL="$BASE_URL/$PKG_NAME"
       TMP_DIR="$(mktemp -d)"
-      mkdir -p "$TMP_DIR"
-      if [ ! -f "$TMP_DIR/$PKG_NAME" ]; then
-          curl -o "$TMP_DIR/$PKG_NAME" "$PKG_URL"
-          info_message "Wazuh agent downloaded successfully."
-      fi
+      info_message "Using temporary directory: $TMP_DIR"
+      curl -o "$TMP_DIR/$PKG_NAME" "$PKG_URL"
+      info_message "Wazuh agent downloaded successfully."
       echo "WAZUH_MANAGER='$WAZUH_MANAGER'" > /tmp/wazuh_envs
       installer -pkg "$TMP_DIR/$PKG_NAME" -target /
+      rm -rf "$TMP_DIR"  # Clean up the temporary directory after installation
   fi
   info_message "Wazuh agent installed successfully."
 }
+
 
 disable_repo() {
   # Disable Wazuh repository after installation for Linux
@@ -180,5 +180,5 @@ installation
 disable_repo
 config
 start_agent 
-info_message "Wazuh agent installation completed successfully."
+
 # End of script
