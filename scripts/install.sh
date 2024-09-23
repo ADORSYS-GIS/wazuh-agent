@@ -11,6 +11,7 @@ fi
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 OSSEC_CONF_PATH=${OSSEC_CONF_PATH:-"/var/ossec/etc/ossec.conf"}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'master.wazuh.adorsys.team'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.8.1-1'}
 
 # Define text formatting
 RED='\033[0;31m'
@@ -111,7 +112,7 @@ installation() {
   # Update and install Wazuh agent for Linux or download and install for macOS
   if [ "$OS" = "Linux" ]; then
       $PACKAGE_MANAGER update
-      WAZUH_MANAGER="$WAZUH_MANAGER" $PACKAGE_MANAGER install wazuh-agent
+      WAZUH_MANAGER="$WAZUH_MANAGER" $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
   elif [ "$OS" = "macOS" ]; then
       # Detect architecture (Intel or Apple Silicon)
       ARCH=$(uname -m)
@@ -119,10 +120,10 @@ installation() {
       
       if [ "$ARCH" = "x86_64" ]; then
           # Intel architecture
-          PKG_NAME="wazuh-agent-4.9.0-1.x86_64.pkg"
+          PKG_NAME="wazuh-agent-$WAZUH_AGENT_VERSION.intel64.pkg"
       elif [ "$ARCH" = "arm64" ]; then
           # Apple Silicon (M1/M2)
-          PKG_NAME="wazuh-agent-4.9.0-1.arm64.pkg"
+          PKG_NAME="wazuh-agent-$WAZUH_AGENT_VERSION.arm64.pkg"
       else
           error_message "Unsupported architecture: $ARCH"
           exit 1

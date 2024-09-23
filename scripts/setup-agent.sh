@@ -55,7 +55,7 @@ fi
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
-if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh | LOG_LEVEL=$LOG_LEVEL OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER=$WAZUH_MANAGER sudo bash) 2>&1; then
+if ! (curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh | LOG_LEVEL=$LOG_LEVEL OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER=$WAZUH_MANAGER WAZUH_AGENT_VERSION=$WAZUH_AGENT_VERSION sudo bash) 2>&1; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
