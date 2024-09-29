@@ -105,7 +105,7 @@ fi
 
 # Step 4: Download and install snort
 info_message "Installing snort"
-if ! (sudo LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/install-snort.sh") 2>&1; then
+if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/install-snort.sh") 2>&1; then
     error_message "Failed to install 'snort'"
     exit 1
 fi
