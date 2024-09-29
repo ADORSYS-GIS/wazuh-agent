@@ -70,13 +70,13 @@ case "$OS_NAME" in
         if command_exists apt-get; then
             info_message "Detected Debian/Ubuntu-based system"
             maybe_sudo apt-get update
-            maybe_sudo apt-get install -y curl jq
+            maybe_sudo apt-get install -y curl jq gnu-sed
         elif command_exists yum; then
             info_message "Detected Red Hat/CentOS-based system"
-            maybe_sudo yum install -y curl jq
+            maybe_sudo yum install -y curl jq gnu-sed
         elif command_exists apk; then
             info_message "Detected Alpine Linux system"
-            maybe_sudo apk add --no-cache curl jq
+            maybe_sudo apk add --no-cache curl jq gnu-sed
         else
             error_message "Unsupported Linux distribution"
             exit 1
@@ -85,7 +85,7 @@ case "$OS_NAME" in
     "Darwin")
         info_message "Detected macOS"
         if command_exists brew; then
-            brew install curl jq
+            brew install curl jq gnu-sed
         else
             error_message "Homebrew is not installed. Please install Homebrew first."
             exit 1
