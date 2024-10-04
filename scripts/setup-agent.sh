@@ -10,7 +10,7 @@ fi
 # Default log level and application details
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
-WOPS_VERSION=${WOPS_VERSION:-"0.2.3"}
+WOPS_VERSION=${WOPS_VERSION:-"0.2.4"}
 # Define the OSSEC configuration path
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
