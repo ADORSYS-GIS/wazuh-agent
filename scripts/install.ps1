@@ -2,7 +2,7 @@
 Set-StrictMode -Version Latest
 
 param (
-    [string]$WAZUH_AGENT_VERSION = "4.3.0",  # Default version
+    [string]$WAZUH_AGENT_VERSION = "4.8.1-1",  # Default version
     [string]$WAZUH_MANAGER = "master.dev.wazuh.adorsys.team",                   # Wazuh manager IP or hostname
     [string]$OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"  # Default configuration path
 )
