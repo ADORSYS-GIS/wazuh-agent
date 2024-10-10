@@ -44,6 +44,11 @@ function Ensure-Dependencies {
         Remove-Item -Path "$TEMP_DIR\curl.zip" -Recurse
         Remove-Item -Path "$TEMP_DIR\curl" -Recurse
         Log-Info "curl installed successfully."
+
+        # Add curl to the PATH environment variable
+        $env:Path += ";C:\Program Files"
+        [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
+        Log-Info "curl added to PATH environment variable."
     }
 
     # Check if jq is available
@@ -51,6 +56,11 @@ function Ensure-Dependencies {
         Log-Info "jq is not installed. Installing jq..."
         Invoke-WebRequest -Uri "https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe" -OutFile "C:\Program Files\jq.exe"
         Log-Info "jq installed successfully."
+
+        # Add jq to the PATH environment variable
+        $env:Path += ";C:\Program Files"
+        [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
+        Log-Info "jq added to PATH environment variable."
     }
 }
 
