@@ -1,14 +1,13 @@
 # Set strict mode for script execution
 Set-StrictMode -Version Latest
 
-# Variables
-$LOG_LEVEL = $env:LOG_LEVEL -or 'INFO'
-$OSSEC_CONF_PATH = $env:OSSEC_CONF_PATH -or "C:\Program Files (x86)\ossec-agent\ossec.conf"
-$WAZUH_MANAGER = $env:WAZUH_MANAGER -or 'master.dev.wazuh.adorsys.team'
-$WAZUH_AGENT_VERSION = $env:WAZUH_AGENT_VERSION -or '4.8.1-1'
-$TEMP_DIR = [System.IO.Path]::GetTempPath()
+param (
+    [string]$WAZUH_AGENT_VERSION = "4.3.0",  # Default version
+    [string]$WAZUH_MANAGER = "master.dev.wazuh.adorsys.team",                   # Wazuh manager IP or hostname
+    [string]$OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"  # Default configuration path
+)
 
-# Text formatting (Powershell doesn't handle color formatting in the same way as Linux)
+# Function to format log messages
 function Format-LogMessage {
     param (
         [string]$Level,
@@ -29,18 +28,25 @@ function Log-Error {
     Write-Host (Format-LogMessage -Level "ERROR" -Message $Message) -ForegroundColor Red
 }
 
-# Check if WAZUH_MANAGER is provided
+# Validate WAZUH_MANAGER
 if (-not $WAZUH_MANAGER) {
     Log-Error "WAZUH_MANAGER is required"
     exit 1
 }
 
-# Import GPG Key for Wazuh repository (equivalent for Windows via Chocolatey or manual package download)
+# Validate OSSEC_CONF_PATH
+if (-not (Test-Path $OSSEC_CONF_PATH)) {
+    Log-Error "OSSEC configuration file not found at $OSSEC_CONF_PATH"
+    exit 1
+}
+
+# Import GPG Key for Wazuh repository
 function Import-Keys {
     Log-Info "Importing Wazuh GPG key and setting up the repository for Windows"
     $WazuhKeyUrl = "https://packages.wazuh.com/key/GPG-KEY-WAZUH"
-    
-    # Download the GPG key (Windows won't use this in the same way, but good to track it)
+    $TEMP_DIR = [System.IO.Path]::GetTempPath()
+
+    # Download the GPG key
     Invoke-WebRequest -Uri $WazuhKeyUrl -OutFile "$TEMP_DIR\WazuhGPGKey.asc"
     Log-Info "Wazuh GPG key downloaded successfully."
 }
@@ -48,18 +54,29 @@ function Import-Keys {
 # Install Wazuh agent on Windows
 function Install-WazuhAgent {
     Log-Info "Installing Wazuh agent version $WAZUH_AGENT_VERSION on Windows"
+    $TEMP_DIR = [System.IO.Path]::GetTempPath()
 
     # Download the Wazuh Agent installer
     $Arch = if ([System.Environment]::Is64BitOperatingSystem) { "win64" } else { "win32" }
     $InstallerUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.$Arch.msi"
     $InstallerPath = "$TEMP_DIR\wazuh-agent-$WAZUH_AGENT_VERSION.$Arch.msi"
-    
+
     Invoke-WebRequest -Uri $InstallerUrl -OutFile $InstallerPath
-    Log-Info "Wazuh agent installer downloaded to $InstallerPath"
+    if ($?) {
+        Log-Info "Wazuh agent installer downloaded to $InstallerPath"
+    } else {
+        Log-Error "Failed to download Wazuh agent installer from $InstallerUrl"
+        exit 1
+    }
 
     # Install the Wazuh Agent MSI package
     Start-Process msiexec.exe -ArgumentList "/i `"$InstallerPath`" /quiet /norestart" -Wait
-    Log-Info "Wazuh agent installed successfully."
+    if ($?) {
+        Log-Info "Wazuh agent installed successfully."
+    } else {
+        Log-Error "Failed to install Wazuh agent."
+        exit 1
+    }
 }
 
 # Configure Wazuh agent by setting the manager IP in the ossec.conf file
@@ -71,20 +88,37 @@ function Configure-Agent {
     Log-Info "Wazuh manager IP configured successfully."
 }
 
-# Start Wazuh agent service on Windows
-function Start-WazuhAgent {
+# Start Wazuh agent service
+function Start-WazuhAgentService {
     Log-Info "Starting Wazuh agent service on Windows"
     
-    Start-Service -Name 'wazuh-agent'
-    Log-Info "Wazuh agent started successfully."
+    # Check if the service exists before starting it
+    if (Get-Service -Name 'wazuh-agent' -ErrorAction SilentlyContinue) {
+        Start-Service -Name 'wazuh-agent'
+        if ($?) {
+            Log-Info "Wazuh agent started successfully."
+        } else {
+            Log-Error "Failed to start Wazuh agent service."
+            exit 1
+        }
+    } else {
+        Log-Error "Wazuh agent service does not exist."
+        exit 1
+    }
 }
 
-# Main execution
+# Clean up temporary files
+function Clean-Up {
+    Log-Info "Cleaning up temporary files."
+    $TEMP_DIR = [System.IO.Path]::GetTempPath()
+    Remove-Item -Path "$TEMP_DIR\WazuhGPGKey.asc" -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "$TEMP_DIR\wazuh-agent-$WAZUH_AGENT_VERSION.$Arch.msi" -Force -ErrorAction SilentlyContinue
+    Log-Info "Temporary files cleaned up."
+}
+
+# Call the functions
 Import-Keys
 Install-WazuhAgent
 Configure-Agent
-Start-WazuhAgent
-
-# Clean up
-Remove-Item "$TEMP_DIR\WazuhGPGKey.asc" -ErrorAction SilentlyContinue
-Log-Info "Temporary files cleaned up."
+Start-WazuhAgentService
+Clean-Up
