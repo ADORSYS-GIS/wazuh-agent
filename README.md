@@ -26,5 +26,5 @@ $env:WAZUH_AGENT_NAME = "test"
 # Download and execute the installation script
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/wazuh-agent-win/scripts/setup-agent.ps1' -OutFile 'setup-agent.ps1'
 # Execute the script
-& .\install.ps1
+& .\setup-agent.ps1
 ```
