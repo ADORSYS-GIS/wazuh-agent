@@ -2,11 +2,11 @@
 Set-StrictMode -Version Latest
 
 # Variables (default log level, app details, paths)
-$LOG_LEVEL = $env:LOG_LEVEL -or "INFO"
-$APP_NAME = $env:APP_NAME -or "wazuh-cert-oauth2-client"
-$WOPS_VERSION = $env:WOPS_VERSION -or "0.2.1"
-$WAZUH_MANAGER = $env:WAZUH_MANAGER -or "master.dev.wazuh.adorsys.team"
-$WAZUH_AGENT_VERSION = $env:WAZUH_AGENT_VERSION -or "4.8.2-1"
+$LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
+$APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-client" }
+$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.2.1" }
+$WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "master.dev.wazuh.adorsys.team" }
+$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.8.2-1" }
 $OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf" # Adjust for Windows
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
 
@@ -40,7 +40,7 @@ function Ensure-Dependencies {
         Log-Info "curl is not installed. Installing curl..."
         Invoke-WebRequest -Uri "https://curl.se/windows/dl-7.79.1_2/curl-7.79.1_2-win64-mingw.zip" -OutFile "$TEMP_DIR\curl.zip"
         Expand-Archive -Path "$TEMP_DIR\curl.zip" -DestinationPath "$TEMP_DIR\curl"
-        Move-Item -Path "$TEMP_DIR\curl\curl-7.79.1_2-win64-mingw\bin\curl.exe" -Destination "C:\Windows\System32\curl.exe"
+        Move-Item -Path "$TEMP_DIR\curl\curl-7.79.1_2-win64-mingw\bin\curl.exe" -Destination "C:\Program Files\curl.exe"
         Remove-Item -Path "$TEMP_DIR\curl.zip" -Recurse
         Remove-Item -Path "$TEMP_DIR\curl" -Recurse
         Log-Info "curl installed successfully."
@@ -49,7 +49,7 @@ function Ensure-Dependencies {
     # Check if jq is available
     if (-not (Get-Command jq -ErrorAction SilentlyContinue)) {
         Log-Info "jq is not installed. Installing jq..."
-        Invoke-WebRequest -Uri "https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe" -OutFile "C:\Windows\System32\jq.exe"
+        Invoke-WebRequest -Uri "https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe" -OutFile "C:\Program Files\jq.exe"
         Log-Info "jq installed successfully."
     }
 }
@@ -66,7 +66,7 @@ function Install-WazuhAgent {
     Log-Info "Wazuh agent downloaded successfully."
 
     # Install Wazuh agent silently
-    Start-Process msiexec.exe -ArgumentList "/i `"$InstallerPath`" /quiet /norestart" -Wait
+    Start-Process msiexec.exe -ArgumentList "/i $InstallerPath /quiet /norestart" -Wait
     Log-Info "Wazuh agent installed successfully."
 
     # Clean up the installer
