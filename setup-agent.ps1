@@ -58,8 +58,8 @@ function Ensure-Dependencies {
 function Install-WazuhAgent {
     Log-Info "Installing Wazuh agent"
 
-    $InstallerUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.win64.msi"
-    $InstallerPath = "$TEMP_DIR\wazuh-agent-$WAZUH_AGENT_VERSION.msi"
+    $InstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/wazuh-agent-win/scripts/install.ps1"
+    $InstallerPath = "$TEMP_DIR\install.ps1"
 
     # Download Wazuh agent installer
     Invoke-WebRequest -Uri $InstallerUrl -OutFile $InstallerPath
