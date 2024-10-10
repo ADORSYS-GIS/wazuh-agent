@@ -54,7 +54,7 @@ function Install-Agent {
 
         # Determine package URL based on architecture
         if ([System.Environment]::Is64BitOperatingSystem) {
-            $PACKAGE_URL = "https://packages.wazuh.com/4.x/windows/wazuh-agent-${WAZUH_AGENT_VERSION}-1.msi"
+            $PACKAGE_URL = "https://packages.wazuh.com/4.x/windows/wazuh-agent-${WAZUH_AGENT_VERSION}.msi"
         } else {
             error_message "Unsupported architecture. Only 64-bit systems are supported."
             exit 1
