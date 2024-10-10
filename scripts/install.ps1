@@ -1,3 +1,36 @@
+# Define text formatting
+$RED = "`e[0;31m"
+$GREEN = "`e[0;32m"
+$YELLOW = "`e[1;33m"
+$BLUE = "`e[1;34m"
+$BOLD = "`e[1m"
+$NORMAL = "`e[0m"
+
+# Function for logging with timestamp
+function log {
+    param (
+        [string]$LEVEL,
+        [string]$MESSAGE
+    )
+    $TIMESTAMP = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    Write-Output "$TIMESTAMP [$LEVEL] $MESSAGE"
+}
+
+# Logging helpers
+function info_message {
+    param (
+        [string]$MESSAGE
+    )
+    log "INFO" "$GREEN$MESSAGE$NORMAL"
+}
+
+function error_message {
+    param (
+        [string]$MESSAGE
+    )
+    log "ERROR" "$RED$MESSAGE$NORMAL"
+}
+
 # Function to install Wazuh Agent
 function Install-Agent {
 
@@ -16,55 +49,58 @@ function Install-Agent {
         # Get the agent name from environment variable
         $WAZUH_AGENT_NAME = $env:WAZUH_AGENT_NAME
         if (-not $WAZUH_AGENT_NAME) {
-            Write-Error "WAZUH_AGENT_NAME environment variable is not set."
+            error_message "WAZUH_AGENT_NAME environment variable is not set."
             exit 1
         }
 
         # Determine package URL based on architecture
-        $ARCH = [System.Environment]::Is64BitOperatingSystem
-
-        if ($ARCH) {
+        if ([System.Environment]::Is64BitOperatingSystem) {
             $PACKAGE_URL = "https://packages.wazuh.com/4.x/windows/wazuh-agent-${WAZUH_AGENT_VERSION}-1.msi"
         } else {
-            Write-Output "Unsupported architecture"
+            error_message "Unsupported architecture"
             exit 1
         }
 
         # Download the package
-        Write-Output "Downloading Wazuh agent..."
+        info_message "Downloading Wazuh agent..."
+        $msiPath = "${TEMP_DIR}\$WAZUH_AGENT_MSI"
         try {
-            Invoke-WebRequest -Uri $PACKAGE_URL -OutFile ${env.tmp}\wazuh-agent
+            Invoke-WebRequest -Uri $PACKAGE_URL -OutFile $msiPath -ErrorAction Stop
         } catch {
-            Write-Error "Failed to download Wazuh agent: $_"
+            error_message "Failed to download Wazuh agent: $_"
             exit 1
         }
 
-        # Define the path to the MSI file
-        $msiPath = "${env.tmp}\wazuh-agent"
+        # Install the package
+        info_message "Installing Wazuh agent..."
         $MSIArguments = @(
             "/i"
-            "${env.tmp}\wazuh-agent"
-            "/q"
+            "`"$msiPath`""   # Use backticks to escape the quotes in the path
+            "/quiet"
             "WAZUH_MANAGER=${WAZUH_MANAGER}"
             "WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME}"
         )
 
-        # Install the package
-        Write-Output "Installing Wazuh agent..."
         try {
-            Start-Process msiexec.exe -ArgumentList $MSIArguments -Wait
+            Start-Process msiexec.exe -ArgumentList $MSIArguments -Wait -ErrorAction Stop
         } catch {
-            Write-Error "Failed to install Wazuh agent: $_"
+            error_message "Failed to install Wazuh agent: $_"
             exit 1
         }
 
         # Clean up
-        Write-Output "Cleaning up..."
+        info_message "Cleaning up..."
         try {
-            Remove-Item -Path ${env.tmp}\wazuh-agent -ErrorAction Stop
+            Remove-Item -Path $msiPath -ErrorAction Stop
         } catch {
             Write-Warning "Failed to clean up the downloaded MSI file: $_"
         }
-        Write-Output "Wazuh agent installed successfully!"
+        info_message "Wazuh agent installed successfully!"
     }
+
+    # Call the Install-WazuhAgent function
+    Install-WazuhAgent
 }
+
+# Call the Install-Agent function to execute the installation
+Install-Agent
