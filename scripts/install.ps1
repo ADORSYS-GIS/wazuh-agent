@@ -40,7 +40,7 @@ function Install-Agent {
     # Function to install Wazuh agent
     function Install-WazuhAgent {
         # Variables
-        $WAZUH_MANAGER = "master.wazuh.adorsys.team"
+        $WAZUH_MANAGER = "master.dev.wazuh.adorsys.team"
         $WAZUH_AGENT_VERSION = "4.8.1-1"
         $WAZUH_AGENT_MSI = "wazuh-agent-${WAZUH_AGENT_VERSION}.msi"
         $TEMP_DIR = $env:TEMP
