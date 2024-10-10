@@ -35,7 +35,6 @@ function error_message {
 function Install-Agent {
 
     # Global variables
-    $YARA_SH_PATH = "C:\Program Files (x86)\ossec-agent\active-response\bin\yara.bat"
     $OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"
 
     # Function to install Wazuh agent
@@ -57,13 +56,13 @@ function Install-Agent {
         if ([System.Environment]::Is64BitOperatingSystem) {
             $PACKAGE_URL = "https://packages.wazuh.com/4.x/windows/wazuh-agent-${WAZUH_AGENT_VERSION}-1.msi"
         } else {
-            error_message "Unsupported architecture"
+            error_message "Unsupported architecture. Only 64-bit systems are supported."
             exit 1
         }
 
         # Download the package
         info_message "Downloading Wazuh agent..."
-        $msiPath = "${TEMP_DIR}\$WAZUH_AGENT_MSI"
+        $msiPath = Join-Path -Path $TEMP_DIR -ChildPath $WAZUH_AGENT_MSI
         try {
             Invoke-WebRequest -Uri $PACKAGE_URL -OutFile $msiPath -ErrorAction Stop
         } catch {
@@ -77,12 +76,13 @@ function Install-Agent {
             "/i"
             "`"$msiPath`""   # Use backticks to escape the quotes in the path
             "/quiet"
+            "/norestart"  # Prevent restart after installation
             "WAZUH_MANAGER=${WAZUH_MANAGER}"
             "WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME}"
         )
 
         try {
-            Start-Process msiexec.exe -ArgumentList $MSIArguments -Wait -ErrorAction Stop
+            Start-Process -FilePath "msiexec.exe" -ArgumentList $MSIArguments -Wait -ErrorAction Stop
         } catch {
             error_message "Failed to install Wazuh agent: $_"
             exit 1
