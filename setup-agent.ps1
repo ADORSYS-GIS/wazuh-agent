@@ -150,24 +150,35 @@ function Install-Yara {
     }
 }
 
-
-# Step 4: Download and install Snort
+# Step 4: Download and install Snort with error handling
 function Install-Snort {
-    Log-Info "Installing Snort"
+    try {
+        Write-Host "Downloading and executing Snort installation script..."
 
-    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/windows/snort.ps1"
-    $SnortScript = "$TEMP_DIR\snort.ps1"
+        $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/windows/snort.ps1"  # Update the URL if needed
+        $SnortScript = "$env:TEMP\snort.ps1"
 
-    # Download the installation script
-    Invoke-WebRequest -Uri $SnortUrl -OutFile $SnortScript
+        # Download the installation script
+        Invoke-WebRequest -Uri $SnortUrl -OutFile $SnortScript -ErrorAction Stop
+        Write-Host "Snort installation script downloaded successfully."
 
-    # Execute the installation script
-    & powershell.exe -File $SnortScript
-    Log-Info "Snort installed successfully."
-
-    # Clean up the script
-    Remove-Item $SnortScript
+        # Execute the installation script
+        & powershell.exe -ExecutionPolicy Bypass -File $SnortScript -ErrorAction Stop
+        Write-Host "Snort installed successfully."
+    }
+    catch {
+        Write-Host "Error during Snort installation: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    finally {
+        # Clean up the script if it exists
+        if (Test-Path $SnortScript) {
+            Remove-Item $SnortScript -Force
+            Write-Host "Installer script removed."
+        }
+    }
 }
+
+
 
 # Main Execution
 Ensure-Dependencies
