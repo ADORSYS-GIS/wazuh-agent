@@ -87,8 +87,8 @@ function Install-WazuhAgent {
 function Install-OAuth2Client {
     Log-Info "Installing wazuh-cert-oauth2-client"
 
-    $OAuth2Url = "https://github.com/ADORSYS-GIS/wazuh-cert-oauth2/releases/download/v0.2.5/wazuh-cert-oauth2-client-aarch64-pc-windows-msvc.exe"
-    $OAuth2Script = "$TEMP_DIR\wazuh-cert-oauth2-client-aarch64-pc-windows-msvc.exe"
+    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/main/scripts/install.ps1"
+    $OAuth2Script = "$TEMP_DIR\wazuh-cert-oauth2-client-install.ps1"
 
     # Download the wazuh-cert-oauth2-client
     Invoke-WebRequest -Uri $OAuth2Url -OutFile $OAuth2Script
