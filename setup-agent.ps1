@@ -64,24 +64,34 @@ function Ensure-Dependencies {
     }
 }
 
-# Step 1: Download and install Wazuh agent
+# Step 1: Download and execute Wazuh agent script with error handling
 function Install-WazuhAgent {
-    Log-Info "Installing Wazuh agent"
+    try {
+        Write-Host "Downloading and executing Wazuh agent script..."
 
-    $InstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/wazuh-agent-win/scripts/install.ps1" #to be updated 
-    $InstallerPath = "$TEMP_DIR\install.ps1"
+        $InstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/wazuh-agent-win/scripts/install.ps1"  # Update the URL if needed
+        $InstallerPath = "$env:TEMP\install.ps1"
 
-    # Download Wazuh agent installer
-    Invoke-WebRequest -Uri $InstallerUrl -OutFile $InstallerPath
-    Log-Info "Wazuh agent downloaded successfully."
+        # Download Wazuh agent installer script
+        Invoke-WebRequest -Uri $InstallerUrl -OutFile $InstallerPath -ErrorAction Stop
+        Write-Host "Wazuh agent script downloaded successfully."
 
-    # Install Wazuh agent silently
-    Start-Process msiexec.exe -ArgumentList "/i $InstallerPath /quiet /norestart" -Wait
-    Log-Info "Wazuh agent installed successfully."
-
-    # Clean up the installer
-    Remove-Item $InstallerPath
+        # Execute the downloaded script
+        & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ErrorAction Stop
+        Write-Host "Wazuh agent script executed successfully."
+    }
+    catch {
+        Write-Host "Error during Wazuh agent installation: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    finally {
+        # Clean up the installer file if it exists
+        if (Test-Path $InstallerPath) {
+            Remove-Item $InstallerPath -Force
+            Write-Host "Installer file removed."
+        }
+    }
 }
+
 
 # Step 2: Download and install wazuh-cert-oauth2-client
 function Install-OAuth2Client {
