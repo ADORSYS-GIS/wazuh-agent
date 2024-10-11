@@ -68,7 +68,7 @@ function Ensure-Dependencies {
 function Install-WazuhAgent {
     Log-Info "Installing Wazuh agent"
 
-    $InstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/wazuh-agent-win/scripts/install.ps1"
+    $InstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/wazuh-agent-win/scripts/install.ps1" #to be updated 
     $InstallerPath = "$TEMP_DIR\install.ps1"
 
     # Download Wazuh agent installer
@@ -87,7 +87,7 @@ function Install-WazuhAgent {
 function Install-OAuth2Client {
     Log-Info "Installing wazuh-cert-oauth2-client"
 
-    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/main/scripts/install.ps1"
+    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/fix/scripts/install.ps1" #to be updated 
     $OAuth2Script = "$TEMP_DIR\wazuh-cert-oauth2-client-install.ps1"
 
     # Download the wazuh-cert-oauth2-client
