@@ -122,23 +122,34 @@ function Install-OAuth2Client {
 }
 
 
-# Step 3: Download and install YARA
+# Step 3: Download and install YARA with error handling
 function Install-Yara {
-    Log-Info "Installing YARA"
+    try {
+        Write-Host "Downloading and executing YARA installation script..."
 
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/main/scripts/install.ps1"
-    $YaraScript = "$TEMP_DIR\install.ps1"
+        $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/main/scripts/install.ps1"  # Update the URL if needed
+        $YaraScript = "$env:TEMP\install.ps1"
 
-    # Download the installation script
-    Invoke-WebRequest -Uri $YaraUrl -OutFile $YaraScript
+        # Download the installation script
+        Invoke-WebRequest -Uri $YaraUrl -OutFile $YaraScript -ErrorAction Stop
+        Write-Host "YARA installation script downloaded successfully."
 
-    # Execute the installation script
-    & powershell.exe -File $YaraScript
-    Log-Info "YARA installed successfully."
-
-    # Clean up the script
-    Remove-Item $YaraScript
+        # Execute the installation script
+        & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
+        Write-Host "YARA installed successfully."
+    }
+    catch {
+        Write-Host "Error during YARA installation: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    finally {
+        # Clean up the script if it exists
+        if (Test-Path $YaraScript) {
+            Remove-Item $YaraScript -Force
+            Write-Host "Installer script removed."
+        }
+    }
 }
+
 
 # Step 4: Download and install Snort
 function Install-Snort {
