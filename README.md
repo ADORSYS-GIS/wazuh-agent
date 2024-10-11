@@ -1,6 +1,7 @@
 # Wazuh Agent Setup
 
-[![Docker Testing](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/test-script.yml/badge.svg)](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/test-script.yml)
+[![Release Client](https://github.com/ADORSYS-GIS/wazuh-cert-oauth2/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/ADORSYS-GIS/wazuh-cert-oauth2/actions/workflows/release.yml)
+
 
 This script automates the installation and setup of the Wazuh agent along with necessary dependencies and additional tools: **Yara** and **Snort**
 
