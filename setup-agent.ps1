@@ -69,7 +69,7 @@ function Install-WazuhAgent {
     try {
         Write-Host "Downloading and executing Wazuh agent script..."
 
-        $InstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/wazuh-agent-win/scripts/install.ps1"  # Update the URL if needed
+        $InstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/install.ps1"  # Update the URL if needed
         $InstallerPath = "$env:TEMP\install.ps1"
 
         # Download Wazuh agent installer script
