@@ -93,23 +93,34 @@ function Install-WazuhAgent {
 }
 
 
-# Step 2: Download and install wazuh-cert-oauth2-client
+# Step 2: Download and install wazuh-cert-oauth2-client with error handling
 function Install-OAuth2Client {
-    Log-Info "Installing wazuh-cert-oauth2-client"
+    try {
+        Write-Host "Downloading and executing wazuh-cert-oauth2-client script..."
 
-    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/fix/scripts/install.ps1" #to be updated 
-    $OAuth2Script = "$TEMP_DIR\wazuh-cert-oauth2-client-install.ps1"
+        $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/fix/scripts/install.ps1"  # Update the URL if needed
+        $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
 
-    # Download the wazuh-cert-oauth2-client
-    Invoke-WebRequest -Uri $OAuth2Url -OutFile $OAuth2Script
+        # Download the wazuh-cert-oauth2-client installer script
+        Invoke-WebRequest -Uri $OAuth2Url -OutFile $OAuth2Script -ErrorAction Stop
+        Write-Host "wazuh-cert-oauth2-client script downloaded successfully."
 
-    # Execute the downloaded executable with appropriate parameters
-    Start-Process -FilePath $OAuth2Script -ArgumentList "-LOG_LEVEL", $LOG_LEVEL, "-OSSEC_CONF_PATH", $OSSEC_CONF_PATH, "-APP_NAME", $APP_NAME, "-WOPS_VERSION", $WOPS_VERSION -Wait
-    Log-Info "wazuh-cert-oauth2-client installed successfully."
-
-    # Clean up the executable
-    Remove-Item $OAuth2Script
+        # Execute the downloaded script with required parameters
+        & powershell.exe -ExecutionPolicy Bypass -File $OAuth2Script -ArgumentList "-LOG_LEVEL", $LOG_LEVEL, "-OSSEC_CONF_PATH", $OSSEC_CONF_PATH, "-APP_NAME", $APP_NAME, "-WOPS_VERSION", $WOPS_VERSION -ErrorAction Stop
+        Write-Host "wazuh-cert-oauth2-client installed successfully."
+    }
+    catch {
+        Write-Host "Error during wazuh-cert-oauth2-client installation: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    finally {
+        # Clean up the installer file if it exists
+        if (Test-Path $OAuth2Script) {
+            Remove-Item $OAuth2Script -Force
+            Write-Host "Installer file removed."
+        }
+    }
 }
+
 
 # Step 3: Download and install YARA
 function Install-Yara {
