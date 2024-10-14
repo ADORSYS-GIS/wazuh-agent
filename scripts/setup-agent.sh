@@ -72,6 +72,7 @@ info_message "Download all scripts..."
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/deps.sh > "$TMP_FOLDER/deps.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/main/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent-status.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/main/scripts/install.sh > "$TMP_FOLDER/install-yara.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/install.sh > "$TMP_FOLDER/install-snort.sh"
 
@@ -96,14 +97,21 @@ if ! (sudo LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$AP
     exit 1
 fi
 
-# Step 3: Download and install yara
+# Step 3: Download and install wazuh-agent-status
+info_message "Installing wazuh-agent-status"
+if ! (bash "$TMP_FOLDER/install-wazuh-agent-status.sh") 2>&1; then
+    error_message "Failed to install 'wazuh-agent-status'"
+    exit 1
+fi
+
+# Step 4: Download and install yara
 info_message "Installing yara"
 if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/install-yara.sh") 2>&1; then
     error_message "Failed to install 'yara'"
     exit 1
 fi
 
-# Step 4: Download and install snort
+# Step 5: Download and install snort
 info_message "Installing snort"
 if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/install-snort.sh") 2>&1; then
     error_message "Failed to install 'snort'"
