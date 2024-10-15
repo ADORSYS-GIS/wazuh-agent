@@ -12,6 +12,12 @@ This script automates the installation and setup of the Wazuh agent along with n
 
 
 ## Installation
+
+**Remark:** 
+This script will enroll the Wazuh agent on the **dev** cluster by default, you should meet a member of the wazuh team if you want to enroll it elsewhere 
+
+### Linux/MacOS Installation
+
 To run the script and install all these components, use the following command:
 ```bash
 curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | WAZUH_AGENT_NAME=test bash

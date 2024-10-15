@@ -10,7 +10,7 @@ fi
 # Variables
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 OSSEC_CONF_PATH=${OSSEC_CONF_PATH:-"/var/ossec/etc/ossec.conf"}
-WAZUH_MANAGER=${WAZUH_MANAGER:-'master.wazuh.adorsys.team'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'master.dev.wazuh.adorsys.team'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.8.1-1'}
 
 # Define text formatting
