@@ -94,7 +94,7 @@ function Install-OAuth2Client {
     try {
         Write-Host "Downloading and executing wazuh-cert-oauth2-client script..."
 
-        $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/fix/scripts/install.ps1"  # Update the URL if needed
+        $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/3-Windows-Agent-Install-Script/scripts/install.ps1"  # Update the URL if needed
         $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
 
         # Download the wazuh-cert-oauth2-client installer script
