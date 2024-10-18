@@ -31,36 +31,32 @@ function Log-Error {
     Log "ERROR" $Message
 }
 
+
 # Step 0: Ensure dependencies (for Windows, equivalent would be checking for curl & jq installation)
-function Ensure-Dependencies {
-    Log-Info "Ensuring dependencies are installed (curl, jq)"
+function Install-Dependencies {
+    try{
+        Write-Host "Downloading and executing Dependencies Script..."
 
-    # Check if curl is available
-    if (-not (Get-Command curl -ErrorAction SilentlyContinue)) {
-        Log-Info "curl is not installed. Installing curl..."
-        Invoke-WebRequest -Uri "https://curl.se/windows/dl-7.79.1_2/curl-7.79.1_2-win64-mingw.zip" -OutFile "$TEMP_DIR\curl.zip"
-        Expand-Archive -Path "$TEMP_DIR\curl.zip" -DestinationPath "$TEMP_DIR\curl"
-        Move-Item -Path "$TEMP_DIR\curl\curl-7.79.1_2-win64-mingw\bin\curl.exe" -Destination "C:\Program Files\curl.exe"
-        Remove-Item -Path "$TEMP_DIR\curl.zip" -Recurse
-        Remove-Item -Path "$TEMP_DIR\curl" -Recurse
-        Log-Info "curl installed successfully."
+        $DependenciesUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/3-Windows-Agent-Install-Script/scripts/deps.ps1"  # Update the URL if needed
+        $DependenciesPath = "$env:TEMP\deps.ps1"
 
-        # Add curl to the PATH environment variable
-        $env:Path += ";C:\Program Files"
-        [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
-        Log-Info "curl added to PATH environment variable."
+        # Download Wazuh agent installer script
+        Invoke-WebRequest -Uri $DependenciesUrl -OutFile $DependenciesPath -ErrorAction Stop
+        Write-Host "Dependencies script downloaded successfully."
+
+        # Execute the downloaded script
+        & powershell.exe -ExecutionPolicy Bypass -File $DependenciesPath -ErrorAction Stop
+        Write-Host "Dependencies script executed successfully."
     }
-
-    # Check if jq is available
-    if (-not (Get-Command jq -ErrorAction SilentlyContinue)) {
-        Log-Info "jq is not installed. Installing jq..."
-        Invoke-WebRequest -Uri "https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe" -OutFile "C:\Program Files\jq.exe"
-        Log-Info "jq installed successfully."
-
-        # Add jq to the PATH environment variable
-        $env:Path += ";C:\Program Files"
-        [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
-        Log-Info "jq added to PATH environment variable."
+    catch {
+        Write-Host "Error during Dependencies installation: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    finally {
+        # Clean up the installer file if it exists
+        if (Test-Path $DependenciesPath) {
+            Remove-Item $DependenciesPath -Force
+            Write-Host "Installer file removed."
+        }
     }
 }
 
@@ -69,7 +65,7 @@ function Install-WazuhAgent {
     try {
         Write-Host "Downloading and executing Wazuh agent script..."
 
-        $InstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/install.ps1"  # Update the URL if needed
+        $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/install.ps1"  # Update the URL if needed
         $InstallerPath = "$env:TEMP\install.ps1"
 
         # Download Wazuh agent installer script
@@ -105,6 +101,7 @@ function Install-OAuth2Client {
         Invoke-WebRequest -Uri $OAuth2Url -OutFile $OAuth2Script -ErrorAction Stop
         Write-Host "wazuh-cert-oauth2-client script downloaded successfully."
 
+        #Supposed to remove the execution/ compare to .sh version
         # Execute the downloaded script with required parameters
         & powershell.exe -ExecutionPolicy Bypass -File $OAuth2Script -ArgumentList "-LOG_LEVEL", $LOG_LEVEL, "-OSSEC_CONF_PATH", $OSSEC_CONF_PATH, "-APP_NAME", $APP_NAME, "-WOPS_VERSION", $WOPS_VERSION -ErrorAction Stop
         Write-Host "wazuh-cert-oauth2-client installed successfully."
@@ -181,7 +178,7 @@ function Install-Snort {
 
 
 # Main Execution
-Ensure-Dependencies
+Install-Dependencies
 Install-WazuhAgent
 Install-OAuth2Client
 Install-Yara
