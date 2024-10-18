@@ -124,7 +124,7 @@ function Install-Yara {
     try {
         Write-Host "Downloading and executing YARA installation script..."
 
-        $YaraUrl = "https://github.com/ADORSYS-GIS/wazuh-yara/blob/3-Windows-Agent-Install-Script/scripts/install.ps1"  # Update the URL if needed
+        $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/heads/3-Windows-Agent-Install-Script/scripts/install.ps1"  # Update the URL if needed
         $YaraScript = "$env:TEMP\install.ps1"
 
         # Download the installation script
