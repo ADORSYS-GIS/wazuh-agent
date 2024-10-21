@@ -51,6 +51,9 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agen
 #Please replace "test" with your agent name.
 $env:WAZUH_AGENT_NAME = "test"
 
+#Set Wazuh Manager domain name.
+$env:WAZUH_MANAGER = "master.wazuh.adorsys.team"
+
 # Download Setup-agent script
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/3-Windows-Agent-Install-Script/scripts/setup-agent.ps1' -OutFile 'setup-agent.ps1'
 
