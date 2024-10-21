@@ -28,10 +28,9 @@ For Windows, Please follow this step by step process to setup the windows wazuh 
 
 ### 1. Open powershell in administrator mode.
 
-### 2. Set your Wazuh Agent Name and run the command to set execution policy. Please respond with "[A] Yes to All"
+### 2. Run the command to set execution policy. Please respond with "[A] Yes to All"
 ```powershell
-#Please replace "test" with your agent name.
-$env:WAZUH_AGENT_NAME = "test"
+
 
 # Set Execution Policy to be able to run powershell script
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
@@ -47,8 +46,10 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agen
 
 ### 3. Please close your powershell terminal and re-open in administrator mode again.
 
-### 4. Run the following commands to complete the installation.
+### 4. Setup your Agent Name and Run the following commands to complete the installation.
 ```powershell
+#Please replace "test" with your agent name.
+$env:WAZUH_AGENT_NAME = "test"
 
 # Download Setup-agent script
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/3-Windows-Agent-Install-Script/scripts/setup-agent.ps1' -OutFile 'setup-agent.ps1'
