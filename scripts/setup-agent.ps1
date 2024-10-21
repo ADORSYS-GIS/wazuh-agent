@@ -181,5 +181,5 @@ function Install-Snort {
 Install-Dependencies
 Install-WazuhAgent
 Install-OAuth2Client
-Install-Yara
+# Install-Yara
 Install-Snort
