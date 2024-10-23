@@ -71,7 +71,6 @@ function Install-Agent {
             "/quiet"
             "/norestart"  # Prevent restart after installation
             "WAZUH_MANAGER=${WAZUH_MANAGER}"
-            "WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME}"
         )
 
         try {
