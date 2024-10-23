@@ -45,13 +45,6 @@ function Install-Agent {
         $WAZUH_AGENT_MSI = "wazuh-agent-${WAZUH_AGENT_VERSION}.msi"
         $TEMP_DIR = $env:TEMP
 
-        # Get the agent name from environment variable
-        $WAZUH_AGENT_NAME = $env:WAZUH_AGENT_NAME
-        if (-not $WAZUH_AGENT_NAME) {
-            error_message "WAZUH_AGENT_NAME environment variable is not set."
-            exit 1
-        }
-
         # Determine package URL based on architecture
         if ([System.Environment]::Is64BitOperatingSystem) {
             $PACKAGE_URL = "https://packages.wazuh.com/4.x/windows/wazuh-agent-${WAZUH_AGENT_VERSION}.msi"
