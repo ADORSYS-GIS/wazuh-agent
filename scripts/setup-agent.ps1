@@ -175,6 +175,35 @@ function Install-Snort {
     }
 }
 
+# Step 4: Download and install Wazuh Agent Status with error handling
+function Install-AgentStatus {
+    try {
+        Write-Host "Downloading and executing Wazuh Agent Status installation script..."
+
+        $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/chore/issue-6/scripts/install.ps1"  # Update the URL if needed
+        $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
+
+        # Download the installation script
+        Invoke-WebRequest -Uri $AgentStatusUrl -OutFile $AgentStatusScript -ErrorAction Stop
+        Write-Host "Agent Status installation script downloaded successfully."
+
+        # Execute the installation script
+        & powershell.exe -ExecutionPolicy Bypass -File $AgentStatusScript -ErrorAction Stop
+        Write-Host "Agent Status installed successfully."
+    }
+    catch {
+        Write-Host "Error during Agent Status installation: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    finally {
+        # Clean up the script if it exists
+        if (Test-Path $AgentStatusScript) {
+            Remove-Item $AgentStatusScript -Force
+            Write-Host "Installer script removed."
+        }
+    }
+}
+
+
 
 
 # Main Execution
@@ -183,3 +212,4 @@ Install-WazuhAgent
 Install-OAuth2Client
 # Install-Yara
 Install-Snort
+Install-AgentStatus
