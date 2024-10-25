@@ -178,9 +178,8 @@ function Install-AgentStatus {
 
 
 # Main Execution
-Install-Dependencies
 Install-WazuhAgent
 Install-OAuth2Client
+Install-AgentStatus
 Install-Yara
 Install-Snort
-Install-AgentStatus
