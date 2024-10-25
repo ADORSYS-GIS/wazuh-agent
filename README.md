@@ -38,7 +38,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ### 3. Run the following commands to download dependecy script and execute it
 ```powershell
 #Download Dependency script
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/3-Windows-Agent-Install-Script/scripts/deps.ps1' -OutFile 'deps.ps1'
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/deps.ps1' -OutFile 'deps.ps1'
 
 # Run dependency script
 .\deps.ps1
@@ -55,7 +55,7 @@ $env:WAZUH_AGENT_NAME = "test"
 $env:WAZUH_MANAGER = "master.wazuh.adorsys.team"
 
 # Download Setup-agent script
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/3-Windows-Agent-Install-Script/scripts/setup-agent.ps1' -OutFile 'setup-agent.ps1'
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/setup-agent.ps1' -OutFile 'setup-agent.ps1'
 
 #Run Setup-agent script
 .\setup-agent.ps1
