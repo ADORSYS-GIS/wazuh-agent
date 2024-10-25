@@ -60,12 +60,30 @@ function Install-Agent {
         return
     }
 
+    # Filling up MSI installer arguments
+    $MsiArguments = @(
+        "/i $MsiPath"
+        "/q"
+        "WAZUH_MANAGER=`"$WazuhManager`""
+    )
+
     # Install the Wazuh agent
     info_message "Installing Wazuh agent..."
     try {
-        Start-Process -FilePath "msiexec.exe" /i $MsiPath /q WAZUH_MANAGER=$WazuhManager -Wait -ErrorAction Stop
+        Start-Process "msiexec.exe" -ArgumentList $MsiArguments -Wait -ErrorAction Stop
     } catch {
         error_message "Failed to install Wazuh agent: $($_.Exception.Message)"
+        return
+    }
+
+    # Update the manager address in the configuration file
+    try {
+        [xml]$configXml = Get-Content -Path $OSSEC_CONF_PATH
+        $configXml.ossec_config.client.server.address = $WazuhManager
+        $configXml.Save($OSSEC_CONF_PATH)
+        info_message "Manager address updated successfully in ossec.conf."
+    } catch {
+        error_message "Failed to update manager address: $($_.Exception.Message)"
         return
     }
     
