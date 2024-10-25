@@ -31,35 +31,6 @@ function Log-Error {
     Log "ERROR" $Message
 }
 
-
-# Step 0: Ensure dependencies (for Windows, equivalent would be checking for curl & jq installation)
-function Install-Dependencies {
-    try{
-        Write-Host "Downloading and executing Dependencies Script..."
-
-        $DependenciesUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/3-Windows-Agent-Install-Script/scripts/deps.ps1"  # Update the URL if needed
-        $DependenciesPath = "$env:TEMP\deps.ps1"
-
-        # Download Wazuh agent installer script
-        Invoke-WebRequest -Uri $DependenciesUrl -OutFile $DependenciesPath -ErrorAction Stop
-        Write-Host "Dependencies script downloaded successfully."
-
-        # Execute the downloaded script
-        & powershell.exe -ExecutionPolicy Bypass -File $DependenciesPath -ErrorAction Stop
-        Write-Host "Dependencies script executed successfully."
-    }
-    catch {
-        Write-Host "Error during Dependencies installation: $($_.Exception.Message)" -ForegroundColor Red
-    }
-    finally {
-        # Clean up the installer file if it exists
-        if (Test-Path $DependenciesPath) {
-            Remove-Item $DependenciesPath -Force
-            Write-Host "Installer file removed."
-        }
-    }
-}
-
 # Step 1: Download and execute Wazuh agent script with error handling
 function Install-WazuhAgent {
     try {
