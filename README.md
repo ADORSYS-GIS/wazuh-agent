@@ -24,14 +24,44 @@ curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agen
 ```
 ### Windows Installation
 
-For Windows, you can download and run the PowerShell script to install the Wazuh agent:
+For Windows, Please follow this step by step process to setup the windows wazuh agent.
 
+### 1. Open powershell in administrator mode.
+
+### 2. Run the command to set execution policy. Please respond with "[A] Yes to All"
 ```powershell
-# Set the environment variable
+
+
+# Set Execution Policy to be able to run powershell script
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+### 3. Run the following commands to download dependecy script and execute it
+```powershell
+#Download Dependency script
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/3-Windows-Agent-Install-Script/scripts/deps.ps1' -OutFile 'deps.ps1'
+
+# Run dependency script
+.\deps.ps1
+```
+
+### 3. Please close your powershell terminal and re-open in administrator mode again.
+
+### 4. Setup your Agent Name and Run the following commands to complete the installation.
+```powershell
+#Please replace "test" with your agent name.
 $env:WAZUH_AGENT_NAME = "test"
 
-# Download and execute the installation script
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/setup-agent.ps1' -OutFile 'setup-agent.ps1'
-# Execute the script
-& .\setup-agent.ps1
+#Set Wazuh Manager domain name.
+$env:WAZUH_MANAGER = "master.wazuh.adorsys.team"
+
+# Download Setup-agent script
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/3-Windows-Agent-Install-Script/scripts/setup-agent.ps1' -OutFile 'setup-agent.ps1'
+
+#Run Setup-agent script
+.\setup-agent.ps1
+
 ```
+
+
+
+

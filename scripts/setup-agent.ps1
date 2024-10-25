@@ -4,7 +4,7 @@ Set-StrictMode -Version Latest
 # Variables (default log level, app details, paths)
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-client" }
-$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.2.1" }
+$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.2.8" }
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "master.dev.wazuh.adorsys.team" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.8.1-1" }
 $OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf" # Adjust for Windows
@@ -31,36 +31,32 @@ function Log-Error {
     Log "ERROR" $Message
 }
 
+
 # Step 0: Ensure dependencies (for Windows, equivalent would be checking for curl & jq installation)
-function Ensure-Dependencies {
-    Log-Info "Ensuring dependencies are installed (curl, jq)"
+function Install-Dependencies {
+    try{
+        Write-Host "Downloading and executing Dependencies Script..."
 
-    # Check if curl is available
-    if (-not (Get-Command curl -ErrorAction SilentlyContinue)) {
-        Log-Info "curl is not installed. Installing curl..."
-        Invoke-WebRequest -Uri "https://curl.se/windows/dl-7.79.1_2/curl-7.79.1_2-win64-mingw.zip" -OutFile "$TEMP_DIR\curl.zip"
-        Expand-Archive -Path "$TEMP_DIR\curl.zip" -DestinationPath "$TEMP_DIR\curl"
-        Move-Item -Path "$TEMP_DIR\curl\curl-7.79.1_2-win64-mingw\bin\curl.exe" -Destination "C:\Program Files\curl.exe"
-        Remove-Item -Path "$TEMP_DIR\curl.zip" -Recurse
-        Remove-Item -Path "$TEMP_DIR\curl" -Recurse
-        Log-Info "curl installed successfully."
+        $DependenciesUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/3-Windows-Agent-Install-Script/scripts/deps.ps1"  # Update the URL if needed
+        $DependenciesPath = "$env:TEMP\deps.ps1"
 
-        # Add curl to the PATH environment variable
-        $env:Path += ";C:\Program Files"
-        [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
-        Log-Info "curl added to PATH environment variable."
+        # Download Wazuh agent installer script
+        Invoke-WebRequest -Uri $DependenciesUrl -OutFile $DependenciesPath -ErrorAction Stop
+        Write-Host "Dependencies script downloaded successfully."
+
+        # Execute the downloaded script
+        & powershell.exe -ExecutionPolicy Bypass -File $DependenciesPath -ErrorAction Stop
+        Write-Host "Dependencies script executed successfully."
     }
-
-    # Check if jq is available
-    if (-not (Get-Command jq -ErrorAction SilentlyContinue)) {
-        Log-Info "jq is not installed. Installing jq..."
-        Invoke-WebRequest -Uri "https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe" -OutFile "C:\Program Files\jq.exe"
-        Log-Info "jq installed successfully."
-
-        # Add jq to the PATH environment variable
-        $env:Path += ";C:\Program Files"
-        [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
-        Log-Info "jq added to PATH environment variable."
+    catch {
+        Write-Host "Error during Dependencies installation: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    finally {
+        # Clean up the installer file if it exists
+        if (Test-Path $DependenciesPath) {
+            Remove-Item $DependenciesPath -Force
+            Write-Host "Installer file removed."
+        }
     }
 }
 
@@ -69,7 +65,7 @@ function Install-WazuhAgent {
     try {
         Write-Host "Downloading and executing Wazuh agent script..."
 
-        $InstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/install.ps1"  # Update the URL if needed
+        $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/install.ps1"  # Update the URL if needed
         $InstallerPath = "$env:TEMP\install.ps1"
 
         # Download Wazuh agent installer script
@@ -98,13 +94,14 @@ function Install-OAuth2Client {
     try {
         Write-Host "Downloading and executing wazuh-cert-oauth2-client script..."
 
-        $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/fix/scripts/install.ps1"  # Update the URL if needed
+        $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/3-Windows-Agent-Install-Script/scripts/install.ps1"  # Update the URL if needed
         $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
 
         # Download the wazuh-cert-oauth2-client installer script
         Invoke-WebRequest -Uri $OAuth2Url -OutFile $OAuth2Script -ErrorAction Stop
         Write-Host "wazuh-cert-oauth2-client script downloaded successfully."
 
+        #Supposed to remove the execution/ compare to .sh version
         # Execute the downloaded script with required parameters
         & powershell.exe -ExecutionPolicy Bypass -File $OAuth2Script -ArgumentList "-LOG_LEVEL", $LOG_LEVEL, "-OSSEC_CONF_PATH", $OSSEC_CONF_PATH, "-APP_NAME", $APP_NAME, "-WOPS_VERSION", $WOPS_VERSION -ErrorAction Stop
         Write-Host "wazuh-cert-oauth2-client installed successfully."
@@ -127,7 +124,7 @@ function Install-Yara {
     try {
         Write-Host "Downloading and executing YARA installation script..."
 
-        $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/main/scripts/install.ps1"  # Update the URL if needed
+        $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/heads/3-Windows-Agent-Install-Script/scripts/install.ps1"  # Update the URL if needed
         $YaraScript = "$env:TEMP\install.ps1"
 
         # Download the installation script
@@ -178,11 +175,41 @@ function Install-Snort {
     }
 }
 
+# Step 4: Download and install Wazuh Agent Status with error handling
+function Install-AgentStatus {
+    try {
+        Write-Host "Downloading and executing Wazuh Agent Status installation script..."
+
+        $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/chore/issue-6/scripts/install.ps1"  # Update the URL if needed
+        $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
+
+        # Download the installation script
+        Invoke-WebRequest -Uri $AgentStatusUrl -OutFile $AgentStatusScript -ErrorAction Stop
+        Write-Host "Agent Status installation script downloaded successfully."
+
+        # Execute the installation script
+        & powershell.exe -ExecutionPolicy Bypass -File $AgentStatusScript -ErrorAction Stop
+        Write-Host "Agent Status installed successfully."
+    }
+    catch {
+        Write-Host "Error during Agent Status installation: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    finally {
+        # Clean up the script if it exists
+        if (Test-Path $AgentStatusScript) {
+            Remove-Item $AgentStatusScript -Force
+            Write-Host "Installer script removed."
+        }
+    }
+}
+
+
 
 
 # Main Execution
-Ensure-Dependencies
+Install-Dependencies
 Install-WazuhAgent
 Install-OAuth2Client
 Install-Yara
 Install-Snort
+Install-AgentStatus
