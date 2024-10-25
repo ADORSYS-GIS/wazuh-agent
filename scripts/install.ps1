@@ -60,18 +60,22 @@ function Install-Agent {
         return
     }
 
-    # Define MSI installation arguments
-    $msiArguments = @(
-        "/i", "`"$MsiPath`"", "/quiet", "/norestart",
-        "WAZUH_MANAGER=$WazuhManager"
-    )
-
     # Install the Wazuh agent
     info_message "Installing Wazuh agent..."
     try {
-        Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArguments -Wait -ErrorAction Stop
+        Start-Process -FilePath "msiexec.exe" /i $MsiPath /q WAZUH_MANAGER=$WazuhManager -Wait -ErrorAction Stop
     } catch {
         error_message "Failed to install Wazuh agent: $($_.Exception.Message)"
+        return
+    }
+    
+    # Start the Wazuh service
+    info_message "Starting Wazuh service..."
+    try {
+        Start-Service -Name "WazuhSvc" -ErrorAction Stop
+        info_message "Wazuh service started successfully."
+    } catch {
+        error_message "Failed to start Wazuh service: $($_.Exception.Message)"
         return
     }
 
