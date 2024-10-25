@@ -48,8 +48,6 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agen
 
 ### 4. Setup your Agent Name and Run the following commands to complete the installation.
 ```powershell
-#Please replace "test" with your agent name.
-$env:WAZUH_AGENT_NAME = "test"
 
 #Set Wazuh Manager domain name.
 $env:WAZUH_MANAGER = "master.wazuh.adorsys.team"
