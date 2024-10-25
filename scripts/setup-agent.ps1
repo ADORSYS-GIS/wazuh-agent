@@ -180,7 +180,7 @@ function Install-AgentStatus {
     try {
         Write-Host "Downloading and executing Wazuh Agent Status installation script..."
 
-        $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/chore/issue-6/scripts/install.ps1"  # Update the URL if needed
+        $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/main/scripts/install.ps1"  # Update the URL if needed
         $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
 
         # Download the installation script
