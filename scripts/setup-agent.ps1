@@ -45,7 +45,6 @@ function Install-WazuhAgent {
 
         # Execute the downloaded script
         & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ErrorAction Stop
-        Write-Host "Wazuh agent script executed successfully."
     }
     catch {
         Write-Host "Error during Wazuh agent installation: $($_.Exception.Message)" -ForegroundColor Red
@@ -75,7 +74,6 @@ function Install-OAuth2Client {
         #Supposed to remove the execution/ compare to .sh version
         # Execute the downloaded script with required parameters
         & powershell.exe -ExecutionPolicy Bypass -File $OAuth2Script -ArgumentList "-LOG_LEVEL", $LOG_LEVEL, "-OSSEC_CONF_PATH", $OSSEC_CONF_PATH, "-APP_NAME", $APP_NAME, "-WOPS_VERSION", $WOPS_VERSION -ErrorAction Stop
-        Write-Host "wazuh-cert-oauth2-client installed successfully."
     }
     catch {
         Write-Host "Error during wazuh-cert-oauth2-client installation: $($_.Exception.Message)" -ForegroundColor Red
@@ -104,7 +102,6 @@ function Install-Yara {
 
         # Execute the installation script
         & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
-        Write-Host "YARA installed successfully."
     }
     catch {
         Write-Host "Error during YARA installation: $($_.Exception.Message)" -ForegroundColor Red
@@ -132,7 +129,6 @@ function Install-Snort {
 
         # Execute the installation script
         & powershell.exe -ExecutionPolicy Bypass -File $SnortScript -ErrorAction Stop
-        Write-Host "Snort installed successfully."
     }
     catch {
         Write-Host "Error during Snort installation: $($_.Exception.Message)" -ForegroundColor Red
@@ -160,7 +156,6 @@ function Install-AgentStatus {
 
         # Execute the installation script
         & powershell.exe -ExecutionPolicy Bypass -File $AgentStatusScript -ErrorAction Stop
-        Write-Host "Agent Status installed successfully."
     }
     catch {
         Write-Host "Error during Agent Status installation: $($_.Exception.Message)" -ForegroundColor Red
