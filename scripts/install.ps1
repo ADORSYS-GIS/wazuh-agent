@@ -66,6 +66,7 @@ function Install-Agent {
         "/i $MsiPath"
         "/q"
         "WAZUH_MANAGER=`"$WazuhManager`""
+        "WAZUH_REGISTRATION_SERVER=`"$WazuhRegistrationServer`""
     )
 
     # Install the Wazuh agent
