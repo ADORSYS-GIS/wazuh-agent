@@ -38,7 +38,8 @@ function Install-Agent {
     $OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"
 
     # Variables
-    $WazuhManager = "master.dev.wazuh.adorsys.team"
+    $WazuhManager = "events.dev.wazuh.adorsys.team"
+    $WazuhRegistrationServer = "register.dev.wazuh.adorsys.team" # TODO Use this
     $AgentVersion = "4.8.1-1"
     $AgentFileName = "wazuh-agent-$AgentVersion.msi"
     $TempDir = $env:TEMP

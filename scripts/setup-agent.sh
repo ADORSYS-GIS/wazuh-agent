@@ -23,7 +23,8 @@ fi
 USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
 
-WAZUH_MANAGER=${WAZUH_MANAGER:-'master.dev.wazuh.adorsys.team'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'events.dev.wazuh.adorsys.team'}
+WAZUH_REGISTRATION_SERVER=${WAZUH_REGISTRATION_SERVER:-'register.dev.wazuh.adorsys.team'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.8.1-1'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 
@@ -85,7 +86,7 @@ fi
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
-if ! (sudo LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_NAME="$WAZUH_AGENT_NAME" bash "$TMP_FOLDER/install-wazuh-agent.sh") 2>&1; then
+if ! (sudo LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_REGISTRATION_SERVER="$WAZUH_REGISTRATION_SERVER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_NAME="$WAZUH_AGENT_NAME" bash "$TMP_FOLDER/install-wazuh-agent.sh") 2>&1; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
