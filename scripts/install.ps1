@@ -40,7 +40,7 @@ function Install-Agent {
     # Variables
     $WazuhManager = "events.dev.wazuh.adorsys.team"
     $WazuhRegistrationServer = "register.dev.wazuh.adorsys.team" # TODO Use this
-    $AgentVersion = "4.8.1-1"
+    $AgentVersion = "4.9.2-1"
     $AgentFileName = "wazuh-agent-$AgentVersion.msi"
     $TempDir = $env:TEMP
     $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$AgentVersion.msi"
