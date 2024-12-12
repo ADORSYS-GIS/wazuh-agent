@@ -287,7 +287,7 @@ echo "$(date) Wazuh upgrade finished with success" >> ${PWD}/logs/active-respons
 EOF
     # Make the new script executable
     maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"
-    maybe_sudo chmod +x "$UPGRADE_SCRIPT_PATH"
+    maybe_sudo chmod 750 "$UPGRADE_SCRIPT_PATH"
     # Confirm creation
     info_message "Script created at $UPGRADE_SCRIPT_PATH"
 }
