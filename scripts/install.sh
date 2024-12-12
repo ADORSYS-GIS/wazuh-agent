@@ -197,24 +197,31 @@ disable_repo() {
 enable_repo() {
   if [ -f /etc/apt/sources.list.d/wazuh.list ]; then
     info_message "Should enable wazuh repository"
-    if [ "$OS" = "Linux" ]; then
-        if [ "$PACKAGE_MANAGER" = "apt" ]; then
-            sed_alternative -i "s/^#deb/deb/" $REPO_FILE
-        elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
-            sed_alternative -i "s/^enabled=0/enabled=1/" $REPO_FILE
-        fi
-
-        maybe_sudo $PACKAGE_MANAGER update
-        info_message "Wazuh repository enabled successfully."
+    if [ "$PACKAGE_MANAGER" = "apt" ]; then
+      sed_alternative -i "s/^#deb/deb/" $REPO_FILE
+    elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
+      sed_alternative -i "s/^enabled=0/enabled=1/" $REPO_FILE
     fi
+
+    maybe_sudo $PACKAGE_MANAGER update
+    info_message "Wazuh repository enabled successfully."
   fi
 }
 
 config() {
   # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for Linux
-  if [ "$OS" = "Linux" ] && [ -n "$WAZUH_MANAGER" ]; then
-      maybe_sudo sed_alternative -i "s/MANAGER_IP/$WAZUH_MANAGER/" "$OSSEC_CONF_PATH"
-      info_message "Wazuh manager IP configured successfully."
+  if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
+    # First remove <address till address>
+    maybe_sudo sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
+        error_message "Error occurred during Wazuh agent certificate configuration."
+        exit 1
+    }
+
+    maybe_sudo sed_alternative -i "/<server=*/ a\
+      <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
+        error_message "Error occurred during Wazuh agent certificate configuration."
+        exit 1
+    }
   fi
 
   if ! maybe_sudo grep -q "<manager_address>$WAZUH_REGISTRATION_SERVER</manager_address>" "$OSSEC_CONF_PATH"; then
