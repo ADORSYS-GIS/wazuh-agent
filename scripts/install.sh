@@ -202,6 +202,8 @@ enable_repo() {
         elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
             sed_alternative -i "s/^enabled=0/enabled=1/" $REPO_FILE
         fi
+
+        $PACKAGE_MANAGER update
         info_message "Wazuh repository enabled successfully."
     fi
   fi
