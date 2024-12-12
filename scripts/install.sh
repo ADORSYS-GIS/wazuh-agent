@@ -12,7 +12,7 @@ LOG_LEVEL=${LOG_LEVEL:-INFO}
 OSSEC_CONF_PATH=${OSSEC_CONF_PATH:-"/var/ossec/etc/ossec.conf"}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'events.dev.wazuh.adorsys.team'}
 WAZUH_REGISTRATION_SERVER=${WAZUH_REGISTRATION_SERVER:-'register.dev.wazuh.adorsys.team'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.8.1-1'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.2-1'}
 
 # Define text formatting
 RED='\033[0;31m'
@@ -39,6 +39,33 @@ info_message() {
 
 error_message() {
     log ERROR "$*"
+}
+
+# Check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Ensure root privileges, either directly or through sudo
+maybe_sudo() {
+    if [ "$(id -u)" -ne 0 ]; then
+        if command_exists sudo; then
+            sudo "$@"
+        else
+            error_message "This script requires root privileges. Please run with sudo or as root."
+            exit 1
+        fi
+    else
+        "$@"
+    fi
+}
+
+sed_alternative() {
+    if command_exists gsed; then
+        gsed "$@"
+    else
+        sed "$@"
+    fi
 }
 
 ## WAZUH_MANAGER is required
@@ -123,7 +150,7 @@ installation() {
           # Intel architecture
           PKG_NAME="wazuh-agent-$WAZUH_AGENT_VERSION.intel64.pkg"
       elif [ "$ARCH" = "arm64" ]; then
-          # Apple Silicon (M1/M2)
+          # Apple Silicon chip
           PKG_NAME="wazuh-agent-$WAZUH_AGENT_VERSION.arm64.pkg"
       else
           error_message "Unsupported architecture: $ARCH"
@@ -159,9 +186,9 @@ disable_repo() {
   # Disable Wazuh repository after installation for Linux
   if [ "$OS" = "Linux" ]; then
       if [ "$PACKAGE_MANAGER" = "apt" ]; then
-          sed -i "s/^deb/#deb/" $REPO_FILE
+          sed_alternative -i "s/^deb/#deb/" $REPO_FILE
       elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
-          sed -i "s/^enabled=1/enabled=0/" $REPO_FILE
+          sed_alternative -i "s/^enabled=1/enabled=0/" $REPO_FILE
       fi
       info_message "Wazuh repository disabled successfully."
   fi
@@ -170,8 +197,22 @@ disable_repo() {
 config() {
   # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for Linux
   if [ "$OS" = "Linux" ] && [ -n "$WAZUH_MANAGER" ]; then
-      sed -i "s/MANAGER_IP/$WAZUH_MANAGER/" "$OSSEC_CONF_PATH"
+      maybe_sudo sed_alternative -i "s/MANAGER_IP/$WAZUH_MANAGER/" "$OSSEC_CONF_PATH"
       info_message "Wazuh manager IP configured successfully."
+  fi
+
+  if ! maybe_sudo grep -q "<manager_address>$WAZUH_REGISTRATION_SERVER</manager_address>" "$OSSEC_CONF_PATH"; then
+    # First remove <manager_address till manager_address>
+    maybe_sudo sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
+        error_message "Error occurred during Wazuh agent certificate configuration."
+        exit 1
+    }
+
+    maybe_sudo sed_alternative -i "/<agent_name=*/ a\
+      <manager_address>$WAZUH_REGISTRATION_SERVER</manager_address>" "$OSSEC_CONF_PATH" || {
+        error_message "Error occurred during Wazuh agent certificate configuration."
+        exit 1
+    }
   fi
 }
 
