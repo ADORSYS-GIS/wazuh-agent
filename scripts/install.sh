@@ -194,6 +194,19 @@ disable_repo() {
   fi
 }
 
+enable_repo() {
+  if [ -f /etc/apt/sources.list.d/wazuh.list ]; then
+    if [ "$OS" = "Linux" ]; then
+        if [ "$PACKAGE_MANAGER" = "apt" ]; then
+            sed_alternative -i "s/^#deb/deb/" $REPO_FILE
+        elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
+            sed_alternative -i "s/^enabled=0/enabled=1/" $REPO_FILE
+        fi
+        info_message "Wazuh repository enabled successfully."
+    fi
+  fi
+}
+
 config() {
   # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for Linux
   if [ "$OS" = "Linux" ] && [ -n "$WAZUH_MANAGER" ]; then
@@ -243,6 +256,7 @@ start_agent() {
 
 # Main execution
 import_keys
+enable_repo
 installation
 disable_repo
 config
