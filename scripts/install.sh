@@ -139,7 +139,7 @@ installation() {
   info_message "Installing Wazuh agent for $OS"
   # Update and install Wazuh agent for Linux or download and install for macOS
   if [ "$OS" = "Linux" ]; then
-      $PACKAGE_MANAGER update
+      maybe_sudo $PACKAGE_MANAGER update
       WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_REGISTRATION_SERVER="$WAZUH_REGISTRATION_SERVER" $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
   elif [ "$OS" = "macOS" ]; then
       # Detect architecture (Intel or Apple Silicon)
@@ -196,6 +196,7 @@ disable_repo() {
 
 enable_repo() {
   if [ -f /etc/apt/sources.list.d/wazuh.list ]; then
+    info_message "Should enable wazuh repository"
     if [ "$OS" = "Linux" ]; then
         if [ "$PACKAGE_MANAGER" = "apt" ]; then
             sed_alternative -i "s/^#deb/deb/" $REPO_FILE
@@ -203,7 +204,7 @@ enable_repo() {
             sed_alternative -i "s/^enabled=0/enabled=1/" $REPO_FILE
         fi
 
-        $PACKAGE_MANAGER update
+        maybe_sudo $PACKAGE_MANAGER update
         info_message "Wazuh repository enabled successfully."
     fi
   fi
