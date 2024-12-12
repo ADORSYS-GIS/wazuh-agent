@@ -77,20 +77,24 @@ fi
 # Determine OS type and package manager or set for macOS
 if [ "$(uname)" = "Darwin" ]; then
     OS="macOS"
+    UPGRADE_SCRIPT_PATH=${UPGRADE_SCRIPT_PATH:-'/Library/Ossec/active-response/bin/adorsys-upgrade.sh'}
 elif [ -f /etc/debian_version ]; then
     OS="Linux"
     PACKAGE_MANAGER="apt"
     REPO_FILE="/etc/apt/sources.list.d/wazuh.list"
     GPG_KEYRING="/usr/share/keyrings/wazuh.gpg"
     GPG_IMPORT_CMD="gpg --no-default-keyring --keyring $GPG_KEYRING --import"
+    UPGRADE_SCRIPT_PATH=${UPGRADE_SCRIPT_PATH:-'/var/ossec/active-response/bin/adorsys-upgrade.sh'}
 elif [ -f /etc/redhat-release ]; then
     OS="Linux"
     PACKAGE_MANAGER="yum"
     REPO_FILE="/etc/yum.repos.d/wazuh.repo"
+    UPGRADE_SCRIPT_PATH=${UPGRADE_SCRIPT_PATH:-'/var/ossec/active-response/bin/adorsys-upgrade.sh'}
 elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     OS="Linux"
     PACKAGE_MANAGER="zypper"
     REPO_FILE="/etc/zypp/repos.d/wazuh.repo"
+    UPGRADE_SCRIPT_PATH=${UPGRADE_SCRIPT_PATH:-'/var/ossec/active-response/bin/adorsys-upgrade.sh'}
 else
     error_message "Unsupported OS"
     exit 1
@@ -264,12 +268,37 @@ start_agent() {
   info_message "Wazuh agent started successfully."
 }
 
+create_upgrade_script() {
+    maybe_sudo cat << 'EOF' > "$UPGRADE_SCRIPT_PATH"
+#!/bin/sh
+# Upgrade script from ADORSYS.
+# Copyright (C) 2024, ADORSYS Inc.
+
+set -u
+
+LOCAL=$(dirname $0)
+cd $LOCAL
+cd ../../
+PWD=$(pwd)
+
+echo "$(date) Starting wazuh upgrade..." >> ${PWD}/logs/active-responses.log
+curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | sh
+echo "$(date) Wazuh upgrade finished with success" >> ${PWD}/logs/active-responses.log
+EOF
+    # Make the new script executable
+    maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"
+    maybe_sudo chmod +x "$UPGRADE_SCRIPT_PATH"
+    # Confirm creation
+    info_message "Script created at $UPGRADE_SCRIPT_PATH"
+}
+
 # Main execution
 import_keys
 enable_repo
 installation
 disable_repo
 config
+create_upgrade_script
 start_agent 
 
 # End of script
