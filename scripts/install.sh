@@ -12,7 +12,7 @@ LOG_LEVEL=${LOG_LEVEL:-INFO}
 OSSEC_CONF_PATH=${OSSEC_CONF_PATH:-"/var/ossec/etc/ossec.conf"}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'events.dev.wazuh.adorsys.team'}
 WAZUH_REGISTRATION_SERVER=${WAZUH_REGISTRATION_SERVER:-'register.dev.wazuh.adorsys.team'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.2-1'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.1-1'}
 
 # Define text formatting
 RED='\033[0;31m'
