@@ -280,9 +280,10 @@ LOCAL=$(dirname $0)
 cd $LOCAL
 cd ../../
 PWD=$(pwd)
+CMD=$(curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | sh)
 
 echo "$(date) Starting wazuh upgrade..." >> ${PWD}/logs/active-responses.log
-curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | sh
+eval "$CMD" 
 echo "$(date) Wazuh upgrade finished with success" >> ${PWD}/logs/active-responses.log
 EOF
     # Make the new script executable
