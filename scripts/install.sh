@@ -283,7 +283,7 @@ PWD=$(pwd)
 CMD=$(curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | sh)
 
 echo "$(date) Starting wazuh upgrade..." >> ${PWD}/logs/active-responses.log
-eval "$CMD" 
+sh -c "$CMD" 
 echo "$(date) Wazuh upgrade finished with success" >> ${PWD}/logs/active-responses.log
 EOF
     # Make the new script executable
