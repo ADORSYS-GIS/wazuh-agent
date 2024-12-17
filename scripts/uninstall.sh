@@ -49,10 +49,10 @@ print_step() {
     log "${BLUE}${BOLD}[STEP]${NORMAL}" "$1: $2"
 }
 
-# Ensure root privileges, either directly or through sudo
+# Check if sudo is available or if the script is run as root
 maybe_sudo() {
     if [ "$(id -u)" -ne 0 ]; then
-        if command_exists sudo; then
+        if command -v sudo >/dev/null 2>&1; then
             sudo "$@"
         else
             error_message "This script requires root privileges. Please run with sudo or as root."
