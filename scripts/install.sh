@@ -28,21 +28,28 @@ log() {
     local MESSAGE="$*"
     local TIMESTAMP
     TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    echo "$TIMESTAMP [$LEVEL] $MESSAGE"
+    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
 }
 
 # Logging helpers
 info_message() {
-    log INFO "$*"
+    log "${BLUE}${BOLD}[INFO]${NORMAL}" "$*"
+}
+
+warn_message() {
+    log "${YELLOW}${BOLD}[WARNING]${NORMAL}" "$*"
 }
 
 error_message() {
-    log ERROR "$*"
+    log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
 }
 
-# Check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
+success_message() {
+    log "${GREEN}${BOLD}[SUCCESS]${NORMAL}" "$*"
+}
+
+print_step() {
+    log "${BLUE}${BOLD}[STEP]${NORMAL}" "$1: $2"
 }
 
 # Ensure root privileges, either directly or through sudo

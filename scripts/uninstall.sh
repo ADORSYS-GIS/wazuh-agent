@@ -7,6 +7,9 @@ else
     set -eu
 fi
 
+WAZUH_USER=${WAZUH_USER:-'wazuh'}
+WAZUH_GROUP=${WAZUH_GROUP:-'wazuh'}
+
 # Define text formatting
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -22,21 +25,28 @@ log() {
     local MESSAGE="$*"
     local TIMESTAMP
     TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    echo "$TIMESTAMP [$LEVEL] $MESSAGE"
+    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
 }
 
 # Logging helpers
 info_message() {
-    log INFO "$*"
+    log "${BLUE}${BOLD}[INFO]${NORMAL}" "$*"
+}
+
+warn_message() {
+    log "${YELLOW}${BOLD}[WARNING]${NORMAL}" "$*"
 }
 
 error_message() {
-    log ERROR "$*"
+    log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
 }
 
-# Check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
+success_message() {
+    log "${GREEN}${BOLD}[SUCCESS]${NORMAL}" "$*"
+}
+
+print_step() {
+    log "${BLUE}${BOLD}[STEP]${NORMAL}" "$1: $2"
 }
 
 # Ensure root privileges, either directly or through sudo
@@ -76,7 +86,7 @@ fi
 
 # Uninstall Wazuh agent
 uninstall_agent() {
-    info_message "Uninstalling Wazuh agent on $OS"
+    info_message "Uninstalling Wazuh agent..."
     
     if [ "$OS" = "Linux" ]; then
         if [ "$PACKAGE_MANAGER" = "apt" ]; then
@@ -126,17 +136,17 @@ cleanup_files() {
 
 # Remove user and group
 remove_user_group() {
-    if id -u "$USER" >/dev/null 2>&1; then
-        info_message "Removing user $USER..."
-        maybe_sudo userdel "$USER" || warn_message "Failed to remove user $USER. Skipping."
+    if id -u "$WAZUH_USER" >/dev/null 2>&1; then
+        info_message "Removing user $WAZUH_USER..."
+        maybe_sudo userdel "$WAZUH_USER" || warn_message "Failed to remove user $WAZUH_USER. Skipping."
     fi
 
-    if getent group "$GROUP" >/dev/null 2>&1; then
-        info_message "Removing group $GROUP..."
-        maybe_sudo groupdel "$GROUP" || warn_message "Failed to remove group $GROUP. Skipping."
+    if getent group "$WAZUH_GROUP" >/dev/null 2>&1; then
+        info_message "Removing group $WAZUH_GROUP..."
+        maybe_sudo groupdel "$WAZUH_GROUP" || warn_message "Failed to remove group $WAZUH_GROUP. Skipping."
     fi
 
-    success_message "User and group cleanup completed."
+    info_message "User and group cleanup completed."
 }
 
 # Stop Wazuh service if running
@@ -145,8 +155,8 @@ stop_service() {
     if [ "$OS" = "Linux" ]; then
         SYSTEMD_RUNNING=$(ps -C systemd > /dev/null 2>&1 && echo "yes" || echo "no")
         if [ "$SYSTEMD_RUNNING" = "yes" ]; then
-            maybe_sudo systemctl stop wazuh-agent || true
-            maybe_sudo systemctl disable wazuh-agent || true
+            maybe_sudo systemctl stop wazuh-agent || warn_message "Failed to stop wazuh-agent service. Skipping."
+            maybe_sudo systemctl disable wazuh-agent || warn_message "Failed to disable wazuh-agent service. Skipping."
             maybe_sudo systemctl daemon-reload || true
         elif [ -f /etc/init.d/wazuh-agent ]; then
             maybe_sudo service wazuh-agent stop || true
@@ -164,6 +174,6 @@ cleanup_repo
 cleanup_files
 remove_user_group
 
-info_message "Wazuh agent uninstallation completed successfully."
+success_message "Wazuh agent uninstallation completed successfully."
 
 # End of script
