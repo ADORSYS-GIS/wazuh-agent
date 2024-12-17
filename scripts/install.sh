@@ -216,31 +216,32 @@ enable_repo() {
 }
 
 config() {
-  # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for Linux
+  # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for unix systems
   if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
     # First remove <address till address>
     maybe_sudo sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during Wazuh agent certificate configuration."
+        error_message "Error occurred during old manager address removal."
         exit 1
     }
 
     maybe_sudo sed_alternative -i "/<server=*/ a\
       <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during Wazuh agent certificate configuration."
+        error_message "Error occurred during insertion of latest manager address."
         exit 1
     }
   fi
 
+  # Replace REGISTRATION_SERVER_IP placeholder with the actual registration server IP in ossec.conf for unix systems
   if ! maybe_sudo grep -q "<manager_address>$WAZUH_REGISTRATION_SERVER</manager_address>" "$OSSEC_CONF_PATH"; then
     # First remove <manager_address till manager_address>
     maybe_sudo sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during Wazuh agent certificate configuration."
+        error_message "Error occurred during old registration server address removal."
         exit 1
     }
 
     maybe_sudo sed_alternative -i "/<agent_name=*/ a\
       <manager_address>$WAZUH_REGISTRATION_SERVER</manager_address>" "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during Wazuh agent certificate configuration."
+        error_message "Error occurred during insertion of latest registration server address."
         exit 1
     }
   fi
