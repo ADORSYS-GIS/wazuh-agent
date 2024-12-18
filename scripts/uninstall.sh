@@ -136,14 +136,29 @@ cleanup_files() {
 
 # Remove user and group
 remove_user_group() {
-    if id -u "$WAZUH_USER" >/dev/null 2>&1; then
-        info_message "Removing user $WAZUH_USER..."
-        maybe_sudo userdel "$WAZUH_USER" || warn_message "Failed to remove user $WAZUH_USER. Skipping."
-    fi
+    if [ "$OS" = "Darwin" ]; then
+        # macOS commands
+        if dscl . -list /Users | grep -q "^$WAZUH_USER$"; then
+            info_message "Removing user $WAZUH_USER..."
+            maybe_sudo dscl . -delete "/Users/$WAZUH_USER" || warn_message "Failed to remove user $WAZUH_USER. Skipping."
+        fi
 
-    if getent group "$WAZUH_GROUP" >/dev/null 2>&1; then
-        info_message "Removing group $WAZUH_GROUP..."
-        maybe_sudo groupdel "$WAZUH_GROUP" || warn_message "Failed to remove group $WAZUH_GROUP. Skipping."
+        if dscl . -list /Groups | grep -q "^$WAZUH_GROUP$"; then
+            info_message "Removing group $WAZUH_GROUP..."
+            maybe_sudo dscl . -delete "/Groups/$WAZUH_GROUP" || warn_message "Failed to remove group $WAZUH_GROUP. Skipping."
+        fi
+    fi
+    if [ "$OS" = "Linux" ]; then
+        # Linux commands
+        if id -u "$WAZUH_USER" >/dev/null 2>&1; then
+            info_message "Removing user $WAZUH_USER..."
+            maybe_sudo userdel "$WAZUH_USER" || warn_message "Failed to remove user $WAZUH_USER. Skipping."
+        fi
+
+        if getent group "$WAZUH_GROUP" >/dev/null 2>&1; then
+            info_message "Removing group $WAZUH_GROUP..."
+            maybe_sudo groupdel "$WAZUH_GROUP" || warn_message "Failed to remove group $WAZUH_GROUP. Skipping."
+        fi
     fi
 
     info_message "User and group cleanup completed."
