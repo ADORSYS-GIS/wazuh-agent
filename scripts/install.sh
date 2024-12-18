@@ -11,7 +11,7 @@ fi
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'events.dev.wazuh.adorsys.team'}
 WAZUH_REGISTRATION_SERVER=${WAZUH_REGISTRATION_SERVER:-'register.dev.wazuh.adorsys.team'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.1-1'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.2-1'}
 
 # Define text formatting
 RED='\033[0;31m'
@@ -50,6 +50,11 @@ success_message() {
 
 print_step() {
     log "${BLUE}${BOLD}[STEP]${NORMAL}" "$1: $2"
+}
+
+# Check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
 }
 
 # Ensure root privileges, either directly or through sudo
@@ -154,7 +159,7 @@ installation() {
   # Update and install Wazuh agent for Linux or download and install for macOS
   if [ "$OS" = "Linux" ]; then
       maybe_sudo $PACKAGE_MANAGER update
-      WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_REGISTRATION_SERVER="$WAZUH_REGISTRATION_SERVER" $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
+      WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_REGISTRATION_SERVER="$WAZUH_REGISTRATION_SERVER" maybe_sudo $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
   elif [ "$OS" = "macOS" ]; then
       # Detect architecture (Intel or Apple Silicon)
       ARCH=$(uname -m)
@@ -304,6 +309,41 @@ EOF
     info_message "Script created at $UPGRADE_SCRIPT_PATH"
 }
 
+# Validate agent installation
+validate_installation() {
+  info_message "Validating installation and configuration..."
+
+  # Check if the Wazuh agent service is running
+  if [ "$OS" = "Linux" ]; then
+      if maybe_sudo /var/ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
+          success_message "Wazuh agent service is running."
+      else
+          error_message "Wazuh agent service is not running."
+          exit 1
+      fi
+  elif [ "$OS" = "macOS" ]; then
+      if maybe_sudo /Library/Ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
+          success_message "Wazuh agent service is running."
+      else
+          error_message "Wazuh agent service is not running."
+          exit 1
+      fi
+  fi
+
+  # Check if the configuration file contains the correct manager and registration server
+  if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
+      warn_message "Wazuh manager address is not configured correctly in $OSSEC_CONF_PATH."
+      exit 1
+  fi
+
+  if ! maybe_sudo grep -q "<manager_address>$WAZUH_REGISTRATION_SERVER</manager_address>" "$OSSEC_CONF_PATH"; then
+      warn_message "Wazuh registration server is not configured correctly in $OSSEC_CONF_PATH."
+      exit 1
+  fi
+
+  success_message "Installation and configuration validated successfully."
+}
+
 # Main execution
 import_keys
 enable_repo
@@ -312,5 +352,6 @@ disable_repo
 config
 create_upgrade_script
 start_agent 
+validate_installation
 
 # End of script
