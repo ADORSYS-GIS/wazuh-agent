@@ -76,7 +76,7 @@ fi
 # Determine OS type and package manager or set for macOS
 if [ "$(uname)" = "Darwin" ]; then
     OS="macOS"
-    UPGRADE_SCRIPT_PATH="/Library/Ossec/active-response/bin/adorsys-upgrade.sh"
+    UPGRADE_SCRIPT_PATH="/Library/Ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
 elif [ -f /etc/debian_version ]; then
     OS="Linux"
@@ -84,19 +84,19 @@ elif [ -f /etc/debian_version ]; then
     REPO_FILE="/etc/apt/sources.list.d/wazuh.list"
     GPG_KEYRING="/usr/share/keyrings/wazuh.gpg"
     GPG_IMPORT_CMD="gpg --no-default-keyring --keyring $GPG_KEYRING --import"
-    UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-upgrade.sh"
+    UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
 elif [ -f /etc/redhat-release ]; then
     OS="Linux"
     PACKAGE_MANAGER="yum"
     REPO_FILE="/etc/yum.repos.d/wazuh.repo"
-    UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-upgrade.sh"
+    UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
 elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     OS="Linux"
     PACKAGE_MANAGER="zypper"
     REPO_FILE="/etc/zypp/repos.d/wazuh.repo"
-    UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-upgrade.sh"
+    UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
 else
     error_message "Unsupported OS"
