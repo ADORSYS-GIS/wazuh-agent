@@ -278,17 +278,73 @@ create_upgrade_script() {
 # Upgrade script from ADORSYS.
 # Copyright (C) 2024, ADORSYS Inc.
 
-set -u
+# Check if we're running in bash; if not, adjust behavior
+if [ -n "$BASH_VERSION" ]; then
+    set -euo pipefail
+else
+    set -eu
+fi
 
-LOCAL=$(dirname $0)
-cd $LOCAL
-cd ../../
-PWD=$(pwd)
-CMD=$(curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | sh)
+# Default log level and application details
+LOG_LEVEL=${LOG_LEVEL:-'INFO'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'events.wazuh.adorsys.team'}
+WAZUH_REGISTRATION_SERVER=${WAZUH_REGISTRATION_SERVER:-'register.wazuh.adorsys.team'}
+LOG_DIR=${LOG_DIR:-'/var/ossec/logs/active-responses.log'}
 
-echo "$(date) Starting wazuh upgrade..." >> ${PWD}/logs/active-responses.log
-sh -c "$CMD" 
-echo "$(date) Wazuh upgrade finished with success" >> ${PWD}/logs/active-responses.log
+TMP_FOLDER="$(mktemp -d)"
+
+# Define text formatting
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+NORMAL='\033[0m'
+
+# Function for logging with timestamp
+log() {
+    local LEVEL="$1"
+    shift
+    local MESSAGE="$*"
+    local TIMESTAMP
+    TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
+}
+
+# Logging helpers
+info_message() {
+    log "${BLUE}${BOLD}[===========> INFO]${NORMAL}" "$*"
+}
+
+error_message() {
+    log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
+}
+
+cleanup() {
+    # Remove temporary folder
+    if [ -d "$TMP_FOLDER" ]; then
+        rm -rf "$TMP_FOLDER"
+    fi
+}
+
+trap cleanup EXIT
+
+info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
+
+# Step 0: Download script
+info_message "Download all scripts..."
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh > "$TMP_FOLDER/setup-agent.sh"
+
+
+# Step 1: Download and install Wazuh agent
+info_message "Starting wazuh upgrade..." >> ${LOG_DIR}
+
+if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_REGISTRATION_SERVER="$WAZUH_REGISTRATION_SERVER" bash "$TMP_FOLDER/setup-agent.sh") >> ${LOG_DIR}; then
+    error_message "Failed to install wazuh-agent"
+    exit 1
+fi
+ 
+info_message "Wazuh upgrade finished with success" >> ${LOG_DIR}
 EOF
     # Make the new script executable
     maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"
