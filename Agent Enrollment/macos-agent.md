@@ -58,19 +58,19 @@
 
    - **i. Login:** You will be prompted to log in page,Log in using **Active  directories: `Adorsys GIS `or `adorsys GmbH & CO KG`**, which will  generate an authentication token using Keycloak.
   
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-14.png" width="500" height="180">
+   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-14.png" width="400" height="300">
 
    - **ii. Two-Factor Authentication:** For first-time logins, authentication via an authenticator is required.
   
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-29-08.png" width="500" height="180">
+   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-29-08.png" width="400" height="300">
 
    - **iii. Token generation:** After a successful authentication a token will be generated.
    
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-45.png" width="500" height="180">
+   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-45.png" width="400" height="300">
 
   #### 3. Complete the Enrollment 
    Return to the command line and complete the enrollment process using the generated token.
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-16-49.png" width="500" height="180">
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-16-49.png" width="500" height="250">
 
    #### 4. Reboot your Device
    Reboot your device to apply the changes. 
@@ -82,7 +82,7 @@
    Look for the Wazuh icon in the system tray to confirm that the agent is running and connected.
 
   
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-18-04.png" width="500" height="200">
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-18-04.png" width="450" height="200">
 
 
   #### 2. Verify Agent Logs:
@@ -93,7 +93,7 @@
    ```
    Check the Wazuh agent logs to ensure there are no errors:
   
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 11-15-00.png" width="500" height="200">
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 11-15-00.png" width="500" height="220">
 
 
    <!-- #### 3. Check Agent service
