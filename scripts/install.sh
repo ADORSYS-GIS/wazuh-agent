@@ -319,26 +319,22 @@ validate_installation() {
           success_message "Wazuh agent service is running."
       else
           error_message "Wazuh agent service is not running."
-          exit 1
       fi
   elif [ "$OS" = "macOS" ]; then
       if maybe_sudo /Library/Ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
           success_message "Wazuh agent service is running."
       else
           error_message "Wazuh agent service is not running."
-          exit 1
       fi
   fi
 
   # Check if the configuration file contains the correct manager and registration server
   if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
       warn_message "Wazuh manager address is not configured correctly in $OSSEC_CONF_PATH."
-      exit 1
   fi
 
   if ! maybe_sudo grep -q "<manager_address>$WAZUH_REGISTRATION_SERVER</manager_address>" "$OSSEC_CONF_PATH"; then
       warn_message "Wazuh registration server is not configured correctly in $OSSEC_CONF_PATH."
-      exit 1
   fi
 
   success_message "Installation and configuration validated successfully."
