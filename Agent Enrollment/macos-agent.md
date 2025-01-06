@@ -22,25 +22,25 @@
    Monitors your endpoint and sends data to the Wazuh Manager.
    The agent is installed and configured to connect to the specified manager (WAZUH_MANAGER).
    
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-08-51.png" width="500" height="200">
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-08-51.png" width="500" height="250">
 
 
    **2. OAuth2 Authentication Client:** Adds certificate-based OAuth2 authentication for secure communications.
 
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-09-46.png" width="500" height="200">
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-09-46.png" width="500" height="250">
 
    **3. Wazuh Agent Status:** Provides real-time health and connection status of the agent.
 
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-12-00.png" width="500" height="200">
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-12-00.png" width="500" height="250">
 
    **4. Yara:** Enables advanced file-based malware detection by integrating Yara rules into Wazuh.
    
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-14-15.png" width="500" height="200">
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-14-15.png" width="500" height="250">
 
    **5. Snort:**
    Adds network intrusion detection capabilities to monitor suspicious traffic.
 
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-15-09.png" width="500" height="200"> 
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-15-09.png" width="500" height="250"> 
 
 ### Step 2:
   #### 1. Generate the Enrollment URL
@@ -52,7 +52,7 @@
    This command will generate a URL. Copy the link and paste it into your web browser.
 
  
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 11-14-33.png" width="500" height="200">
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 11-14-33.png" width="500" height="250">
 
   #### 2. Authentication via browser
 
@@ -82,7 +82,7 @@
    Look for the Wazuh icon in the system tray to confirm that the agent is running and connected.
 
   
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-18-04.png" width="450" height="200">
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-18-04.png" width="450" height="250">
 
 
   #### 2. Verify Agent Logs:
