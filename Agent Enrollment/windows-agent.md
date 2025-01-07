@@ -108,7 +108,7 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
    Look for the Wazuh icon in the system tray to confirm that the agent is running and connected.
 
   
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2025-01-07 14-44-53.png" width="400" height="200">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 14-44-53.png" width="400" height="200">
 
 
   #### 2. Verify Agent Logs:
