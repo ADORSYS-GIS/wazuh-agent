@@ -60,7 +60,7 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
 
    iv. Once completed please click Next >.
 
-   <img src="/Agent Enrollment/images/windows/SScreenshot from 2025-01-07 13-35-09.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-09.png" width="400" height="300">
    
    v. Please click Finish once Npcap installation is complete.
 
@@ -125,7 +125,7 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
   #### 3. Check Agent service
    Run the following command:
    ```
-   
+
    ``` 
   
    <img src="/Agent Enrollment/images/linux/Screenshot from 2025-01-06 12-04-56.png" width="500" height="200">
