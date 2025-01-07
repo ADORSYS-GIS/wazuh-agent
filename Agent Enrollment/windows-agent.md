@@ -108,27 +108,25 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
    Look for the Wazuh icon in the system tray to confirm that the agent is running and connected.
 
   
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 09-47-27.png" width="400" height="200">
+   <img src="/Agent Enrollment/images/linux/Screenshot from 2025-01-07 14-44-53.png" width="400" height="200">
 
 
   #### 2. Verify Agent Logs:
    Check the Wazuh agent logs to ensure there are no errors:
 
-   ```
-
+   ```powershell
+   Get-Content 'C:\Program Files (x86)\ossec-agent\ossec.log' -Tail 20
    ```
    Check the Wazuh agent logs to ensure there are no errors:
-  
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2025-01-06 12-04-15.png" width="500" height="200">
 
 
   #### 3. Check Agent service
    Run the following command:
-   ```
-
+   ```powershell
+   Get-Service -Name "Wazuh"
    ``` 
   
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2025-01-06 12-04-56.png" width="500" height="200">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 14-54-19.png" width="500" height="200">
 
 
   #### 4. Check the Wazuh Manager Dashboard:
@@ -150,15 +148,20 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
    **3. Tools Installed:**
    - YARA
    ```powershell
+   yara64 -v
    ``` 
     
    - Snort
    ```powershell
-
+   snort -V
    ```
    - Agent Status
    ```powershell
-    $ sudo /var/ossec/bin/wazuh-control status 
+   Select-String -Path 'C:\Program Files (x86)\ossec-agent\wazuh-agent.state' -Pattern '^status'
+   ```
+   OR
+   ```powershell
+      Get-Service -Name "Wazuh"
    ```
 
   **4. Installation Validation:**
