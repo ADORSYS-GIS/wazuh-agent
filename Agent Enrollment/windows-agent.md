@@ -26,19 +26,19 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
    Monitors your endpoint and sends data to the Wazuh Manager.
    The agent is installed and configured to connect to the specified manager (WAZUH_MANAGER).
    
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-36-39.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-36-39.png">
 
    **2. OAuth2 Authentication Client:** Adds certificate-based OAuth2 authentication for secure communications.
 
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-38-14.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-38-14.png">
 
    **3. Wazuh Agent Status:** Provides real-time health and connection status of the agent.
 
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-38-39.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-38-39.png" >
 
    **4. Yara:** Enables advanced file-based malware detection by integrating Yara rules into Wazuh.
 
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-01.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-01.png">
 
    **5. Snort:**
    Adds network intrusion detection capabilities to monitor suspicious traffic.
@@ -48,27 +48,27 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
 
    i. Snort has been installed. Please click OK to continue installation and install Npcap.
 
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-34-11.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-34-11.png" >
 
    ii. Please click "I Agree" to start npcap installation.
 
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-34-29.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-34-29.png">
 
    iii. Please check the boxes shown in the image below and click "Install" and Wait for installation to complete. 
 
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-34-34.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-34-34.png">
 
    iv. Once completed please click Next >.
 
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-09.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-09.png">
    
    v. Please click Finish once Npcap installation is complete.
 
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-15.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-15.png">
 
    vi. Installation will now continue:
 
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-23.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-23.png">
 
 ### Step 2:
   #### 1. Generate the Enrollment URL
@@ -84,15 +84,15 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
 
    - **i. Login:** You will be prompted to log in page,Log in using **Active  directories: `Adorsys GIS `or `adorsys GmbH & CO KG`**, which will  generate an authentication token using Keycloak.
   
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-14.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-14.png">
 
    - **ii. Two-Factor Authentication:** For first-time logins, authentication via an authenticator is required.
   
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-29-08.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-29-08.png">
 
    - **iii. Token generation:** After a successful authentication a token will be generated.
    
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-45.png" width="400" height="300">
+   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-45.png">
 
   #### 3. Complete the Enrollment 
    Return to the command line and complete the enrollment process using the generated token.
@@ -108,7 +108,7 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
    Look for the Wazuh icon in the system tray to confirm that the agent is running and connected.
 
   
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 14-44-53.png" width="400" height="200">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 14-44-53.png">
 
 
   #### 2. Verify Agent Logs:
@@ -126,7 +126,7 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
    Get-Service -Name "Wazuh"
    ``` 
   
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 14-54-19.png" width="500" height="200">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 14-54-19.png">
 
 
   #### 4. Check the Wazuh Manager Dashboard:
