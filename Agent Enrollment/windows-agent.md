@@ -3,7 +3,6 @@
 
  ### Prerequisites
 
-- **Administrator Privileges:** Ensure you have sudo access.
 
 - **Internet Connectivity:** Verify that the system is connected to the internet.
 
