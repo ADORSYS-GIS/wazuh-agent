@@ -102,5 +102,87 @@ function Install-Agent {
     info_message "Wazuh agent installed successfully."
 }
 
+function Create-Upgrade-Script {
+    $UPGRADE_SCRIPT_PATH = "C:\Program Files (x86)\ossec-agent\adorsys-update.ps1"
+    info_message "Creating update script at $UPGRADE_SCRIPT_PATH"
+
+    # Temporary directory
+    $TempFolder = New-TemporaryFile
+    Remove-Item $TempFolder -Force
+    New-Item -ItemType Directory -Path $TempFolder | Out-Null
+
+    try {
+        # Define upgrade script content
+        $UpgradeScript = @'
+# Upgrade script for Wazuh Agent
+# This script downloads and updates the Wazuh agent
+
+function Log {
+    param (
+        [string]$Level,
+        [string]$Message
+    )
+    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    Write-Host "$Timestamp [$Level] $Message"
+}
+
+function info_message {
+    param ([string]$Message)
+    Log "INFO" $Message
+}
+
+function error_message {
+    param ([string]$Message)
+    Log "ERROR" $Message
+}
+
+function Cleanup {
+    param ([string]$TempFolder)
+    if (Test-Path $TempFolder) {
+        Remove-Item -Path $TempFolder -Recurse -Force
+        info_message "Temporary folder removed: $TempFolder"
+    }
+}
+
+try {
+    $TempFolder = New-TemporaryFile
+    Remove-Item $TempFolder -Force
+    New-Item -ItemType Directory -Path $TempFolder | Out-Null
+
+    info_message "Starting Wazuh Agent Upgrade"
+
+    # Download the setup script
+    $SetupScriptURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.ps1"
+    $SetupScriptPath = Join-Path -Path $TempFolder -ChildPath "setup-agent.ps1"
+    Invoke-WebRequest -Uri $SetupScriptURL -OutFile $SetupScriptPath
+
+    # Execute the setup script
+    . $SetupScriptPath
+
+    info_message "Wazuh Agent Upgrade Completed"
+} catch {
+    error_message "Wazuh Agent Upgrade Failed: $_"
+    exit 1
+} finally {
+    Cleanup -TempFolder $TempFolder
+}
+'@
+
+        # Save the script
+        $UpgradeScript | Set-Content -Path $UPGRADE_SCRIPT_PATH -Force
+        Set-ItemProperty -Path $UPGRADE_SCRIPT_PATH -Name IsReadOnly -Value $true
+        info_message "Update script created successfully."
+    } catch {
+        error_message "Failed to create the upgrade script: $_"
+    } finally {
+        # Cleanup temporary directory
+        if (Test-Path $TempFolder) {
+            Remove-Item -Path $TempFolder -Recurse -Force
+        }
+    }
+}
+
+
 # Call the Install-Agent function to execute the installation
 Install-Agent
+Create-Upgrade-Script
