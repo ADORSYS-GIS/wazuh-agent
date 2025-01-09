@@ -333,7 +333,7 @@ case "$OS_TYPE" in
         ;;
     Darwin)
         OS="macOS"
-        LOG_DIR='/usr/local/var/log/ossec-active-responses.log'
+        LOG_DIR='/Library/Ossec/logs/active-responses.log'
         ;;
     *)
         error_message "Unsupported operating system: $OS_TYPE"
@@ -349,24 +349,13 @@ info_message "Download all scripts..."
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh > "$TMP_FOLDER/setup-agent.sh"
 
 # Step 1: Download and install Wazuh agent
-info_message "Starting wazuh upgrade..." >> "${LOG_DIR}"
+info_message "Starting wazuh upgrade..." >> ${LOG_DIR}
 
-if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") >> "${LOG_DIR}"; then
+if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") >> ${LOG_DIR}; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
-
-info_message "Wazuh upgrade finished successfully." >> "${LOG_DIR}"
-
-# Add any OS-specific post-installation steps
-if [ "$OS" = "macOS" ]; then
-    info_message "Performing additional steps for macOS..."
-    # macOS-specific actions go here
-elif [ "$OS" = "Linux" ]; then
-    info_message "Performing additional steps for Linux..."
-    # Linux-specific actions go here
-fi
-
+info_message "Wazuh upgrade finished with success" >> ${LOG_DIR}
 EOF
     # Make the new script executable
     maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"
