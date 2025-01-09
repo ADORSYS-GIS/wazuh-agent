@@ -158,7 +158,7 @@ installation() {
   # Update and install Wazuh agent for Linux or download and install for macOS
   if [ "$OS" = "Linux" ]; then
       maybe_sudo $PACKAGE_MANAGER update
-      WAZUH_MANAGER="$WAZUH_MANAGER" $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
+      $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
   elif [ "$OS" = "macOS" ]; then
       # Detect architecture (Intel or Apple Silicon)
       ARCH=$(uname -m)
