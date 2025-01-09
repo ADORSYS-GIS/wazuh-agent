@@ -9,8 +9,7 @@ fi
 
 # Variables
 LOG_LEVEL=${LOG_LEVEL:-INFO}
-WAZUH_MANAGER=${WAZUH_MANAGER:-'events.dev.wazuh.adorsys.team'}
-WAZUH_REGISTRATION_SERVER=${WAZUH_REGISTRATION_SERVER:-'register.dev.wazuh.adorsys.team'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'test-cluster.wazuh.adorsys.team'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.2-1'}
 
 # Define text formatting
@@ -159,7 +158,7 @@ installation() {
   # Update and install Wazuh agent for Linux or download and install for macOS
   if [ "$OS" = "Linux" ]; then
       maybe_sudo $PACKAGE_MANAGER update
-      WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_REGISTRATION_SERVER="$WAZUH_REGISTRATION_SERVER" $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
+      WAZUH_MANAGER="$WAZUH_MANAGER" $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
   elif [ "$OS" = "macOS" ]; then
       # Detect architecture (Intel or Apple Silicon)
       ARCH=$(uname -m)
@@ -242,21 +241,6 @@ config() {
         exit 1
     }
   fi
-
-  # Replace REGISTRATION_SERVER_IP placeholder with the actual registration server IP in ossec.conf for unix systems
-  if ! maybe_sudo grep -q "<manager_address>$WAZUH_REGISTRATION_SERVER</manager_address>" "$OSSEC_CONF_PATH"; then
-    # First remove <manager_address till manager_address>
-    maybe_sudo sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during old registration server address removal."
-        exit 1
-    }
-
-    maybe_sudo sed_alternative -i "/<agent_name=*/ a\
-      <manager_address>$WAZUH_REGISTRATION_SERVER</manager_address>" "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during insertion of latest registration server address."
-        exit 1
-    }
-  fi
 }
 
 start_agent() {
@@ -299,8 +283,7 @@ fi
 
 # Default log level and application details
 LOG_LEVEL=${LOG_LEVEL:-'INFO'}
-WAZUH_MANAGER=${WAZUH_MANAGER:-'events.wazuh.adorsys.team'}
-WAZUH_REGISTRATION_SERVER=${WAZUH_REGISTRATION_SERVER:-'register.wazuh.adorsys.team'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'test-cluster.wazuh.adorsys.team'}
 LOG_DIR=${LOG_DIR:-'/var/ossec/logs/active-responses.log'}
 
 TMP_FOLDER="$(mktemp -d)"
@@ -351,7 +334,7 @@ curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scrip
 # Step 1: Download and install Wazuh agent
 info_message "Starting wazuh upgrade..." >> ${LOG_DIR}
 
-if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_REGISTRATION_SERVER="$WAZUH_REGISTRATION_SERVER" bash "$TMP_FOLDER/setup-agent.sh") >> ${LOG_DIR}; then
+if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") >> ${LOG_DIR}; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
@@ -387,10 +370,6 @@ validate_installation() {
   # Check if the configuration file contains the correct manager and registration server
   if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
       warn_message "Wazuh manager address is not configured correctly in $OSSEC_CONF_PATH."
-  fi
-
-  if ! maybe_sudo grep -q "<manager_address>$WAZUH_REGISTRATION_SERVER</manager_address>" "$OSSEC_CONF_PATH"; then
-      warn_message "Wazuh registration server is not configured correctly in $OSSEC_CONF_PATH."
   fi
 
   success_message "Installation and configuration validated successfully."
