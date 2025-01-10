@@ -84,11 +84,12 @@ case "$OS_NAME" in
         ;;
     "Darwin")
         info_message "Detected macOS"
-        if command_exists brew; then
-            brew install curl jq gnu-sed
+        # Check if curl and jq are available
+        if command_exists curl || command_exists jq; then
+           success_message "curl and jq are already installed and available for use."
         else
-            error_message "Homebrew is not installed. Please install Homebrew first."
-            exit 1
+           error_message "Either curl or jq is missing. Please install them manually to proceed."
+           exit 1
         fi
         ;;
     *)
