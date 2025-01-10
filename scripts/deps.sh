@@ -111,11 +111,11 @@ case "$OS_NAME" in
         info_message "Detected macOS"
         # Check if curl and jq are available
         if ! command_exists curl || command_exists jq || command_exists gnu-sed; then
+           info_message "curl, jq and gnu-sed is not installed, installing.."
            install_jq
            install_gnu_sed
         else
            success_message "curl,jq and gnu-sed are already installed and available for use."
-           exit 1
         fi
         ;;
     *)
