@@ -18,35 +18,6 @@
    ```
 
 
-  #### Components Installed by the Script:
-
-   **1. Wazuh Agent:**
-   Monitors your endpoint and sends data to the Wazuh Manager.
-   The agent is installed and configured to connect to the specified manager (WAZUH_MANAGER).
-   
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-11-23.png" width="500" height="200">
-
-
-
-   **2. OAuth2 Authentication Client:** Adds certificate-based OAuth2 authentication for secure communications.
-
-
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-12-06.png" width="500" height="200">
-
-   **3. Wazuh Agent Status:** Provides real-time health and connection status of the agent.
-
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-13-06.png" width="500" height="200">
-
-   **4. Yara:** Enables advanced file-based malware detection by integrating Yara rules into Wazuh.
-   
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-14-00.png" width="500" height="200">
-
-   **5. Snort:**
-   Adds network intrusion detection capabilities to monitor suspicious traffic.
-
-   <img src="/Agent Enrollment/images/linux/Screenshot%20from%202024-12-16%2012-58-37.png" width="500" height="200">
-
-
 ### Step 2:
   #### 1. Generate the Enrollment URL
    Run the following command to start the enrollment process:
@@ -69,12 +40,13 @@
   
    <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-29-08.png" width="400" height="300">
 
-   - **iii. Token generation:** After a successful authentication a token will be generated.
+   - **iii. Token generation:** After a successful authentication, a token will be generated. Copy the token and return to the command line.
    
    <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-45.png" width="400" height="300">
 
   #### 3. Complete the Enrollment 
-   Return to the command line and complete the enrollment process using the generated token.
+   Return to the command line, paste the token, and follow the prompts to complete the enrollment process.
+
    <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-30-06.png" width="600" height="250">
 
   #### 4. Reboot your Device
@@ -87,7 +59,7 @@
    Look for the Wazuh icon in the system tray to confirm that the agent is running and connected.
 
   
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 09-47-27.png" width="400" height="200">
+   <img src="/Agent Enrollment/images/linux/Screenshot from 2025-01-10 11-56-49.png" width="400" height="200">
 
 
   #### 2. Verify Agent Logs:
@@ -114,20 +86,39 @@
    Ping an admin for confirmation that the agent appears in the Wazuh Manager dashboard.
 
 
-### Step 4:
-  #### Checklist of elements to be installed and configured at agent enrollment 
-   **1. Pre-Requisites:**
-   - Supported OS confirmed
-   - Internet connectivity checked
+  ## Checklist of Elements Installed and Configured During Agent Enrollment 
 
-   **2. Downloaded Scripts:**
-   - Dependencies script
-   - Installation scripts (Wazuh Agent, OAuth2, YARA, Snort, Agent Status):
-     - Dependencies Installed
-     - Wazuh Agent Installed and Configured
-     - OAuth2 Client Installed
+   ### i. Components Installed by the Script:
 
-   **3. Tools Installed:**
+   **1. Wazuh Agent:**
+     Monitors your endpoint and sends data to the Wazuh Manager.
+     The agent is installed and configured to connect to the specified manager (WAZUH_MANAGER).
+   
+   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-11-23.png" width="500" height="200">
+
+
+
+   **2. OAuth2 Authentication Client:** Adds certificate-based OAuth2 authentication for secure communications.
+
+
+   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-12-06.png" width="500" height="200">
+
+   **3. Wazuh Agent Status:** Provides real-time health and connection status of the agent.
+
+   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-13-06.png" width="500" height="200">
+
+   **4. Yara:** Enables advanced file-based malware detection by integrating Yara rules into Wazuh.
+   
+   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-14-00.png" width="500" height="200">
+
+   **5. Snort:**
+   Adds network intrusion detection capabilities to monitor suspicious traffic.
+
+   <img src="/Agent Enrollment/images/linux/Screenshot%20from%202024-12-16%2012-58-37.png" width="500" height="200">
+
+
+   
+   ### ii. Tools Installed:
    - YARA
    ```bash
     $ yara -v 
@@ -143,7 +134,7 @@
     $ sudo /var/ossec/bin/wazuh-control status 
    ```
 
-  **4. Installation Validation:**
+  ### iii. Installation Validation:
    - Test registration successful
    - Logs reviewed for errors
    - Cleanup Completed
