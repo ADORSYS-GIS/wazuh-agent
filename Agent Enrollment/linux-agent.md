@@ -52,6 +52,7 @@
   #### 4. Reboot your Device
    Reboot your device to apply the changes. 
 
+
 ### Step 3: Validate the Installation
    After completing the agent enrollment, verify that the agent is properly connected and functioning:
 
@@ -139,6 +140,7 @@
    - Logs reviewed for errors
    - Cleanup Completed
 
+
 ## Troubleshooting
 
 - If the enrollment URL fails to generate, check internet connectivity and script permissions.
@@ -146,6 +148,7 @@
 - For errors during authentication, ensure Active Directory credentials are correct and two-factor authentication is set up.
 
 - Consult the Wazuh logs (/var/ossec/logs/ossec.log) for detailed error messages.
+
 
 ### Additional Resources
 - [Wazuh Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html#wazuh-agent)

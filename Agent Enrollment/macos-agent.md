@@ -84,6 +84,7 @@
    Ping an admin for confirmation that the agent appears in the Wazuh Manager dashboard.
 
 
+
    ## Checklist of Elements Installed and Configured During Agent Enrollment 
 
    ### i. Components Installed by the Script:
@@ -133,6 +134,8 @@
    - Logs reviewed for errors
    - Cleanup Completed
 
+
+
 ## Troubleshooting
 
 - If the enrollment URL fails to generate, check internet connectivity and script permissions.
@@ -140,6 +143,7 @@
 - For errors during authentication, ensure Active Directory credentials are correct and two-factor authentication is set up.
 
 - Consult the Wazuh logs (/Library/Ossec/logs/ossec.log) for detailed error messages.
+
 
 ### Additional Resources
 - [Wazuh Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html#wazuh-agent)
