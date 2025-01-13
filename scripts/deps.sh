@@ -126,23 +126,23 @@ case "$OS_NAME" in
         info_message "Detected macOS"
         
         # Check if curl, jq or gnu-sed are available
-        # Define an associative array mapping commands to their installation functions
-        declare -A commands=(
-            [curl]=install_curl
-            [jq]=install_jq
-            [gnu-sed]=install_gnu_sed
-        )
+        # Check for individual commands and install if missing
+        # Define indexed arrays for commands and their installation functions
+        commands=(curl jq gnu-sed)
+        install_functions=(install_curl install_jq install_gnu_sed)
 
-        # Iterate through the commands and check if they exist
-        for cmd in "${!commands[@]}"; do
+        # Iterate through the arrays
+        for i in "${!commands[@]}"; do
+            cmd="${commands[$i]}"
+            install_func="${install_functions[$i]}"
+
             if command_exists "$cmd"; then
                 success_message "$cmd is already installed and available for use."
             else
                 info_message "$cmd is missing. Installing now..."
-                "${commands[$cmd]}"
+                "$install_func"
             fi
         done
-
         ;;
     *)
         error_message "Unsupported operating system: $OS_NAME"
