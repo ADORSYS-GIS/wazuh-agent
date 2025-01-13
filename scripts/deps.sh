@@ -57,6 +57,21 @@ install_jq() {
     success_message "jq installed successfully."
 }
 
+# Function to download and install curl
+install_curl() {
+    info_message "curl not found. Downloading and installing..."
+    CURL_URL="https://curl.se/download/curl-7.88.1.tar.gz" # Example version, update as needed
+    TMP_DIR=$(mktemp -d)
+    cd "$TMP_DIR" || exit
+    curl -LO "$CURL_URL"
+    tar -xzf curl-*.tar.gz
+    cd curl-* || exit
+    ./configure --prefix=/usr/local
+    make
+    sudo make install
+    success_message "curl installed successfully."
+}
+
 # Ensure root privileges, either directly or through sudo
 maybe_sudo() {
     if [ "$(id -u)" -ne 0 ]; then
@@ -109,14 +124,25 @@ case "$OS_NAME" in
         ;;
     "Darwin")
         info_message "Detected macOS"
-        # Check if curl and jq are available
-        if command_exists curl || command_exists jq || command_exists gnu-sed; then
-           success_message "curl and jq are already installed and available for use."
-        else
-           info_message "Either curl, jq or gnu-sed is missing. Installing now..."
-           install_gnu_sed
-           install_jq
-        fi
+        
+        # Check if curl, jq or gnu-sed are available
+        # Define an associative array mapping commands to their installation functions
+        declare -A commands=(
+            [curl]=install_curl
+            [jq]=install_jq
+            [gnu-sed]=install_gnu_sed
+        )
+
+        # Iterate through the commands and check if they exist
+        for cmd in "${!commands[@]}"; do
+            if command_exists "$cmd"; then
+                success_message "$cmd is already installed and available for use."
+            else
+                info_message "$cmd is missing. Installing now..."
+                "${commands[$cmd]}"
+            fi
+        done
+
         ;;
     *)
         error_message "Unsupported operating system: $OS_NAME"
