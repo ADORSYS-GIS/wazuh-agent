@@ -91,14 +91,6 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Check if curl and jq are installed
-if command_exists curl && command_exists jq; then
-    success_message "curl and jq are already installed."
-    exit 0
-fi
-
-info_message "curl or jq not found, proceeding with installation..."
-
 # Detect OS and install packages
 OS_NAME=$(uname -s)
 ARCH=$(uname -m)
