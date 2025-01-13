@@ -14,7 +14,7 @@
    Download the setup script from the repository and run it to configure the Wazuh agent with the necessary parameters for secure communication with the Wazuh Manager.
    
    ```powershell
-$env:WAZUH_MANAGER = "events.wazuh.adorsys.team"
+$env:WAZUH_MANAGER = "test-cluster.wazuh.adorsys.team"
 $env:WAZUH_REGISTRATION_SERVER = "register.wazuh.adorsys.team" 
 Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/setup-agent.ps1' | Invoke-Expression 
    ```
@@ -111,20 +111,7 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
    For Snort A POP-UP window will come up to perform the installation.
    Please follow these steps:
 
-   i. Snort has been installed. Please click OK to continue installation and install Npcap.
-
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-34-11.png" >
-
-   ii. Please click "I Agree" to start npcap installation.
-
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-34-29.png">
-
-   iii. Please check the boxes shown in the image below and click "Install" and Wait for installation to complete. 
-
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-34-34.png">
-
-   iv. Once completed please click Next >.
-
+   i. Snort has been installed. Please click OK to continue installation and install Npcap.Setup agent script defaults wazuh manager to: events.dev.wazuh.adorsys.team
    <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-09.png">
    
    v. Please click Finish once Npcap installation is complete.
