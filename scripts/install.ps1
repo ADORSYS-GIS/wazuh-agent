@@ -66,7 +66,7 @@ function Install-Agent {
     $MsiArguments = @(
         "/i $MsiPath"
         "/q"
-        "WAZUH_MANAGER=`"$WazuhManager`""
+        "WAZUH_MANAGER=`"$WAZUH_MANAGER`""
     )
 
     # Install the Wazuh agent
@@ -81,7 +81,7 @@ function Install-Agent {
     # Update the manager address in the configuration file
     try {
         [xml]$configXml = Get-Content -Path $OSSEC_CONF_PATH
-        $configXml.ossec_config.client.server.address = $WazuhManager
+        $configXml.ossec_config.client.server.address = $WAZUH_MANAGER
         $configXml.Save($OSSEC_CONF_PATH)
         info_message "Manager address updated successfully in ossec.conf."
     } catch {
