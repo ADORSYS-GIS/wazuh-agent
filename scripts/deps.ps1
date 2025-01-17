@@ -81,7 +81,7 @@ function Install-GnuSed {
         Write-Host "Download completed. Starting installation..." -ForegroundColor Green
         
         # Run the installer silently
-        Start-Process -FilePath $DestinationPath -ArgumentList "/silent" -Wait
+        Start-Process -FilePath $DestinationPath  -Wait
 
         Write-Host "GNU sed installed successfully." -ForegroundColor Green
 
