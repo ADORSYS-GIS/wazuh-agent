@@ -117,10 +117,10 @@ case "$OS_NAME" in
     "Darwin")
         info_message "Detected macOS"
         
-        # Check if curl, jq or gnu-sed are available
+        # Check if curl, jq or gsed are available
         # Check for individual commands and install if missing
         # Define indexed arrays for commands and their installation functions
-        commands=(curl jq gnu-sed)
+        commands=(curl jq gsed)
         install_functions=(install_curl install_jq install_gnu_sed)
 
         # Iterate through the arrays
@@ -142,4 +142,4 @@ case "$OS_NAME" in
         ;;
 esac
 
-success_message "curl and jq installed successfully!"
+success_message "curl,jq and gsed installed successfully!"
