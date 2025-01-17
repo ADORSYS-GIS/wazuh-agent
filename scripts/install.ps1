@@ -1,3 +1,6 @@
+$WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "test-cluster.wazuh.adorsys.team" }
+$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.9.2-1" }
+
 # Define text formatting
 $RED = "`e[0;31m"
 $GREEN = "`e[0;32m"
@@ -38,8 +41,7 @@ function Install-Agent {
     $OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"
 
     # Variables
-    $WazuhManager = "test-cluster.wazuh.adorsys.team"
-    $AgentVersion = "4.9.2-1"
+
     $AgentFileName = "wazuh-agent-$AgentVersion.msi"
     $TempDir = $env:TEMP
     $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$AgentVersion.msi"
