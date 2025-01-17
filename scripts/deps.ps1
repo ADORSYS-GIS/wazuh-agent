@@ -64,7 +64,7 @@ function Ensure-Dependencies {
     }
 }
 
-function Check-PythonInstalled {
+function IsPythonInstalled {
     try {
         $pythonVersion = & python --version 2>&1
         if ($pythonVersion -match "Python (\d+)\.(\d+)\.(\d+)") {
@@ -101,10 +101,67 @@ function Check-PythonInstalled {
     }
 }
 
+function Install-GnuSed {
+    # Define the source URL and destination path
+    $SourceUrl = "https://downloads.sourceforge.net/project/gnuwin32/sed/4.2.1/sed-4.2.1-setup.exe?ts=gAAAAABnihwyfyy8CnXn7cxMYUNSQkpG2f2dUMFeiIGE8dM6A4aJ9G6yYtMvnuqpFQ658BS-pINAAB2fnD6SQOVdenwjEcrf0w%3D%3D&r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fgnuwin32%2Ffiles%2Fsed%2F4.2.1%2Fsed-4.2.1-setup.exe%2Fdownload%3Fuse_mirror%3Ddeac-fra%26r%3Dhttps%253A%252F%252Fsourceforge.net%252Fprojects%252Fgnuwin32%252Ffiles%252Fsed%252F4.2.1%252Fsed-4.2.1-setup.exe%252Fdownload%253Fuse_mirror%253Dnetcologne%2522"
+    $DestinationPath = "$env:TEMP\sed-4.2.1-setup.exe"
+
+    # Define a test command to check if GNU sed is installed
+    $TestCommand = "sed --version"
+    $DefaultInstallPath = "C:\Program Files (x86)\GnuWin32\bin"
+
+    try {
+        # Check if GNU sed is already installed
+        Write-Host "Checking if GNU sed is already installed..."
+        $versionOutput = & cmd /c $TestCommand 2>&1
+        if ($versionOutput -match "GNU sed") {
+            Write-Host "GNU sed is already installed." -ForegroundColor Green
+            return
+        }
+    } catch {
+        Write-Host "GNU sed is not installed. Proceeding with download and installation..." -ForegroundColor Yellow
+    }
+
+    try {
+        # Download the installer using BITS
+        Write-Host "Downloading GNU sed setup file to $DestinationPath..."
+        Start-BitsTransfer -Source $SourceUrl -Destination $DestinationPath
+
+        Write-Host "Download completed. Starting installation..." -ForegroundColor Green
+        
+        # Run the installer silently
+        Start-Process -FilePath $DestinationPath -ArgumentList "/silent" -Wait
+
+        Write-Host "GNU sed installed successfully." -ForegroundColor Green
+
+        # Check if the installation path exists
+        if (-Not (Test-Path $DefaultInstallPath)) {
+            Write-Host "Installation directory not found. Please verify the installation." -ForegroundColor Red
+            return
+        }
+
+        # Add sed to the system PATH if it's not already included
+        Write-Host "Checking if sed is in the PATH..."
+        $currentPath = [Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
+        if ($currentPath -notlike "*$DefaultInstallPath*") {
+            Write-Host "Adding GNU sed to the system PATH..." -ForegroundColor Yellow
+            [Environment]::SetEnvironmentVariable("Path", "$currentPath;$DefaultInstallPath", [System.EnvironmentVariableTarget]::Machine)
+            Write-Host "GNU sed added to the system PATH. Restart your terminal to apply changes." -ForegroundColor Green
+        } else {
+            Write-Host "GNU sed is already in the PATH." -ForegroundColor Green
+        }
+    } catch {
+        # Catch and display any errors
+        Write-Host "An error occurred: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    Remove-Item -Path $DestinationPath
+}
+
+
 
 
 # Function to check if Visual C++ Redistributable is installed
-function Check-VCppInstalled {
+function IsVCppInstalled {
     $vcppKey = "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"
     if (Test-Path $vcppKey) {
         $vcppInstalled = Get-ItemProperty -Path $vcppKey
@@ -119,8 +176,8 @@ function Check-VCppInstalled {
     Remove-Item -Path "$env:TEMP\vc_redist.x64.exe"
 }
 
-Check-PythonInstalled
-Check-VCppInstalled
+IsPythonInstalled
+IsVCppInstalled
 Ensure-Dependencies
 
     # Ensure valhallaAPI module is installed
