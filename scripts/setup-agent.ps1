@@ -30,6 +30,16 @@ function Log-Error {
     param ([string]$Message)
     Log "ERROR" $Message
 }
+function SectionSeparator {
+    param (
+        [string]$SectionName
+    )
+    Write-Host ""
+    Write-Host "==================================================" -ForegroundColor Magenta
+    Write-Host "  $SectionName" -ForegroundColor Magenta
+    Write-Host "==================================================" -ForegroundColor Magenta
+    Write-Host ""
+}
 
 # Step 1: Download and execute Wazuh agent script with error handling
 function Install-WazuhAgent {
@@ -173,8 +183,13 @@ function Install-AgentStatus {
 
 
 # Main Execution
+SectionSeparator "Installing Wazuh Agent"
 Install-WazuhAgent
+SectionSeparator "Installing OAuth2Client"
 Install-OAuth2Client
+SectionSeparator "Installing Agent Status"
 Install-AgentStatus
+SectionSeparator "Installing Yara"
 Install-Yara
+SectionSeparator "Installing Snort"
 Install-Snort
