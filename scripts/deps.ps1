@@ -127,8 +127,9 @@ function IsVCppInstalled {
     Remove-Item -Path "$env:TEMP\vc_redist.x64.exe"
 }
 
-IsPythonInstalled
+
 IsVCppInstalled
+Install-GnuSed
 Ensure-Dependencies
 
 
