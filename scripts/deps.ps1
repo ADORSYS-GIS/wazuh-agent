@@ -64,43 +64,6 @@ function Ensure-Dependencies {
     }
 }
 
-function IsPythonInstalled {
-    try {
-        $pythonVersion = & python --version 2>&1
-        if ($pythonVersion -match "Python (\d+)\.(\d+)\.(\d+)") {
-            $majorVersion = [int]$matches[1]
-            $minorVersion = [int]$matches[2]
-            $patchVersion = [int]$matches[3]
-            
-            if ($majorVersion -ge 3 -and $minorVersion -ge 9) {
-                Write-Host "Python $majorVersion.$minorVersion.$patchVersion is installed and is a recent version." -ForegroundColor Green
-                return $true
-            } else {
-                Write-Host "Python version is $majorVersion.$minorVersion.$patchVersion. Please install Python 3.9 or later and run the script again." -ForegroundColor Red
-                exit
-            }
-        } else {
-            throw "Python is not installed or not properly configured."
-        }
-    } catch {
-        Write-Host "Python is not installed or not properly configured. Installing Python..." -ForegroundColor Yellow
-        Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.9.0/python-3.9.0-amd64.exe" -OutFile "$env:TEMP\python-3.9.0-amd64.exe"
-        Start-Process -FilePath "$env:TEMP\python-3.9.0-amd64.exe" -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait
-        Remove-Item -Path "$env:TEMP\python-3.9.0-amd64.exe"
-
-        # Update environment variables
-        [System.Environment]::SetEnvironmentVariable("Path", [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";C:\Program Files\Python39", "Process")
-
-        # Update pip to the latest version
-        try {
-            & python -m pip install --upgrade pip
-        } catch {
-            Write-Error "Failed to update pip: $_"
-            exit 1
-        }
-    }
-}
-
 function Install-GnuSed {
     # Define the source URL and destination path
     $SourceUrl = "https://downloads.sourceforge.net/project/gnuwin32/sed/4.2.1/sed-4.2.1-setup.exe?ts=gAAAAABnihwyfyy8CnXn7cxMYUNSQkpG2f2dUMFeiIGE8dM6A4aJ9G6yYtMvnuqpFQ658BS-pINAAB2fnD6SQOVdenwjEcrf0w%3D%3D&r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fgnuwin32%2Ffiles%2Fsed%2F4.2.1%2Fsed-4.2.1-setup.exe%2Fdownload%3Fuse_mirror%3Ddeac-fra%26r%3Dhttps%253A%252F%252Fsourceforge.net%252Fprojects%252Fgnuwin32%252Ffiles%252Fsed%252F4.2.1%252Fsed-4.2.1-setup.exe%252Fdownload%253Fuse_mirror%253Dnetcologne%2522"
