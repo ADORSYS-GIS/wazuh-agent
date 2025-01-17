@@ -42,9 +42,9 @@ function Install-Agent {
 
     # Variables
 
-    $AgentFileName = "wazuh-agent-$AgentVersion.msi"
+    $AgentFileName = "wazuh-agent-$WAZUH_AGENT_VERSION.msi"
     $TempDir = $env:TEMP
-    $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$AgentVersion.msi"
+    $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.msi"
     $MsiPath = Join-Path -Path $TempDir -ChildPath $AgentFileName
 
     # Check if system architecture is supported
@@ -54,7 +54,7 @@ function Install-Agent {
     }
 
     # Download the Wazuh agent MSI package
-    info_message "Downloading Wazuh agent version $AgentVersion..."
+    info_message "Downloading Wazuh agent version $WAZUH_AGENT_VERSION..."
     try {
         Invoke-WebRequest -Uri $DownloadUrl -OutFile $MsiPath -ErrorAction Stop
     } catch {
