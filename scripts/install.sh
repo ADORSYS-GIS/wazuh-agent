@@ -241,6 +241,16 @@ config() {
         exit 1
     }
   fi
+  
+  # Delete REGISTRATION_SERVER_ADDRESS if it exists
+  if ! maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
+    # First remove <address till address>
+    maybe_sudo sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
+        error_message "Error occurred during old manager address removal."
+        exit 1
+    }
+  fi
+  
 }
 
 start_agent() {
