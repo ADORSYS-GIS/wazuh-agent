@@ -42,7 +42,7 @@ install_gnu_sed() {
     cd sed-* || exit
     ./configure --prefix=/usr/local
     make
-    sudo make install
+    maybe_sudo make install
     success_message "GNU sed installed successfully."
 }
 
@@ -53,7 +53,7 @@ install_jq() {
     cd "$TMP_DIR" || exit
     curl -LO "$JQ_URL"
     chmod +x jq-osx-amd64
-    sudo mv jq-osx-amd64 /usr/local/bin/jq
+    maybe_sudo mv jq-osx-amd64 /usr/local/bin/jq
     success_message "jq installed successfully."
 }
 
@@ -68,7 +68,7 @@ install_curl() {
     cd curl-* || exit
     ./configure --prefix=/usr/local
     make
-    sudo make install
+    maybe_sudo make install
     success_message "curl installed successfully."
 }
 
