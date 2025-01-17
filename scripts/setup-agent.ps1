@@ -41,6 +41,35 @@ function SectionSeparator {
     Write-Host ""
 }
 
+
+# Step 0: Download dependency script and execute
+function Install-Dependencies {
+    try {
+        Write-Host "Downloading and executing dependency script..."
+
+        $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/develop/scripts/deps.ps1"  # Update the URL if needed
+        $InstallerPath = "$env:TEMP\deps.ps1"
+
+        # Download Wazuh agent installer script
+        Invoke-WebRequest -Uri $InstallerUrl -OutFile $InstallerPath -ErrorAction Stop
+        Write-Host "Dependency script downloaded successfully."
+
+        # Execute the downloaded script
+        & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ErrorAction Stop
+    }
+    catch {
+        Write-Host "Error during dependency installation: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    finally {
+        # Clean up the installer file if it exists
+        if (Test-Path $InstallerPath) {
+            Remove-Item $InstallerPath -Force
+            Write-Host "Installer file removed."
+        }
+    }
+}
+
+
 # Step 1: Download and execute Wazuh agent script with error handling
 function Install-WazuhAgent {
     try {
@@ -183,6 +212,8 @@ function Install-AgentStatus {
 
 
 # Main Execution
+SectionSeparator "Installing Dependencies"
+Install-Dependencies
 SectionSeparator "Installing Wazuh Agent"
 Install-WazuhAgent
 SectionSeparator "Installing OAuth2Client"
