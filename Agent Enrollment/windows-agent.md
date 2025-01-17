@@ -1,12 +1,10 @@
-# Linux enrollment Guide
- This guide walks you through the process of enrolling a Linux system with the Wazuh Manager. By following these steps, you will install and configure necessary components, ensuring secure communication between the Wazuh Agent and the Wazuh Manager.
+# Windows enrollment Guide
+ This guide walks you through the process of enrolling a Windows system with the Wazuh Manager. By following these steps, you will install and configure necessary components, ensuring secure communication between the Wazuh Agent and the Wazuh Manager.
 
  ### Prerequisites
 
-- **Administrator Privileges:** Ensure you have sudo access.
 
 - **Internet Connectivity:** Verify that the system is connected to the internet.
-
 
 
 ## Step by step process 
@@ -33,55 +31,7 @@
 $env:WAZUH_MANAGER = "test-cluster.wazuh.adorsys.team"
 Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/setup-agent.ps1' | Invoke-Expression 
    ```
-  #### Components Installed by the Script:
 
-   **1. Wazuh Agent:**
-   Monitors your endpoint and sends data to the Wazuh Manager.
-   The agent is installed and configured to connect to the specified manager (WAZUH_MANAGER).
-   
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-36-39.png">
-
-   **2. OAuth2 Authentication Client:** Adds certificate-based OAuth2 authentication for secure communications.
-
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-38-14.png">
-
-   **3. Wazuh Agent Status:** Provides real-time health and connection status of the agent.
-
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-38-39.png" >
-
-   **4. Yara:** Enables advanced file-based malware detection by integrating Yara rules into Wazuh.
-
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-01.png">
-
-   **5. Snort:**
-   Adds network intrusion detection capabilities to monitor suspicious traffic.
-
-   For Snort A POP-UP window will come up to perform the installation.
-   Please follow these steps:
-
-   i. Snort has been installed. Please click OK to continue installation and install Npcap.
-
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-34-11.png" >
-
-   ii. Please click "I Agree" to start npcap installation.
-
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-34-29.png">
-
-   iii. Please check the boxes shown in the image below and click "Install" and Wait for installation to complete. 
-
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-34-34.png">
-
-   iv. Once completed please click Next >.
-
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-09.png">
-   
-   v. Please click Finish once Npcap installation is complete.
-
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-15.png">
-
-   vi. Installation will now continue:
-
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-23.png">
 
 ### Step 2:
   #### 1. Generate the Enrollment URL
@@ -145,20 +95,47 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
   #### 4. Check the Wazuh Manager Dashboard:
    Ping an admin for confirmation that the agent appears in the Wazuh Manager dashboard.
 
-### Step 4:
-  #### Checklist of elements to be installed and configured at agent enrollment 
-   **1. Pre-Requisites:**
-   - Supported OS confirmed
-   - Internet connectivity checked
 
-   **2. Downloaded Scripts:**
-   - Dependencies script
-   - Installation scripts (Wazuh Agent, OAuth2, YARA, Snort, Agent Status):
-     - Dependencies Installed
-     - Wazuh Agent Installed and Configured
-     - OAuth2 Client Installed
 
-   **3. Tools Installed:**
+  ## Checklist of Elements Installed and Configured During Agent Enrollment 
+   ### i. Components Installed by the Script:
+
+   **1. Wazuh Agent:**
+   Monitors your endpoint and sends data to the Wazuh Manager.
+   The agent is installed and configured to connect to the specified manager (WAZUH_MANAGER).
+   
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-36-39.png">
+
+   **2. OAuth2 Authentication Client:** Adds certificate-based OAuth2 authentication for secure communications.
+
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-38-14.png">
+
+   **3. Wazuh Agent Status:** Provides real-time health and connection status of the agent.
+
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-38-39.png" >
+
+   **4. Yara:** Enables advanced file-based malware detection by integrating Yara rules into Wazuh.
+
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-01.png">
+
+   **5. Snort:**
+   Adds network intrusion detection capabilities to monitor suspicious traffic.
+
+   For Snort A POP-UP window will come up to perform the installation.
+   Please follow these steps:
+
+   i. Snort has been installed. Please click OK to continue installation and install Npcap.Setup agent script defaults wazuh manager to: events.dev.wazuh.adorsys.team
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-09.png">
+   
+   v. Please click Finish once Npcap installation is complete.
+
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-15.png">
+
+   vi. Installation will now continue:
+
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-23.png">
+
+   ### ii. Tools Installed:
    - YARA
    ```powershell
    yara64 -v
@@ -177,10 +154,11 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
       Get-Service -Name "Wazuh"
    ```
 
-  **4. Installation Validation:**
+  ### iii. Installation Validation:
    - Test registration successful
    - Logs reviewed for errors
    - Cleanup Completed
+
 
 ## Troubleshooting
 
@@ -189,6 +167,7 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
 - For errors during authentication, ensure Active Directory credentials are correct and two-factor authentication is set up.
 
 - Consult the Wazuh logs (/var/ossec/logs/ossec.log) for detailed error messages.
+
 
 ### Additional Resources
 - [Wazuh Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html#wazuh-agent)

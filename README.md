@@ -20,52 +20,16 @@ This repository provides an automated setup script for installing the Wazuh Agen
 
 ## Installation
 
-**Remark:** 
-This script will enroll the Wazuh agent on the **dev** cluster by default, you should meet a member of the wazuh team if you want to enroll it elsewhere 
+### Wazuh Agent Enrollment Guide
+This guide provides instructions to enroll Wazuh agents on various platforms, integrating them with the Wazuh Manager for enhanced monitoring and security. Additionally, it automates the installation of tools like Yara and Snort to augment security capabilities.
 
-### Linux/MacOS Installation
+### Introduction
+Wazuh agents collect and transmit security data from endpoints to the Wazuh Manager for analysis. Proper enrollment ensures seamless integration and secure communication. Refer to the respective guide:
 
-To run the script and install all these components, use the following command:
-```bash
-curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | WAZUH_AGENT_NAME=test bash
-```
-### Windows Installation
+- [Linux Enrollment Guide](/Agent%20Enrollment/linux-agent.md)
+- [MacOS Enrollment Guide](/Agent%20Enrollment/macos-agent.md)
+- [Windows Enrollment Guide](/Agent%20Enrollment/windows-agent.md)
 
-For Windows, Please follow this step by step process to setup the windows wazuh agent.
-
-### 1. Open powershell in administrator mode.
-
-### 2. Run the command to set execution policy. Please respond with "[A] Yes to All"
-```powershell
-
-
-# Set Execution Policy to be able to run powershell script
-Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-```
-### 3. Run the following commands to download dependecy script and execute it
-```powershell
-#Download Dependency script
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/deps.ps1' -OutFile 'deps.ps1'
-
-# Run dependency script
-.\deps.ps1
-```
-
-### 4. Please close your powershell terminal and re-open in administrator mode again.
-
-### 5. Setup your Agent Name and Run the following commands to complete the installation.
-```powershell
-
-#Set Wazuh Manager domain name.
-$env:WAZUH_MANAGER = "master.wazuh.adorsys.team"
-
-# Download Setup-agent script
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/setup-agent.ps1' -OutFile 'setup-agent.ps1'
-
-#Run Setup-agent script
-.\setup-agent.ps1
-
-```
 ## Additional Notes
 ### Scripts Overview
 This repository includes several scripts for configuring and deploying Wazuh and additional security components:
