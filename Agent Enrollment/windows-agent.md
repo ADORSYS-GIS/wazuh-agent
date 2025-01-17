@@ -11,13 +11,26 @@
 
 ## Step by step process 
 
+### Step 0: Set Execution Policy
+
+```
+   Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+### Step 0.1 : Download and Install Dependencies
+
+```
+   Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/develop/scripts/deps.ps1' | Invoke-Expression 
+```
+
+
+## Please restart powershell in administrator mode
 
 ### Step 1: Download and Run the Setup Script
    Download the setup script from the repository and run it to configure the Wazuh agent with the necessary parameters for secure communication with the Wazuh Manager.
    
    ```powershell
-$env:WAZUH_MANAGER = "events.wazuh.adorsys.team"
-$env:WAZUH_REGISTRATION_SERVER = "register.wazuh.adorsys.team" 
+$env:WAZUH_MANAGER = "test-cluster.wazuh.adorsys.team"
 Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/setup-agent.ps1' | Invoke-Expression 
    ```
   #### Components Installed by the Script:
