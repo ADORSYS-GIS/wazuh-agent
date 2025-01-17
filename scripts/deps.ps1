@@ -19,18 +19,6 @@ function Log-Error {
     Log "ERROR" $Message
 }
 
-#Function to check if pip module is installed
-function Is-ModuleInstalled {
-    param (
-        [string]$ModuleName
-    )
-    $result = pip show $ModuleName 2>&1
-    if ($result -match "Name:") {
-        return $true
-    } else {
-        return $false
-    }
-}
 
 function Ensure-Dependencies {
     Log-Info "Ensuring dependencies are installed (curl, jq)"   
@@ -143,13 +131,5 @@ IsPythonInstalled
 IsVCppInstalled
 Ensure-Dependencies
 
-    # Ensure valhallaAPI module is installed
-$moduleName = "valhallaAPI"
-if (Is-ModuleInstalled -ModuleName $moduleName) {
-    Write-Host "$moduleName is installed."
-} else {
-    Write-Host "$moduleName is not installed."
-    pip install $moduleName
-}
 
 
