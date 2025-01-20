@@ -78,7 +78,7 @@ curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scrip
 
 # Step 0: Install dependencies
 info_message "Install dependencies"
-if ! (sudo env bash "$TMP_FOLDER/deps.sh") 2>&1; then
+if ! (bash "$TMP_FOLDER/deps.sh") 2>&1; then
     error_message "Failed to install dependencies"
     exit 1
 fi
