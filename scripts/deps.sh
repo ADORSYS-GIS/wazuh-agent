@@ -118,7 +118,7 @@ case "$OS_NAME" in
         info_message "Detected macOS"
         if command_exists brew; then
             brew install curl jq gnu-sed
-        elif command_exists yum; then            
+        else            
             # Check if curl, jq or gsed are available
             # Check for individual commands and install if missing
             # Define indexed arrays for commands and their installation functions
@@ -137,6 +137,7 @@ case "$OS_NAME" in
                     "$install_func"
                 fi
             done
+        fi
         ;;
     *)
         error_message "Unsupported operating system: $OS_NAME"
