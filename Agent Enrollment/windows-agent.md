@@ -30,7 +30,7 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
 
 In the dependency intallation a pop-up running the GNU sed installation will show.
 
-   <img src=" /Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-11.png">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-11.png">
 
 
 **Please choose the options shown in the images below to install GNU sed**
