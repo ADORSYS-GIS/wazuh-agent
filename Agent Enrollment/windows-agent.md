@@ -36,19 +36,19 @@ In the dependency intallation a pop-up running the GNU sed installation will sho
 **Please choose the options shown in the images below to install GNU sed**
 
    #### i. In order for installation to begin you need to accepts GNU's license agreement
-   <img src=" /Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-16.png">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-16.png">
 
    #### ii. Please install sed in the default location (C:\Program Files (x86)\GnuWin32)
-   <img src=" /Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-20.png">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-20.png">
 
    #### iii. Select Full Installation on the drop down with both binaries and documentation selected
-   <img src=" /Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-24.png">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-24.png">
 
    #### iv. Please select next
-   <img src=" /Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-28.png">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-28.png">
 
    #### v. Please uncheck both addition icon options
-   <img src=" /Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-35.png">
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-35.png">
 
 ### Step 3: Snort Installation
 
