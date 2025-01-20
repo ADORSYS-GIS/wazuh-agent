@@ -5,6 +5,8 @@
 
 - **Administrator Privileges:** Ensure you have sudo access.
 
+- **Homebrew**: Have Homebrew be installed
+
 - **Internet Connectivity:** Verify that the system is connected to the internet.
 
 
