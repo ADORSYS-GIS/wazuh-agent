@@ -159,7 +159,7 @@ function Install-Snort {
     try {
         Write-Host "Downloading and executing Snort installation script..."
 
-        $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/windows/snort.ps1"  # Update the URL if needed
+        $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/develop/scripts/windows/snort.ps1"  # Update the URL if needed
         $SnortScript = "$env:TEMP\snort.ps1"
 
         # Download the installation script
