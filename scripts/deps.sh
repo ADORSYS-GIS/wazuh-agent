@@ -116,25 +116,27 @@ case "$OS_NAME" in
         ;;
     "Darwin")
         info_message "Detected macOS"
-        
-        # Check if curl, jq or gsed are available
-        # Check for individual commands and install if missing
-        # Define indexed arrays for commands and their installation functions
-        commands=(curl jq gsed)
-        install_functions=(install_curl install_jq install_gnu_sed)
-
-        # Iterate through the arrays
-        for i in "${!commands[@]}"; do
-            cmd="${commands[$i]}"
-            install_func="${install_functions[$i]}"
-
-            if command_exists "$cmd"; then
-                success_message "$cmd is already installed and available for use."
-            else
-                info_message "$cmd is missing. Installing now..."
-                "$install_func"
-            fi
-        done
+        if command_exists brew; then
+            brew install curl jq gnu-sed
+        elif command_exists yum; then            
+            # Check if curl, jq or gsed are available
+            # Check for individual commands and install if missing
+            # Define indexed arrays for commands and their installation functions
+            commands=(curl jq gsed)
+            install_functions=(install_curl install_jq install_gnu_sed)
+    
+            # Iterate through the arrays
+            for i in "${!commands[@]}"; do
+                cmd="${commands[$i]}"
+                install_func="${install_functions[$i]}"
+    
+                if command_exists "$cmd"; then
+                    success_message "$cmd is already installed and available for use."
+                else
+                    info_message "$cmd is missing. Installing now..."
+                    "$install_func"
+                fi
+            done
         ;;
     *)
         error_message "Unsupported operating system: $OS_NAME"
