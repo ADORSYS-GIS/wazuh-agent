@@ -50,6 +50,10 @@ In the dependency intallation a pop-up running the GNU sed installation will sho
    #### v. Please uncheck both addition icon options
    <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-35.png">
 
+**The Installation will now continue**
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-36-39.png">
+
+
 ### Step 3: Snort Installation
 
 For Snort A POP-UP window will come up to perform the installation.
@@ -65,6 +69,10 @@ For Snort A POP-UP window will come up to perform the installation.
    #### iii. Installation will now continue:
 
    <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-23.png">
+
+
+## Before Moving to the next Step please close your powershell and re-open it in administrator mode again
+
 
 ### Step 4:
   #### 1. Generate the Enrollment URL
