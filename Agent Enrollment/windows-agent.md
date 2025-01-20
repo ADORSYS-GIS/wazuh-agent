@@ -5,24 +5,18 @@
 
 
 - **Internet Connectivity:** Verify that the system is connected to the internet.
+- **Adiminstrator Privileges:**  Ensure you open Powershell In Administrator Mode
 
 
 ## Step by step process 
 
 ### Step 0: Set Execution Policy
+Set Execution Policy to Remote Signed to allow powershell scripts to run.
 
 ```
-   Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
-
-### Step 0.1 : Download and Install Dependencies
-
-```
-   Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/develop/scripts/deps.ps1' | Invoke-Expression 
-```
-
-
-## Please restart powershell in administrator mode
+When prompted, respond with A [Yes to All], to enable the execution policy.
 
 ### Step 1: Download and Run the Setup Script
    Download the setup script from the repository and run it to configure the Wazuh agent with the necessary parameters for secure communication with the Wazuh Manager.
@@ -32,8 +26,47 @@ $env:WAZUH_MANAGER = "test-cluster.wazuh.adorsys.team"
 Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/setup-agent.ps1' | Invoke-Expression 
    ```
 
+### Step 2: Gnu Sed Installation
 
-### Step 2:
+In the dependency intallation a pop-up running the GNU sed installation will show.
+
+   <img src=" /Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-11.png">
+
+
+**Please choose the options shown in the images below to install GNU sed**
+
+   #### i. In order for installation to begin you need to accepts GNU's license agreement
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-16.png">
+
+   #### ii. Please install sed in the default location (C:\Program Files (x86)\GnuWin32)
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-20.png">
+
+   #### iii. Select Full Installation on the drop down with both binaries and documentation selected
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-24.png">
+
+   #### iv. Please select next
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-28.png">
+
+   #### v. Please uncheck both addition icon options
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-35.png">
+
+### Step 3: Snort Installation
+
+For Snort A POP-UP window will come up to perform the installation.
+   Please follow these steps:
+
+   #### i. Snort has been installed. Please click OK to continue installation and install Npcap.
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-09.png">
+   
+   #### ii. Please click Finish once Npcap installation is complete.
+
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-15.png">
+
+   #### iii. Installation will now continue:
+
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-23.png">
+
+### Step 4:
   #### 1. Generate the Enrollment URL
    Run the following command to start the enrollment process:
 
@@ -64,7 +97,7 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
   #### 4. Reboot your Device
    Reboot your device to apply the changes. 
 
-### Step 3: Validate the Installation
+### Step 5: Validate the Installation
    After completing the agent enrollment, verify that the agent is properly connected and functioning:
 
   #### 1. Check the Agent Status:
@@ -100,25 +133,34 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
   ## Checklist of Elements Installed and Configured During Agent Enrollment 
    ### i. Components Installed by the Script:
 
-   **1. Wazuh Agent:**
+   **1. Wazuh Dependencies:**
+
+   The dependencies installed for the wazuh-agent and other components include:
+   - Visual C++ Redistributable 
+   - GNU sed 
+   - jq
+   
+
+
+   **2. Wazuh Agent:**
    Monitors your endpoint and sends data to the Wazuh Manager.
    The agent is installed and configured to connect to the specified manager (WAZUH_MANAGER).
    
    <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-36-39.png">
 
-   **2. OAuth2 Authentication Client:** Adds certificate-based OAuth2 authentication for secure communications.
+   **3. OAuth2 Authentication Client:** Adds certificate-based OAuth2 authentication for secure communications.
 
    <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-38-14.png">
 
-   **3. Wazuh Agent Status:** Provides real-time health and connection status of the agent.
+   **4. Wazuh Agent Status:** Provides real-time health and connection status of the agent.
 
    <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-38-39.png" >
 
-   **4. Yara:** Enables advanced file-based malware detection by integrating Yara rules into Wazuh.
+   **5. Yara:** Enables advanced file-based malware detection by integrating Yara rules into Wazuh.
 
    <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-01.png">
 
-   **5. Snort:**
+   **6. Snort:**
    Adds network intrusion detection capabilities to monitor suspicious traffic.
 
    For Snort A POP-UP window will come up to perform the installation.
@@ -151,7 +193,7 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
    ```
    OR
    ```powershell
-      Get-Service -Name "Wazuh"
+   Get-Service -Name "Wazuh"
    ```
 
   ### iii. Installation Validation:
@@ -166,7 +208,7 @@ Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADOR
 
 - For errors during authentication, ensure Active Directory credentials are correct and two-factor authentication is set up.
 
-- Consult the Wazuh logs (/var/ossec/logs/ossec.log) for detailed error messages.
+- Consult the Wazuh logs (C:\Program Files (x86)\ossec-agent\ossec.log) for detailed error messages.
 
 
 ### Additional Resources
