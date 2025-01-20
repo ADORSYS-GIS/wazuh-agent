@@ -14,7 +14,7 @@
    Download the setup script from the repository and run it to configure the Wazuh agent with the necessary parameters for secure communication with the Wazuh Manager.
    
    ```bash
-   curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | WAZUH_MANAGER=test-cluster.wazuh.adorsys.team WAZUH_REGISTRATION_SERVER=register.wazuh.adorsys.team bash
+   curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | WAZUH_MANAGER=test-cluster.wazuh.adorsys.team bash
    ```
   
 ### Step 2:
