@@ -93,7 +93,7 @@ fi
 
 # Stop Wazuh service if running
 stop_service() {
-    if [ -x "$OSSEC_CONTROL_PATH" ]; then
+    if maybe_sudo [ -x "$OSSEC_CONTROL_PATH" ]; then
         info_message "Stopping Wazuh service..."
         maybe_sudo "$OSSEC_CONTROL_PATH" stop || true
         info_message "Wazuh service stopped successfully"
@@ -104,7 +104,7 @@ stop_service() {
 
 # Uninstall Wazuh agent
 uninstall_agent() {
-    if [ -d "$OSSEC_PATH" ]; then
+    if maybe_sudo [ -d "$OSSEC_PATH" ]; then
         info_message "Uninstalling Wazuh agent..."
         if [ "$OS" = "Linux" ]; then
             if [ "$PACKAGE_MANAGER" = "apt" ]; then

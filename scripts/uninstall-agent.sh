@@ -49,10 +49,10 @@ info_message "Starting uninstallation. Using temporary directory: \"$TMP_FOLDER\
 
 # Step -1: Download all uninstall scripts
 info_message "Downloading all uninstall scripts..."
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/develop/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-wazuh-agent.sh"
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/develop/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-wazuh-agent-status.sh"
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/heads/develop/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-yara.sh"
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/heads/develop/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-snort.sh"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-wazuh-agent.sh"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/main/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-wazuh-agent-status.sh"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/main/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-yara.sh"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-snort.sh"
 
 # Step 0: Uninstall Wazuh agent
 info_message "Uninstalling Wazuh agent"

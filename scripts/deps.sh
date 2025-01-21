@@ -1,8 +1,6 @@
 #!/bin/sh
 
 # Set shell options
-
-# Set shell options
 if [ -n "$BASH_VERSION" ]; then
     set -euo pipefail
 else
