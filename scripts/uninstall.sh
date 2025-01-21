@@ -142,18 +142,18 @@ cleanup_repo() {
         if [ "$PACKAGE_MANAGER" = "apt" ] && [ -f "/usr/share/keyrings/wazuh.gpg" ]; then
             maybe_sudo rm -f /usr/share/keyrings/wazuh.gpg
         fi
+        info_message "Repository and GPG key removed successfully."
     fi
-    info_message "Repository and GPG key removed successfully."
 }
 
 # Clean up any remaining Wazuh files
-cleanup_files() {
-    info_message "Cleaning up remaining Wazuh files"
+cleanup_files() { 
     if [ "$OS" = "Linux" ]; then
         info_message "Cleaning up remaining Wazuh files"
+        info_message "Cleaning up remaining Wazuh files"
         maybe_sudo rm -rf /var/ossec
+        info_message "User and group cleanup completed."
     fi
-    info_message "User and group cleanup completed."
 }
 
 # Remove user and group
