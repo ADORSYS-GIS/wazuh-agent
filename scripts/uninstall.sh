@@ -129,9 +129,6 @@ uninstall_agent() {
     else
         warn_message "Wazuh agent does not exist, skipping"
     fi
-
-    
-
 }
 
 # Remove repository and GPG key
@@ -151,14 +148,17 @@ cleanup_repo() {
 
 # Clean up any remaining Wazuh files
 cleanup_files() {
+    info_message "Cleaning up remaining Wazuh files"
     if [ "$OS" = "Linux" ]; then
         info_message "Cleaning up remaining Wazuh files"
         maybe_sudo rm -rf /var/ossec
     fi
+    info_message "User and group cleanup completed."
 }
 
 # Remove user and group
 remove_user_group() {
+    info_message "Removing user and group if they exist"
     if [ "$OS" = "Darwin" ]; then
         # macOS commands
         if dscl . -list /Users | grep -q "^$WAZUH_USER$"; then
@@ -183,7 +183,6 @@ remove_user_group() {
             maybe_sudo groupdel "$WAZUH_GROUP" || warn_message "Failed to remove group $WAZUH_GROUP. Skipping."
         fi
     fi
-
     info_message "User and group cleanup completed."
 }
 
