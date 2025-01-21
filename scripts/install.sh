@@ -293,7 +293,7 @@ fi
 
 # Default log level and application details
 LOG_LEVEL=${LOG_LEVEL:-'INFO'}
-WAZUH_MANAGER=${WAZUH_MANAGER:-'test-cluster.wazuh.adorsys.team'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 TMP_FOLDER="$(mktemp -d)"
 
 # Define text formatting
