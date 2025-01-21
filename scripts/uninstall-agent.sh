@@ -32,6 +32,10 @@ info_message() {
     log "${BLUE}${BOLD}[INFO]${NORMAL}" "$*"
 }
 
+success_message() {
+    log "${GREEN}${BOLD}[INFO]${NORMAL}" "$*"
+}
+
 error_message() {
     log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
 }
