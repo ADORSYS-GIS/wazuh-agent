@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Set shell options
 
@@ -93,7 +93,6 @@ command_exists() {
 
 # Detect OS and install packages
 OS_NAME=$(uname -s)
-ARCH=$(uname -m)
 
 info_message "Detecting operating system..."
 
@@ -119,18 +118,8 @@ case "$OS_NAME" in
         if command_exists brew; then
             brew install curl jq gnu-sed
         else
-            commands=(curl jq gsed)
-            install_functions=(install_curl install_jq install_gnu_sed)
-            for i in "${!commands[@]}"; do
-                cmd="${commands[$i]}"
-                install_func="${install_functions[$i]}"
-                if command_exists "$cmd"; then
-                    success_message "$cmd is already installed."
-                else
-                    info_message "$cmd is missing. Installing now..."
-                    "$install_func"
-                fi
-            done
+            error_message "brew is missing. Install it and try again."
+            exit 1
         fi
         ;;
     *)
