@@ -92,38 +92,47 @@ command_exists() {
 # Detect OS and install packages
 OS_NAME=$(uname -s)
 
-info_message "Detecting operating system..."
+# List of required commands
+commands=("curl" "jq" "gsed")
 
-case "$OS_NAME" in
-    "Linux")
-        if command_exists apt-get; then
-            info_message "Detected Debian/Ubuntu-based system"
-            maybe_sudo apt-get update
-            maybe_sudo apt-get install -y curl jq
-        elif command_exists yum; then
-            info_message "Detected Red Hat/CentOS-based system"
-            maybe_sudo yum install -y curl jq
-        elif command_exists apk; then
-            info_message "Detected Alpine Linux system"
-            maybe_sudo apk add --no-cache curl jq
-        else
-            error_message "Unsupported Linux distribution"
+# Check all commands using &&&
+if command -v "${commands[0]}" &> /dev/null && command -v "${commands[1]}" &> /dev/null && command -v "${commands[2]}" &> /dev/null; then
+    info_message "All required commands: (${commands[*]}) are already installed."
+else
+    info_message "Detecting operating system..."
+    
+    case "$OS_NAME" in
+        "Linux")
+            if command_exists apt-get; then
+                info_message "Detected Debian/Ubuntu-based system"
+                maybe_sudo apt-get update
+                maybe_sudo apt-get install -y curl jq
+            elif command_exists yum; then
+                info_message "Detected Red Hat/CentOS-based system"
+                maybe_sudo yum install -y curl jq
+            elif command_exists apk; then
+                info_message "Detected Alpine Linux system"
+                maybe_sudo apk add --no-cache curl jq
+            else
+                error_message "Unsupported Linux distribution"
+                exit 1
+            fi
+            ;;
+        "Darwin")
+            info_message "Detected macOS"
+            if command_exists brew; then
+                brew install curl jq gnu-sed
+            else
+                error_message "brew is missing. Install it and try again."
+                exit 1
+            fi
+            ;;
+        *)
+            error_message "Unsupported operating system: $OS_NAME"
             exit 1
-        fi
-        ;;
-    "Darwin")
-        info_message "Detected macOS"
-        if command_exists brew; then
-            brew install curl jq gnu-sed
-        else
-            error_message "brew is missing. Install it and try again."
-            exit 1
-        fi
-        ;;
-    *)
-        error_message "Unsupported operating system: $OS_NAME"
-        exit 1
-        ;;
-esac
+            ;;
+    esac
+    
+    success_message "curl,jq and gsed installed successfully!"
+fi
 
-success_message "curl,jq and gsed installed successfully!"
