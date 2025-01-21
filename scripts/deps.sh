@@ -92,11 +92,21 @@ command_exists() {
 # Detect OS and install packages
 OS_NAME=$(uname -s)
 
-# List of required commands
-commands=("curl" "jq" "gsed")
+case "$OS_NAME" in
+    Linux)
+        commands=("curl" "jq" "sed")
+        ;;
+    Darwin)
+        commands=("curl" "jq" "gsed")
+        ;;
+    *)
+        error_message "Unsupported operating system: $OS_NAME"
+        exit 1
+        ;;
+    esac
 
 # Check all commands using &&&
-if command -v "${commands[0]}" &> /dev/null && command -v "${commands[1]}" &> /dev/null && command -v "${commands[2]}" &> /dev/null; then
+if command_exists "${commands[0]}" && command_exists "${commands[1]}" && command_exists "${commands[2]}"; then
     info_message "All required commands: (${commands[*]}) are already installed."
 else
     info_message "Detecting operating system..."
