@@ -7,6 +7,11 @@
 
 - **Homebrew**: Have Homebrew be installed
 
+- **Dependencies**: Have **curl, jq and gsed** installed. You can install them with this command
+  ```
+  brew install curl jq gnu-sed
+  ```
+
 - **Internet Connectivity:** Verify that the system is connected to the internet.
 
 
