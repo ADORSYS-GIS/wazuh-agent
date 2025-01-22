@@ -293,8 +293,16 @@ fi
 
 # Default log level and application details
 LOG_LEVEL=${LOG_LEVEL:-'INFO'}
-WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
-LOG_DIR=${LOG_DIR:-'/var/ossec/logs/active-responses.log'}
+
+# Define the log file path
+if [ "$(uname)" = "Darwin" ]; then
+    # macOS
+    LOG_DIR='/Library/Ossec/logs/active-responses.log'
+else
+    # Linux
+    LOG_DIR='/var/ossec/logs/active-responses.log'
+fi
+
 
 TMP_FOLDER="$(mktemp -d)"
 
