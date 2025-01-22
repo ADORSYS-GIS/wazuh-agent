@@ -297,11 +297,15 @@ WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 
 # Define the log file path
 if [ "$(uname)" = "Darwin" ]; then
-    # macOS
     LOG_DIR='/Library/Ossec/logs/active-responses.log'
+    if [ "$ARCH" = "x86_64" ]; then
+        BIN_PATH='/usr/local/bin'
+    else
+        BIN_PATH='/opt/homebrew/bin'
+    fi
 else
-    # Linux
     LOG_DIR='/var/ossec/logs/active-responses.log'
+    BIN_PATH='/usr/bin'
 fi
 
 
@@ -341,20 +345,23 @@ cleanup() {
     fi
 }
 
-trap cleanup EXIT
+trap cleanup EXIT  | tee -a "$LOG_DIR"
 
-info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
+info_message "Add bin directory: $ to PATH environment"  | tee -a "$LOG_DIR"
+export PATH="$BIN_PATH:$PATH" | tee -a "$LOG_DIR"
+ 
+info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""  | tee -a "$LOG_DIR"
 
-# Step 0: Download script
-info_message "Download all scripts..."
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh > "$TMP_FOLDER/setup-agent.sh"
+# Download scripts
+info_message "Download all scripts..."  | tee -a "$LOG_DIR"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh > "$TMP_FOLDER/setup-agent.sh"  | tee -a "$LOG_DIR"
 
 
-# Step 1: Download and install Wazuh agent
+# Download and install Wazuh agent
 info_message "Starting wazuh upgrade..." | tee -a ${LOG_DIR}
 
 if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") | tee -a ${LOG_DIR}; then
-    error_message "Failed to install wazuh-agent"
+    error_message "Failed to install wazuh-agent"  | tee -a "$LOG_DIR"
     exit 1
 fi
  
