@@ -9,7 +9,7 @@ fi
 
 # Variables
 LOG_LEVEL=${LOG_LEVEL:-INFO}
-WAZUH_MANAGER=${WAZUH_MANAGER:-'test-cluster.wazuh.adorsys.team'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.2-1'}
 
 # Define text formatting
