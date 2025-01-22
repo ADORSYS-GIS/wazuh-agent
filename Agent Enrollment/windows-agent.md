@@ -50,6 +50,9 @@ In the dependency intallation a pop-up running the GNU sed installation will sho
    #### v. Please uncheck both addition icon options
    <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-35.png">
 
+   #### vi. The GNU Sed installation is now finished.
+   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-21 16-29-27.png">
+
 **The Installation will now continue**
    <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-36-39.png">
 
@@ -71,10 +74,11 @@ For Snort A POP-UP window will come up to perform the installation.
    <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-23.png">
 
 
-## Before Moving to the next Step please close your powershell and re-open it in administrator mode again
+###  Step 4: Please Restart Your Powershell terminal in Administrator mode.
 
+This is a **very** important step, the installation will not work well if this step is not completed
 
-### Step 4:
+### Step 5: Enrolling your agent with cert-oauth2
   #### 1. Generate the Enrollment URL
    Run the following command to start the enrollment process:
 
@@ -105,7 +109,7 @@ For Snort A POP-UP window will come up to perform the installation.
   #### 4. Reboot your Device
    Reboot your device to apply the changes. 
 
-### Step 5: Validate the Installation
+### Step 6: Validate the Installation
    After completing the agent enrollment, verify that the agent is properly connected and functioning:
 
   #### 1. Check the Agent Status:
@@ -144,9 +148,9 @@ For Snort A POP-UP window will come up to perform the installation.
    **1. Wazuh Dependencies:**
 
    The dependencies installed for the wazuh-agent and other components include:
-   - Visual C++ Redistributable 
-   - GNU sed 
-   - jq
+   - [Visual C++ Redistributable](https://www.microsoft.com/en-us/download/details.aspx?id=48145)
+   - [GNU sed](https://www.gnu.org/software/sed/) 
+   - [jq](https://jqlang.github.io/jq/)
    
 
 
@@ -217,6 +221,10 @@ For Snort A POP-UP window will come up to perform the installation.
 - For errors during authentication, ensure Active Directory credentials are correct and two-factor authentication is set up.
 
 - Consult the Wazuh logs (C:\Program Files (x86)\ossec-agent\ossec.log) for detailed error messages.
+   ``` powershell
+   Get-Content 'C:\Program Files (x86)\ossec-agent\ossec.log' -Tail 20
+   ```
+
 
 
 ### Additional Resources
