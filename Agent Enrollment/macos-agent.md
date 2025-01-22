@@ -75,7 +75,7 @@ Look for the Wazuh icon in the system tray to confirm that the agent is running 
 
 #### 2. Verify Agent Logs:
 
-Check the Wazuh agent logs to ensure there are no errors:
+Check the Wazuh agent logs for examination:
 
 ```bash
 sudo tail -f /Library/Ossec/logs/ossec.log

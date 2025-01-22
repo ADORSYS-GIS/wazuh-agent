@@ -6,6 +6,11 @@
 - **Administrator Privileges:** Ensure you have sudo access.
 
 - **Internet Connectivity:** Verify that the system is connected to the internet.
+- **Dependencies**: Have **curl and jq** installed. You can install them with this command.
+
+ ```bash
+ sudo apt-get install -y curl jq
+ ```
 
 
 
@@ -69,7 +74,7 @@
    ```bash
    sudo tail -f /var/ossec/logs/ossec.log
    ```
-   Check the Wazuh agent logs to ensure there are no errors:
+   Check the Wazuh agent logs for examination :
   
    <img src="/Agent Enrollment/images/linux/Screenshot from 2025-01-06 12-04-15.png" width="500" height="200">
 
