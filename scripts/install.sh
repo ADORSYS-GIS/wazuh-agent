@@ -53,7 +53,9 @@ print_step() {
 
 # Check if a command exists
 command_exists() {
+    info_message "check if cmd: $1 exists"
     command -v "$1" >/dev/null 2>&1
+    info_message "cmd: $1 exists"
 }
 
 # Ensure root privileges, either directly or through sudo
@@ -72,8 +74,10 @@ maybe_sudo() {
 
 sed_alternative() {
     if command_exists gsed; then
+        info_message "using gsed..."
         maybe_sudo gsed "$@"
     else
+        info_message "using sed..."
         maybe_sudo sed "$@"
     fi
 }
