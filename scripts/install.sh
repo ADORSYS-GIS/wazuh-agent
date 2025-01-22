@@ -71,10 +71,10 @@ maybe_sudo() {
 }
 
 sed_alternative() {
-    if [ "$(uname)" = "Darwin" ]; then
-        sed -i '' "$@"
+    if maybe_sudo [ -x "/opt/homebrew/bin/gsed" ]; then
+        /opt/homebrew/bin/gsed "$@"
     else
-        sed -i "$@"
+        sed "$@"
     fi
 }
 
@@ -204,9 +204,9 @@ disable_repo() {
   # Disable Wazuh repository after installation for Linux
   if [ "$OS" = "Linux" ]; then
       if [ "$PACKAGE_MANAGER" = "apt" ]; then
-          sed_alternative "s/^deb/#deb/" $REPO_FILE
+          sed_alternative -i "s/^deb/#deb/" $REPO_FILE
       elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
-          sed_alternative "s/^enabled=1/enabled=0/" $REPO_FILE
+          sed_alternative -i "s/^enabled=1/enabled=0/" $REPO_FILE
       fi
       info_message "Wazuh repository disabled successfully."
   fi
@@ -216,9 +216,9 @@ enable_repo() {
   if [ -f /etc/apt/sources.list.d/wazuh.list ]; then
     info_message "Should enable wazuh repository"
     if [ "$PACKAGE_MANAGER" = "apt" ]; then
-      sed_alternative "s/^#deb/deb/" $REPO_FILE
+      sed_alternative -i "s/^#deb/deb/" $REPO_FILE
     elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
-      sed_alternative "s/^enabled=0/enabled=1/" $REPO_FILE
+      sed_alternative -i "s/^enabled=0/enabled=1/" $REPO_FILE
     fi
 
     maybe_sudo $PACKAGE_MANAGER update
@@ -230,12 +230,12 @@ config() {
   # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for unix systems
   if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
     # First remove <address till address>
-    maybe_sudo sed_alternative '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
+    maybe_sudo sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during old manager address removal."
         exit 1
     }
 
-    maybe_sudo sed_alternative "/<server=*/ a\
+    maybe_sudo sed_alternative -i "/<server=*/ a\
       <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during insertion of latest manager address."
         exit 1
@@ -245,7 +245,7 @@ config() {
   # Delete REGISTRATION_SERVER_ADDRESS if it exists
   if ! maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
     # First remove <address till address>
-    maybe_sudo sed_alternative '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
+    maybe_sudo sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during old manager address removal."
         exit 1
     }
