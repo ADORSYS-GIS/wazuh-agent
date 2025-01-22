@@ -293,6 +293,7 @@ fi
 
 # Default log level and application details
 LOG_LEVEL=${LOG_LEVEL:-'INFO'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 
 # Define the log file path
 if [ "$(uname)" = "Darwin" ]; then
