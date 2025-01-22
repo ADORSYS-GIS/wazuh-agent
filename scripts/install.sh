@@ -56,10 +56,10 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Check if sudo is available or if the script is run as root
+# Ensure root privileges, either directly or through sudo
 maybe_sudo() {
     if [ "$(id -u)" -ne 0 ]; then
-        if command -v sudo >/dev/null 2>&1; then
+        if command_exists sudo; then
             sudo "$@"
         else
             error_message "This script requires root privileges. Please run with sudo or as root."
@@ -230,31 +230,25 @@ config() {
   # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for unix systems
   if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
     # First remove <address till address>
-    info_message "Removing <address>.*</address> block..."
-    sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
+    maybe_sudo sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during old manager address removal."
         exit 1
     }
-    info_message "<address>.*</address> block removed successfully"
 
-    info_message "Adding <address>$WAZUH_MANAGER</address>..."
-    sed_alternative -i "/<server=*/ a\
+    maybe_sudo sed_alternative -i "/<server=*/ a\
       <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during insertion of latest manager address."
         exit 1
     }
-    info_message "<address>$WAZUH_MANAGER</address> added successfully"
   fi
   
   # Delete REGISTRATION_SERVER_ADDRESS if it exists
-  if maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
+  if ! maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
     # First remove <address till address>
-    info_message "Removing <manager_address>.*</manager_address> block..."
-    sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during manager address removal."
+    maybe_sudo sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
+        error_message "Error occurred during old manager address removal."
         exit 1
     }
-    info_message "<manager_address>.*</manager_address> block removed successfully"
   fi
   
 }
@@ -299,6 +293,9 @@ fi
 
 # Default log level and application details
 LOG_LEVEL=${LOG_LEVEL:-'INFO'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'test-cluster.wazuh.adorsys.team'}
+LOG_DIR=${LOG_DIR:-'/var/ossec/logs/active-responses.log'}
+
 TMP_FOLDER="$(mktemp -d)"
 
 # Define text formatting
@@ -339,37 +336,19 @@ trap cleanup EXIT
 
 info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
-# Detect OS type
-OS_TYPE=$(uname -s)
-case "$OS_TYPE" in
-    Linux)
-        OS="Linux"
-        LOG_DIR='/var/ossec/logs/active-responses.log'
-        ;;
-    Darwin)
-        OS="macOS"
-        LOG_DIR='/Library/Ossec/logs/active-responses.log'
-        ;;
-    *)
-        error_message "Unsupported operating system: $OS_TYPE"
-        exit 1
-        ;;
-esac
-
-info_message "Detected OS: $OS"
-info_message "Using log directory: $LOG_DIR"
-
 # Step 0: Download script
 info_message "Download all scripts..."
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh > "$TMP_FOLDER/setup-agent.sh"
 
+
 # Step 1: Download and install Wazuh agent
 info_message "Starting wazuh upgrade..." >> ${LOG_DIR}
 
-if ! (bash "$TMP_FOLDER/setup-agent.sh") >> ${LOG_DIR}; then
+if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") >> ${LOG_DIR}; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
+ 
 info_message "Wazuh upgrade finished with success" >> ${LOG_DIR}
 EOF
     # Make the new script executable
@@ -398,7 +377,7 @@ validate_installation() {
       fi
   fi
 
-  # Check if the configuration file contains the correct manager address
+  # Check if the configuration file contains the correct manager and registration server
   if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
       warn_message "Wazuh manager address is not configured correctly in $OSSEC_CONF_PATH."
   fi
