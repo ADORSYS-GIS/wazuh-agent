@@ -72,9 +72,9 @@ maybe_sudo() {
 
 sed_alternative() {
     if command_exists gsed; then
-        gsed "$@"
+        maybe_sudo gsed "$@"
     else
-        sed "$@"
+        maybe_sudo sed "$@"
     fi
 }
 
@@ -230,12 +230,12 @@ config() {
   # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for unix systems
   if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
     # First remove <address till address>
-    maybe_sudo sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
+    sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during old manager address removal."
         exit 1
     }
 
-    maybe_sudo sed_alternative -i "/<server=*/ a\
+    sed_alternative -i "/<server=*/ a\
       <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during insertion of latest manager address."
         exit 1
@@ -245,7 +245,7 @@ config() {
   # Delete REGISTRATION_SERVER_ADDRESS if it exists
   if maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
     # First remove <address till address>
-    maybe_sudo sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
+    sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during old manager address removal."
         exit 1
     }

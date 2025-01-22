@@ -23,7 +23,7 @@ fi
 USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
 
-WAZUH_MANAGER=${WAZUH_MANAGER:-'test-cluster.wazuh.adorsys.team'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.2-1'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 
