@@ -82,6 +82,7 @@ sed_alternative() {
     fi
 }
 
+
 ## WAZUH_MANAGER is required
 if [ -z "$WAZUH_MANAGER" ]; then
     error_message "WAZUH_MANAGER is required"
@@ -93,6 +94,7 @@ if [ "$(uname)" = "Darwin" ]; then
     OS="macOS"
     UPGRADE_SCRIPT_PATH="/Library/Ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
+    SED_CMD=$(maybe_sudo sed -i '')
 elif [ -f /etc/debian_version ]; then
     OS="Linux"
     PACKAGE_MANAGER="apt"
@@ -101,18 +103,21 @@ elif [ -f /etc/debian_version ]; then
     GPG_IMPORT_CMD="gpg --no-default-keyring --keyring $GPG_KEYRING --import"
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
+    SED_CMD=$(maybe_sudo sed -i)
 elif [ -f /etc/redhat-release ]; then
     OS="Linux"
     PACKAGE_MANAGER="yum"
     REPO_FILE="/etc/yum.repos.d/wazuh.repo"
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
+    SED_CMD=$(maybe_sudo sed -i)
 elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     OS="Linux"
     PACKAGE_MANAGER="zypper"
     REPO_FILE="/etc/zypp/repos.d/wazuh.repo"
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
+    SED_CMD=$(maybe_sudo sed -i)
 else
     error_message "Unsupported OS"
     exit 1
@@ -235,14 +240,14 @@ config() {
   if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
     # First remove <address till address>
     info_message "Removing <address>.*</address> block..."
-    sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
+    SED_CMD '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during old manager address removal."
         exit 1
     }
     info_message "<address>.*</address> block removed successfully"
 
     info_message "Adding <address>$WAZUH_MANAGER</address>..."
-    sed_alternative -i "/<server=*/ a\
+    SED_CMD "/<server=*/ a\
       <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during insertion of latest manager address."
         exit 1
@@ -254,7 +259,7 @@ config() {
   if maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
     # First remove <address till address>
     info_message "Removing <manager_address>.*</manager_address> block..."
-    sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
+    SED_CMD '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during manager address removal."
         exit 1
     }
