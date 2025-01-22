@@ -71,7 +71,7 @@ maybe_sudo() {
 }
 
 sed_alternative() {
-    if command_exists gsed; then
+    if [ "$(uname)" = "Darwin" ]; then
         gsed "$@"
     else
         sed "$@"
