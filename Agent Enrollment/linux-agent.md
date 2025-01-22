@@ -149,6 +149,13 @@
 
 - Consult the Wazuh logs (/var/ossec/logs/ossec.log) for detailed error messages.
 
+## Uninstall Agent
+
+Use this command to uninstall
+
+```bash
+curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall-agent.sh | bash
+```
 
 ### Additional Resources
 - [Wazuh Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html#wazuh-agent)
