@@ -342,14 +342,14 @@ curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scrip
 
 
 # Step 1: Download and install Wazuh agent
-info_message "Starting wazuh upgrade..." >> ${LOG_DIR}
+info_message "Starting wazuh upgrade..." | tee -a ${LOG_DIR}
 
-if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") >> ${LOG_DIR}; then
+if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") | tee -a ${LOG_DIR}; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
  
-info_message "Wazuh upgrade finished with success" >> ${LOG_DIR}
+info_message "Wazuh upgrade finished with success" | tee -a ${LOG_DIR}
 EOF
     # Make the new script executable
     maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"
