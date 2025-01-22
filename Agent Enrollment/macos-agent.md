@@ -23,7 +23,7 @@ This guide walks you through the process of enrolling a MacOS system with the Wa
 Download the setup script from the repository and run it to configure the Wazuh agent with the necessary parameters for secure communication with the Wazuh Manager.
 
 ```bash
-curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | WAZUH_MANAGER=test-cluster.wazuh.adorsys.team bash
+curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | WAZUH_MANAGER=manager.wazuh.adorsys.team bash
 ```
 
 ### Step 2:
