@@ -298,6 +298,7 @@ WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 # Define the log file path
 if [ "$(uname)" = "Darwin" ]; then
     LOG_DIR='/Library/Ossec/logs/active-responses.log'
+    ARCH=$(uname -m)
     if [ "$ARCH" = "x86_64" ]; then
         BIN_PATH='/usr/local/bin'
     else
