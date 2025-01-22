@@ -298,15 +298,8 @@ WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 # Define the log file path
 if [ "$(uname)" = "Darwin" ]; then
     LOG_DIR='/Library/Ossec/logs/active-responses.log'
-    ARCH=$(uname -m)
-    if [ "$ARCH" = "x86_64" ]; then
-        BIN_FOLDER='/usr/local/bin'
-    else
-        BIN_FOLDER='/opt/homebrew/bin'
-    fi
 else
     LOG_DIR='/var/ossec/logs/active-responses.log'
-    BIN_FOLDER='/usr/bin'
 fi
 
 
@@ -350,6 +343,15 @@ trap cleanup EXIT  | tee -a "$LOG_DIR"
 
 info_message "Add bin directory: $BIN_FOLDER to PATH environment"  | tee -a "$LOG_DIR"
 export PATH="$BIN_FOLDER:$PATH" | tee -a "$LOG_DIR"
+
+if [ "$(uname)" = "Darwin" ]; then
+    ARCH=$(uname -m)
+    if [ "$ARCH" = "x86_64" ]; then
+        export PATH="/usr/local/bin:$PATH" | tee -a "$LOG_DIR"
+    else
+        export PATH="/opt/homebrew/bin:$PATH" | tee -a "$LOG_DIR"
+    fi
+fi
  
 info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""  | tee -a "$LOG_DIR"
 
