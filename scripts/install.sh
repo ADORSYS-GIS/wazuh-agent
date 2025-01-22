@@ -71,7 +71,7 @@ maybe_sudo() {
 }
 
 sed_alternative() {
-    if maybe_sudo [ -x "/opt/homebrew/bin/gsed" ]; then
+    if command_exists gsed; then
         /opt/homebrew/bin/gsed "$@"
     else
         sed "$@"
