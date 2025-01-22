@@ -230,25 +230,31 @@ config() {
   # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for unix systems
   if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
     # First remove <address till address>
+    info_message "Removing <address>.*</address> block..."
     sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during old manager address removal."
         exit 1
     }
+    info_message "<address>.*</address> block removed successfully"
 
+    info_message "Adding <address>$WAZUH_MANAGER</address>..."
     sed_alternative -i "/<server=*/ a\
       <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
         error_message "Error occurred during insertion of latest manager address."
         exit 1
     }
+    info_message "<address>$WAZUH_MANAGER</address> added successfully"
   fi
   
   # Delete REGISTRATION_SERVER_ADDRESS if it exists
   if maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
     # First remove <address till address>
+    info_message "Removing <manager_address>.*</manager_address> block..."
     sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during old manager address removal."
+        error_message "Error occurred during manager address removal."
         exit 1
     }
+    info_message "<manager_address>.*</manager_address> block removed successfully"
   fi
   
 }
@@ -293,7 +299,6 @@ fi
 
 # Default log level and application details
 LOG_LEVEL=${LOG_LEVEL:-'INFO'}
-WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 TMP_FOLDER="$(mktemp -d)"
 
 # Define text formatting
@@ -361,7 +366,7 @@ curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scrip
 # Step 1: Download and install Wazuh agent
 info_message "Starting wazuh upgrade..." >> ${LOG_DIR}
 
-if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") >> ${LOG_DIR}; then
+if ! (bash "$TMP_FOLDER/setup-agent.sh") >> ${LOG_DIR}; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
