@@ -161,11 +161,23 @@ Adds network intrusion detection capabilities to monitor suspicious traffic.
 
 ## Uninstall Agent
 
-Use this command to uninstall
+### 1. Uninstall on user's machine:
 
-```bash
-curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall-agent.sh | bash
-```
+- Use this command to uninstall
+
+  ```bash
+  curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall-agent.sh | bash
+  ```
+
+- Reboot the user's machine
+  
+### 2. Remove from wazuh manager:
+
+Use this command to remove agent from wazuh manager's database
+
+  ```bash
+  /var/ossec/bin/manage-agents -r <AGENT_ID>
+  ```
 
 ### Additional Resources
 
