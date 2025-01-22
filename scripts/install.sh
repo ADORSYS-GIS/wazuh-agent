@@ -300,13 +300,13 @@ if [ "$(uname)" = "Darwin" ]; then
     LOG_DIR='/Library/Ossec/logs/active-responses.log'
     ARCH=$(uname -m)
     if [ "$ARCH" = "x86_64" ]; then
-        BIN_PATH='/usr/local/bin'
+        BIN_FOLDER='/usr/local/bin'
     else
-        BIN_PATH='/opt/homebrew/bin'
+        BIN_FOLDER='/opt/homebrew/bin'
     fi
 else
     LOG_DIR='/var/ossec/logs/active-responses.log'
-    BIN_PATH='/usr/bin'
+    BIN_FOLDER='/usr/bin'
 fi
 
 
@@ -348,8 +348,8 @@ cleanup() {
 
 trap cleanup EXIT  | tee -a "$LOG_DIR"
 
-info_message "Add bin directory: $ to PATH environment"  | tee -a "$LOG_DIR"
-export PATH="$BIN_PATH:$PATH" | tee -a "$LOG_DIR"
+info_message "Add bin directory: $BIN_FOLDER to PATH environment"  | tee -a "$LOG_DIR"
+export PATH="$BIN_FOLDER:$PATH" | tee -a "$LOG_DIR"
  
 info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""  | tee -a "$LOG_DIR"
 
