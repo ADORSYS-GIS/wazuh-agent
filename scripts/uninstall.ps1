@@ -1,7 +1,8 @@
+$AgentVersion = "4.9.2-1"
 $OssecPath = "C:\Program Files (x86)\ossec-agent"
 $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$AgentVersion.msi"
 $TempFile = New-TemporaryFile
-$AgentVersion = "4.9.2-1"
+
 
 function Log {
     param (
@@ -10,7 +11,7 @@ function Log {
         [string]$Color = "White"  # Default color
     )
     $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Output "$Timestamp $Level $Message" -ForegroundColor $Color
+    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
 }
 
 # Logging helpers with colors
@@ -77,7 +78,7 @@ function Uninstall-Agent {
     }
 }
 
-function Stop-Service {
+function Stop-WazuhService {
     InfoMessage "Stopping Wazuh service if running"
     $service = Get-Service -Name WazuhSvc
 
@@ -108,7 +109,7 @@ function Cleanup-Files {
     
 }
 
-Stop-Service
+Stop-WazuhService
 Uninstall-Agent
 Cleanup-Files
 
