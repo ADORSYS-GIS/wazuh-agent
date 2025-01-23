@@ -2,7 +2,8 @@
 
 This guide walks you through the process of enrolling a MacOS system with the Wazuh Manager. By following these steps, you will install and configure necessary components, ensuring secure communication between the Wazuh Agent and the Wazuh Manager.
 
-### Prerequisites
+
+## Prerequisites
 
 - **Administrator Privileges:** Ensure you have sudo access.
 
@@ -16,6 +17,7 @@ This guide walks you through the process of enrolling a MacOS system with the Wa
 
 - **Internet Connectivity:** Verify that the system is connected to the internet.
 
+
 ## Step by step process
 
 ### Step 1: Download and Run the Setup Script
@@ -26,7 +28,33 @@ Download the setup script from the repository and run it to configure the Wazuh 
 curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | WAZUH_MANAGER=manager.wazuh.adorsys.team bash
 ```
 
-### Step 2:
+#### Components Installed by the Script:
+
+**1. Wazuh Agent:**
+Monitors your endpoint and sends data to the Wazuh Manager.
+The agent is installed and configured to connect to the specified manager (WAZUH_MANAGER).
+
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-08-51.png">
+
+**2. OAuth2 Authentication Client:** Adds certificate-based OAuth2 authentication for secure communications.
+
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-09-46.png">
+
+**3. Wazuh Agent Status:** Provides real-time health and connection status of the agent.
+
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-12-00.png">
+
+**4. Yara:** Enables advanced file-based malware detection by integrating Yara rules into Wazuh.
+
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-14-15.png">
+
+**5. Snort:**
+Adds network intrusion detection capabilities to monitor suspicious traffic.
+
+   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-15-09.png">
+
+
+### Step 2: Enroll Agent to Manager
 
 #### 1. Generate the Enrollment URL
 
@@ -63,7 +91,8 @@ Return to the command line, paste the token, and follow the prompts to complete 
 
 Reboot your device to apply the changes.
 
-### Step 3: Validate the Installation
+
+### Step 3: Validate Agent Installation
 
 After completing the agent enrollment, verify that the agent is properly connected and functioning:
 
@@ -73,83 +102,26 @@ Look for the Wazuh icon in the system tray to confirm that the agent is running 
 
    <img src="/Agent Enrollment/images/linux/Screenshot from 2025-01-10 11-59-18.png">
 
-#### 2. Verify Agent Logs:
 
-Check the Wazuh agent logs for examination:
-
-```bash
-sudo tail -f /Library/Ossec/logs/ossec.log
-```
-
-Check the Wazuh agent logs to ensure there are no errors:
-
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 11-15-00.png">
-
-   <!-- #### 3. Check Agent service
-   Run the following command:
-   ```bash
-   sudo systemctl status wazuh-agent
-   ``` 
-  
-   <img src="/Agent Enrollment/images/linux/Screenshot%20from%202024-12-16%2016-19-46.png" width="600" height="200"> -->
-
-#### 3. Check the Wazuh Manager Dashboard:
-
-Ping an admin for confirmation that the agent appears in the Wazuh Manager dashboard.
-
-## Checklist of Elements Installed and Configured During Agent Enrollment
-
-### i. Components Installed by the Script:
-
-**1. Wazuh Agent:**
-Monitors your endpoint and sends data to the Wazuh Manager.
-The agent is installed and configured to connect to the specified manager (WAZUH_MANAGER).
-
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-08-51.png">
-
-**2. OAuth2 Authentication Client:** Adds certificate-based OAuth2 authentication for secure communications.
-
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-09-46.png">
-
-**3. Wazuh Agent Status:** Provides real-time health and connection status of the agent.
-
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-12-00.png">
-
-**4. Yara:** Enables advanced file-based malware detection by integrating Yara rules into Wazuh.
-
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-14-15.png">
-
-**5. Snort:**
-Adds network intrusion detection capabilities to monitor suspicious traffic.
-
-   <img src="/Agent Enrollment/images/mac/Screenshot from 2025-01-06 09-15-09.png">
-
-### ii. Tools Installed:
+#### 2. Validate Other Tools Installation
 
 - YARA
 
 ```bash
-  $ yara -v
-  $ sudo ls -l /Library/Ossec/ruleset/yara/rules
+  yara -v
+  sudo ls -l /Library/Ossec/ruleset/yara/rules
 ```
 
 - Snort
 
 ```bash
-  $ snort -V
+  snort -V
 ```
 
-- Agent Status
+#### 3. Check the Wazuh Manager Dashboard:
 
-```bash
- $ sudo /Library/Ossec/bin/wazuh-control status
-```
+Ping an admin for confirmation that the agent appears in the Wazuh Manager dashboard.
 
-### iii. Installation Validation:
-
-- Test registration successful
-- Logs reviewed for errors
-- Cleanup Completed
 
 ## Troubleshooting
 
@@ -157,11 +129,16 @@ Adds network intrusion detection capabilities to monitor suspicious traffic.
 
 - For errors during authentication, ensure Active Directory credentials are correct and two-factor authentication is set up.
 
-- Consult the Wazuh logs (/Library/Ossec/logs/ossec.log) for detailed error messages.
+- If the **wazuh agent status app** doesn't show you as `Active` and `Connected`, check the logs for examination
+
+   ```bash
+   sudo tail -f /Library/Ossec/logs/ossec.log
+   ```
+   
 
 ## Uninstall Agent
 
-### 1. Uninstall on user's machine:
+### 1. Uninstall on User's Machine:
 
 - Use this command to uninstall
 
@@ -171,12 +148,12 @@ Adds network intrusion detection capabilities to monitor suspicious traffic.
 
 - Reboot the user's machine
   
-### 2. Remove from wazuh manager:
+### 2. Remove Agent from Wazuh Manager:
 
-Use this command to remove agent from wazuh manager's database
+Shell into the **master manager node** and use this command to remove agent from wazuh manager's database
 
   ```bash
-  /var/ossec/bin/manage-agents -r <AGENT_ID>
+  /var/ossec/bin/manage_agents -r <AGENT_ID>
   ```
 
 ### Additional Resources
