@@ -84,7 +84,7 @@ function Stop-Service {
     if ($service.Status -eq 'Running') {
         InfoMessage "Wazuh Service is Running. Stopping Service..."
         try {
-            Stop-Service -Name WazuhSvc -Wait -ErrorAction Stop
+            Stop-Service -Name WazuhSvc  
             InfoMessage "Wazuh Service stopped succesfully"
         }
         catch {
