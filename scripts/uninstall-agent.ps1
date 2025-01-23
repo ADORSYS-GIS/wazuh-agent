@@ -40,14 +40,14 @@ function SectionSeparator {
 # Step 1: Download and execute Wazuh agent script with error handling
 function Uninstall-WazuhAgent {
     try {
-        Write-Host "Downloading and executing Wazuh agent script..."
+        Write-Host "Downloading and executing Wazuh agent uninstall script..."
 
-        $UninstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/uninstall.ps1"  # Update the URL if needed
+        $UninstallerURL = ""  # Update the URL if needed
         $UninstallerPath = "$env:TEMP\uninstall.ps1"
 
         # Download Wazuh agent Uninstaller script
         Invoke-WebRequest -Uri $UninstallerUrl -OutFile $UninstallerPath -ErrorAction Stop
-        Write-Host "Wazuh agent script downloaded successfully."
+        Write-Host "Wazuh agent uninstall script downloaded successfully."
 
         # Execute the downloaded script
         & powershell.exe -ExecutionPolicy Bypass -File $UninstallerPath -ErrorAction Stop
@@ -59,7 +59,7 @@ function Uninstall-WazuhAgent {
         # Clean up the Uninstaller file if it exists
         if (Test-Path $UninstallerPath) {
             Remove-Item $UninstallerPath -Force
-            Write-Host "Uninstaller file removed."
+            Write-Host "Uninstall file removed."
         }
     }
 }
@@ -68,9 +68,9 @@ function Uninstall-WazuhAgent {
 # Step 2: Download and Uninstall wazuh-cert-oauth2-client with error handling
 function Uninstall-OAuth2Client {
     try {
-        Write-Host "Downloading and executing wazuh-cert-oauth2-client script..."
+        Write-Host "Downloading and executing wazuh-cert-oauth2-client uninstall script..."
 
-        $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/3-Windows-Agent-Uninstall-Script/scripts/uninstall.ps1"  # Update the URL if needed
+        $OAuth2Url = ""  # Update the URL if needed
         $OAuth2Script = "$env:TEMP\uninstall-wazuh-cert-oauth2-client.ps1"
 
         # Download the wazuh-cert-oauth2-client Uninstaller script
@@ -88,7 +88,7 @@ function Uninstall-OAuth2Client {
         # Clean up the Uninstaller file if it exists
         if (Test-Path $OAuth2Script) {
             Remove-Item $OAuth2Script -Force
-            Write-Host "Uninstaller file removed."
+            Write-Host "Uninstall file removed."
         }
     }
 }
@@ -97,9 +97,9 @@ function Uninstall-OAuth2Client {
 # Step 3: Download and Uninstall YARA with error handling
 function Uninstall-Yara {
     try {
-        Write-Host "Downloading and executing YARA Uninstallation script..."
+        Write-Host "Downloading and executing YARA uninstall script..."
 
-        $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/heads/main/scripts/uninstall.ps1"  # Update the URL if needed
+        $YaraUrl = ""  # Update the URL if needed
         $YaraScript = "$env:TEMP\uninstall-yara.ps1"
 
         # Download the Uninstallation script
@@ -116,7 +116,7 @@ function Uninstall-Yara {
         # Clean up the script if it exists
         if (Test-Path $YaraScript) {
             Remove-Item $YaraScript -Force
-            Write-Host "Uninstaller script removed."
+            Write-Host "Uninstall script removed."
         }
     }
 }
@@ -124,9 +124,9 @@ function Uninstall-Yara {
 # Step 4: Download and Uninstall Snort with error handling
 function Uninstall-Snort {
     try {
-        Write-Host "Downloading and executing Snort Uninstallation script..."
+        Write-Host "Downloading and executing Snort uninstall script..."
 
-        $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/windows/snort.ps1"  # Update the URL if needed
+        $SnortUrl = ""  # Update the URL if needed
         $SnortScript = "$env:TEMP\uninstall-snort.ps1"
 
         # Download the Uninstallation script
@@ -143,7 +143,7 @@ function Uninstall-Snort {
         # Clean up the script if it exists
         if (Test-Path $SnortScript) {
             Remove-Item $SnortScript -Force
-            Write-Host "Uninstaller script removed."
+            Write-Host "Uninstall script removed."
         }
     }
 }
@@ -151,9 +151,9 @@ function Uninstall-Snort {
 # Step 4: Download and Uninstall Wazuh Agent Status with error handling
 function Uninstall-AgentStatus {
     try {
-        Write-Host "Downloading and executing Wazuh Agent Status Uninstallation script..."
+        Write-Host "Downloading and executing Wazuh Agent Status uninstall script..."
 
-        $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/main/scripts/uninstall.ps1"  # Update the URL if needed
+        $AgentStatusUrl = ""  # Update the URL if needed
         $AgentStatusScript = "$env:TEMP\uninstall-agent-status.ps1"
 
         # Download the Uninstallation script
@@ -170,7 +170,7 @@ function Uninstall-AgentStatus {
         # Clean up the script if it exists
         if (Test-Path $AgentStatusScript) {
             Remove-Item $AgentStatusScript -Force
-            Write-Host "Uninstaller script removed."
+            Write-Host "Uninstall script removed."
         }
     }
 }
