@@ -85,7 +85,7 @@ function Stop-WazuhService {
     if ($service.Status -eq 'Running') {
         InfoMessage "Wazuh Service is Running. Stopping Service..."
         try {
-            Stop-Service -Name WazuhSvc  
+            Stop-Service -Name WazuhSvc -ErrorAction Stop
             InfoMessage "Wazuh Service stopped succesfully"
         }
         catch {
@@ -100,7 +100,7 @@ function Stop-WazuhService {
 function Cleanup-Files {
     InfoMessage "Cleaning up remain Wazuh files"
     try {
-        Remove-Item -Path $OssecPath -Recurse -Force -Wait -ErrorAction Continue
+        Remove-Item -Path $OssecPath -Recurse -Force
         InfoMessage "Wazuh Files removed succesfully"
     }
     catch {
