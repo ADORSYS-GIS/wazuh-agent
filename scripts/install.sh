@@ -189,7 +189,7 @@ installation() {
       echo "WAZUH_MANAGER='$WAZUH_MANAGER'" > /tmp/wazuh_envs
 
       # Install Wazuh agent using the package
-      installer -pkg "$TMP_DIR/$PKG_NAME" -target /
+      maybe_sudo installer -pkg "$TMP_DIR/$PKG_NAME" -target /
 
       # Clean up the temporary directory after installation
       rm -rf "$TMP_DIR"
