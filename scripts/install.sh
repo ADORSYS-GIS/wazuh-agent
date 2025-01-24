@@ -251,6 +251,44 @@ config() {
     }
   fi
   
+  case "$(uname)" in
+      Linux*)
+        # Check if the specific <location> tag exists in the configuration file
+        if ! maybe_sudo grep -q "<location>/var/ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
+            
+            sed_alternative -i '/<\/ossec_config>/i\
+                <!-- active response logs -->\
+                <localfile>\
+                    <log_format>syslog<\/log_format>\
+                    <location>\/var\/ossec\/logs\/active-responses.log<\/location>\
+                <\/localfile>' "$OSSEC_CONF_PATH"
+        
+    
+            info_message "active-response logs are now being monitored"
+        else
+            info_message "The active response already exists in $OSSEC_CONF_PATH"
+        fi
+        info_message "Wazuh agent certificate configuration completed successfully."
+        ;;
+      Darwin*)
+        if ! maybe_sudo grep -q "<location>/Library/Ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
+    
+            sed_alternative -i -e "/<\/ossec_config>/i\\
+                <!-- active response logs -->\\
+                <localfile>\\
+                    <log_format>syslog</log_format>\\
+                    <location>/Library/Ossec/logs/active-responses.log</location>\\
+                </localfile>" "$OSSEC_CONF_PATH"
+        
+    
+            info_message "active-response logs are now being monitored"
+        else
+            info_message "The active response already exists in $OSSEC_CONF_PATH"
+        fi
+        info_message "Wazuh agent certificate configuration completed successfully."
+        ;;
+    esac
+  
 }
 
 start_agent() {
