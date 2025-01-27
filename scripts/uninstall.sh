@@ -66,49 +66,69 @@ maybe_sudo() {
 # Determine OS type and package manager or set for macOS
 if [ "$(uname)" = "Darwin" ]; then
     OS="macOS"
-    OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
+    OSSEC_PATH="/Library/Ossec/"
+    OSSEC_CONTROL_PATH="/Library/Ossec/bin/wazuh-control"
 elif [ -f /etc/debian_version ]; then
     OS="Linux"
     PACKAGE_MANAGER="apt"
     REPO_FILE="/etc/apt/sources.list.d/wazuh.list"
+    OSSEC_PATH="/var/ossec/"
+    OSSEC_CONTROL_PATH="/var/ossec/bin/wazuh-control"
 elif [ -f /etc/redhat-release ]; then
     OS="Linux"
     PACKAGE_MANAGER="yum"
     REPO_FILE="/etc/yum.repos.d/wazuh.repo"
+    OSSEC_PATH="/var/ossec/"
+    OSSEC_CONTROL_PATH="/var/ossec/bin/wazuh-control"
 elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     OS="Linux"
     PACKAGE_MANAGER="zypper"
     REPO_FILE="/etc/zypp/repos.d/wazuh.repo"
+    OSSEC_PATH="/var/ossec/"
+    OSSEC_CONTROL_PATH="/var/ossec/bin/wazuh-control"
 else
     error_message "Unsupported OS"
     exit 1
 fi
 
+# Stop Wazuh service if running
+stop_service() {
+    if maybe_sudo [ -x "$OSSEC_CONTROL_PATH" ]; then
+        info_message "Stopping Wazuh service..."
+        maybe_sudo "$OSSEC_CONTROL_PATH" stop || true
+        info_message "Wazuh service stopped successfully"
+    else
+        warn_message "Wazuh service does not exist, skipping"
+    fi
+}
+
 # Uninstall Wazuh agent
 uninstall_agent() {
-    info_message "Uninstalling Wazuh agent..."
+    if maybe_sudo [ -d "$OSSEC_PATH" ]; then
+        info_message "Uninstalling Wazuh agent..."
+        if [ "$OS" = "Linux" ]; then
+            if [ "$PACKAGE_MANAGER" = "apt" ]; then
+                maybe_sudo apt remove -y wazuh-agent
+                maybe_sudo apt autoremove -y
+            elif [ "$PACKAGE_MANAGER" = "yum" ]; then
+                maybe_sudo yum remove -y wazuh-agent
+            elif [ "$PACKAGE_MANAGER" = "zypper" ]; then
+                maybe_sudo zypper remove -y wazuh-agent
+            fi
+        elif [ "$OS" = "macOS" ]; then
+            maybe_sudo rm -rf /Library/Ossec
     
-    if [ "$OS" = "Linux" ]; then
-        if [ "$PACKAGE_MANAGER" = "apt" ]; then
-            maybe_sudo apt remove -y wazuh-agent
-            maybe_sudo apt autoremove -y
-        elif [ "$PACKAGE_MANAGER" = "yum" ]; then
-            maybe_sudo yum remove -y wazuh-agent
-        elif [ "$PACKAGE_MANAGER" = "zypper" ]; then
-            maybe_sudo zypper remove -y wazuh-agent
+            # Remove LaunchDaemon and StartUP items
+            maybe_sudo rm -f /Library/LaunchDaemons/com.wazuh.agent.plist
+            maybe_sudo rm -rf /Library/StartupItems/WAZUH
+    
+            # Remove from the pkgutil
+            maybe_sudo pkgutil --forget com.wazuh.pkg.wazuh-agent
         fi
-    elif [ "$OS" = "macOS" ]; then
-        maybe_sudo rm -rf /Library/Ossec
-        
-        # Remove LaunchDaemon and StartUP items
-        maybe_sudo rm -f /Library/LaunchDaemons/com.wazuh.agent.plist
-        maybe_sudo rm -rf /Library/StartupItems/WAZUH
-        
-        # Remove from the pkgutil 
-        maybe_sudo pkgutil --forget com.wazuh.pkg.wazuh-agent
+        info_message "Wazuh agent uninstalled successfully."
+    else
+        warn_message "Wazuh agent does not exist, skipping"
     fi
-
-    info_message "Wazuh agent uninstalled successfully."
 }
 
 # Remove repository and GPG key
@@ -118,24 +138,27 @@ cleanup_repo() {
         if [ -f "$REPO_FILE" ]; then
             maybe_sudo rm -f "$REPO_FILE"
         fi
-        
+
         if [ "$PACKAGE_MANAGER" = "apt" ] && [ -f "/usr/share/keyrings/wazuh.gpg" ]; then
             maybe_sudo rm -f /usr/share/keyrings/wazuh.gpg
         fi
+        info_message "Repository and GPG key removed successfully."
     fi
-    info_message "Repository and GPG key removed successfully."
 }
 
 # Clean up any remaining Wazuh files
-cleanup_files() {
+cleanup_files() { 
     if [ "$OS" = "Linux" ]; then
         info_message "Cleaning up remaining Wazuh files"
+        info_message "Cleaning up remaining Wazuh files"
         maybe_sudo rm -rf /var/ossec
+        info_message "User and group cleanup completed."
     fi
 }
 
 # Remove user and group
 remove_user_group() {
+    info_message "Removing user and group if they exist"
     if [ "$OS" = "Darwin" ]; then
         # macOS commands
         if dscl . -list /Users | grep -q "^$WAZUH_USER$"; then
@@ -160,26 +183,7 @@ remove_user_group() {
             maybe_sudo groupdel "$WAZUH_GROUP" || warn_message "Failed to remove group $WAZUH_GROUP. Skipping."
         fi
     fi
-
     info_message "User and group cleanup completed."
-}
-
-# Stop Wazuh service if running
-stop_service() {
-    info_message "Stopping Wazuh service if running"
-    if [ "$OS" = "Linux" ]; then
-        SYSTEMD_RUNNING=$(ps -C systemd > /dev/null 2>&1 && echo "yes" || echo "no")
-        if [ "$SYSTEMD_RUNNING" = "yes" ]; then
-            maybe_sudo systemctl stop wazuh-agent || warn_message "Failed to stop wazuh-agent service. Skipping."
-            maybe_sudo systemctl disable wazuh-agent || warn_message "Failed to disable wazuh-agent service. Skipping."
-            maybe_sudo systemctl daemon-reload || true
-        elif [ -f /etc/init.d/wazuh-agent ]; then
-            maybe_sudo service wazuh-agent stop || true
-        fi
-    elif [ "$OS" = "macOS" ]; then
-        maybe_sudo /Library/Ossec/bin/wazuh-control stop || true
-    fi
-    info_message "Wazuh service stopped successfully."
 }
 
 # Main execution

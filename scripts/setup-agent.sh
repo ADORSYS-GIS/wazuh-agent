@@ -10,9 +10,9 @@ fi
 # Default log level and application details
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
-WOPS_VERSION=${WOPS_VERSION:-"0.2.11"}
+WOPS_VERSION=${WOPS_VERSION:-"0.2.13"}
 # Define the OSSEC configuration path
-if [ "$(uname)" = "Darwin"* ]; then
+if [ "$(uname)" = "Darwin" ]; then
     # macOS
     OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
 else
@@ -23,7 +23,7 @@ fi
 USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
 
-WAZUH_MANAGER=${WAZUH_MANAGER:-'events.dev.wazuh.adorsys.team'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.2-1'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 
@@ -69,19 +69,11 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
 # Step -1: Download all scripts
 info_message "Download all scripts..."
-curl -SL -s  https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/deps.sh > "$TMP_FOLDER/deps.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/main/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent-status.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/main/scripts/install.sh > "$TMP_FOLDER/install-yara.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/install.sh > "$TMP_FOLDER/install-snort.sh"
-
-# Step 0: Install dependencies
-info_message "Install dependencies"
-if ! (sudo env bash "$TMP_FOLDER/deps.sh") 2>&1; then
-    error_message "Failed to install dependencies"
-    exit 1
-fi
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"

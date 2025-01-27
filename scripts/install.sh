@@ -189,7 +189,7 @@ installation() {
       echo "WAZUH_MANAGER='$WAZUH_MANAGER'" > /tmp/wazuh_envs
 
       # Install Wazuh agent using the package
-      installer -pkg "$TMP_DIR/$PKG_NAME" -target /
+      maybe_sudo installer -pkg "$TMP_DIR/$PKG_NAME" -target /
 
       # Clean up the temporary directory after installation
       rm -rf "$TMP_DIR"
@@ -251,6 +251,44 @@ config() {
     }
   fi
   
+  case "$(uname)" in
+      Linux*)
+        # Check if the specific <location> tag exists in the configuration file
+        if ! maybe_sudo grep -q "<location>/var/ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
+            
+            sed_alternative -i '/<\/ossec_config>/i\
+                <!-- active response logs -->\
+                <localfile>\
+                    <log_format>syslog<\/log_format>\
+                    <location>\/var\/ossec\/logs\/active-responses.log<\/location>\
+                <\/localfile>' "$OSSEC_CONF_PATH"
+        
+    
+            info_message "active-response logs are now being monitored"
+        else
+            info_message "The active response already exists in $OSSEC_CONF_PATH"
+        fi
+        info_message "Wazuh agent certificate configuration completed successfully."
+        ;;
+      Darwin*)
+        if ! maybe_sudo grep -q "<location>/Library/Ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
+    
+            sed_alternative -i -e "/<\/ossec_config>/i\\
+                <!-- active response logs -->\\
+                <localfile>\\
+                    <log_format>syslog</log_format>\\
+                    <location>/Library/Ossec/logs/active-responses.log</location>\\
+                </localfile>" "$OSSEC_CONF_PATH"
+        
+    
+            info_message "active-response logs are now being monitored"
+        else
+            info_message "The active response already exists in $OSSEC_CONF_PATH"
+        fi
+        info_message "Wazuh agent certificate configuration completed successfully."
+        ;;
+    esac
+  
 }
 
 start_agent() {
@@ -293,8 +331,22 @@ fi
 
 # Default log level and application details
 LOG_LEVEL=${LOG_LEVEL:-'INFO'}
-WAZUH_MANAGER=${WAZUH_MANAGER:-'test-cluster.wazuh.adorsys.team'}
-LOG_DIR=${LOG_DIR:-'/var/ossec/logs/active-responses.log'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
+
+# Define the log file path
+if [ "$(uname)" = "Darwin" ]; then
+    LOG_DIR='/Library/Ossec/logs/active-responses.log'
+    ARCH=$(uname -m)
+    if [ "$ARCH" = "x86_64" ]; then
+        BIN_FOLDER='/usr/local/bin'
+    else
+        BIN_FOLDER='/opt/homebrew/bin'
+    fi
+else
+    LOG_DIR='/var/ossec/logs/active-responses.log'
+    BIN_FOLDER='/usr/bin'
+fi
+
 
 TMP_FOLDER="$(mktemp -d)"
 
@@ -332,24 +384,29 @@ cleanup() {
     fi
 }
 
-trap cleanup EXIT
+trap cleanup EXIT  | tee -a "$LOG_DIR"
 
-info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
+info_message "Add bin directory: $BIN_FOLDER to PATH environment"  | tee -a "$LOG_DIR"
+export PATH="$BIN_FOLDER:$PATH"
+ 
+echo $PATH | tee -a "$LOG_DIR"
 
-# Step 0: Download script
-info_message "Download all scripts..."
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh > "$TMP_FOLDER/setup-agent.sh"
+info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""  | tee -a "$LOG_DIR"
+
+# Download scripts
+info_message "Download all scripts..."  | tee -a "$LOG_DIR"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh > "$TMP_FOLDER/setup-agent.sh"  | tee -a "$LOG_DIR"
 
 
-# Step 1: Download and install Wazuh agent
-info_message "Starting wazuh upgrade..." >> ${LOG_DIR}
+# Download and install Wazuh agent
+info_message "Starting wazuh upgrade..." | tee -a ${LOG_DIR}
 
-if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") >> ${LOG_DIR}; then
-    error_message "Failed to install wazuh-agent"
+if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") | tee -a ${LOG_DIR}; then
+    error_message "Failed to install wazuh-agent"  | tee -a "$LOG_DIR"
     exit 1
 fi
  
-info_message "Wazuh upgrade finished with success" >> ${LOG_DIR}
+info_message "Wazuh upgrade finished with success" | tee -a ${LOG_DIR}
 EOF
     # Make the new script executable
     maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"
