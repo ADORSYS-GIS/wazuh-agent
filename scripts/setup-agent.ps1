@@ -4,9 +4,8 @@ Set-StrictMode -Version Latest
 # Variables (default log level, app details, paths)
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-client" }
-$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.2.8" }
-$WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "events.dev.wazuh.adorsys.team" }
-$WAZUH_REGISTRATION_SERVER = if ($env:WAZUH_REGISTRATION_SERVER) { $env:WAZUH_REGISTRATION_SERVER } else { "register.dev.wazuh.adorsys.team" }
+$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.2.12" }
+$WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "test-cluster.wazuh.adorsys.team" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.9.2-1" }
 $OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf" # Adjust for Windows
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
@@ -31,6 +30,45 @@ function Log-Error {
     param ([string]$Message)
     Log "ERROR" $Message
 }
+function SectionSeparator {
+    param (
+        [string]$SectionName
+    )
+    Write-Host ""
+    Write-Host "==================================================" -ForegroundColor Magenta
+    Write-Host "  $SectionName" -ForegroundColor Magenta
+    Write-Host "==================================================" -ForegroundColor Magenta
+    Write-Host ""
+}
+
+
+# Step 0: Download dependency script and execute
+function Install-Dependencies {
+    try {
+        Write-Host "Downloading and executing dependency script..."
+
+        $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/develop/scripts/deps.ps1"  # Update the URL if needed
+        $InstallerPath = "$env:TEMP\deps.ps1"
+
+        # Download Wazuh agent installer script
+        Invoke-WebRequest -Uri $InstallerUrl -OutFile $InstallerPath -ErrorAction Stop
+        Write-Host "Dependency script downloaded successfully."
+
+        # Execute the downloaded script
+        & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ErrorAction Stop
+    }
+    catch {
+        Write-Host "Error during dependency installation: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    finally {
+        # Clean up the installer file if it exists
+        if (Test-Path $InstallerPath) {
+            Remove-Item $InstallerPath -Force
+            Write-Host "Installer file removed."
+        }
+    }
+}
+
 
 # Step 1: Download and execute Wazuh agent script with error handling
 function Install-WazuhAgent {
@@ -65,7 +103,7 @@ function Install-OAuth2Client {
     try {
         Write-Host "Downloading and executing wazuh-cert-oauth2-client script..."
 
-        $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/3-Windows-Agent-Install-Script/scripts/install.ps1"  # Update the URL if needed
+        $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/develop/scripts/install.ps1"  # Update the URL if needed
         $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
 
         # Download the wazuh-cert-oauth2-client installer script
@@ -121,7 +159,7 @@ function Install-Snort {
     try {
         Write-Host "Downloading and executing Snort installation script..."
 
-        $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/windows/snort.ps1"  # Update the URL if needed
+        $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/develop/scripts/windows/snort.ps1"  # Update the URL if needed
         $SnortScript = "$env:TEMP\snort.ps1"
 
         # Download the installation script
@@ -174,8 +212,15 @@ function Install-AgentStatus {
 
 
 # Main Execution
+SectionSeparator "Installing Dependencies"
+Install-Dependencies
+SectionSeparator "Installing Wazuh Agent"
 Install-WazuhAgent
+SectionSeparator "Installing OAuth2Client"
 Install-OAuth2Client
+SectionSeparator "Installing Agent Status"
 Install-AgentStatus
+SectionSeparator "Installing Yara"
 Install-Yara
+SectionSeparator "Installing Snort"
 Install-Snort

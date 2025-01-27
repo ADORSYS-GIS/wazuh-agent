@@ -9,10 +9,8 @@ fi
 
 # Variables
 LOG_LEVEL=${LOG_LEVEL:-INFO}
-OSSEC_CONF_PATH=${OSSEC_CONF_PATH:-"/var/ossec/etc/ossec.conf"}
-WAZUH_MANAGER=${WAZUH_MANAGER:-'events.dev.wazuh.adorsys.team'}
-WAZUH_REGISTRATION_SERVER=${WAZUH_REGISTRATION_SERVER:-'register.dev.wazuh.adorsys.team'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.1-1'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.2-1'}
 
 # Define text formatting
 RED='\033[0;31m'
@@ -29,16 +27,28 @@ log() {
     local MESSAGE="$*"
     local TIMESTAMP
     TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    echo "$TIMESTAMP [$LEVEL] $MESSAGE"
+    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
 }
 
 # Logging helpers
 info_message() {
-    log INFO "$*"
+    log "${BLUE}${BOLD}[INFO]${NORMAL}" "$*"
+}
+
+warn_message() {
+    log "${YELLOW}${BOLD}[WARNING]${NORMAL}" "$*"
 }
 
 error_message() {
-    log ERROR "$*"
+    log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
+}
+
+success_message() {
+    log "${GREEN}${BOLD}[SUCCESS]${NORMAL}" "$*"
+}
+
+print_step() {
+    log "${BLUE}${BOLD}[STEP]${NORMAL}" "$1: $2"
 }
 
 # Check if a command exists
@@ -77,24 +87,28 @@ fi
 # Determine OS type and package manager or set for macOS
 if [ "$(uname)" = "Darwin" ]; then
     OS="macOS"
-    UPGRADE_SCRIPT_PATH=${UPGRADE_SCRIPT_PATH:-'/Library/Ossec/active-response/bin/adorsys-upgrade.sh'}
+    UPGRADE_SCRIPT_PATH="/Library/Ossec/active-response/bin/adorsys-update.sh"
+    OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
 elif [ -f /etc/debian_version ]; then
     OS="Linux"
     PACKAGE_MANAGER="apt"
     REPO_FILE="/etc/apt/sources.list.d/wazuh.list"
     GPG_KEYRING="/usr/share/keyrings/wazuh.gpg"
     GPG_IMPORT_CMD="gpg --no-default-keyring --keyring $GPG_KEYRING --import"
-    UPGRADE_SCRIPT_PATH=${UPGRADE_SCRIPT_PATH:-'/var/ossec/active-response/bin/adorsys-upgrade.sh'}
+    UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
+    OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
 elif [ -f /etc/redhat-release ]; then
     OS="Linux"
     PACKAGE_MANAGER="yum"
     REPO_FILE="/etc/yum.repos.d/wazuh.repo"
-    UPGRADE_SCRIPT_PATH=${UPGRADE_SCRIPT_PATH:-'/var/ossec/active-response/bin/adorsys-upgrade.sh'}
+    UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
+    OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
 elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     OS="Linux"
     PACKAGE_MANAGER="zypper"
     REPO_FILE="/etc/zypp/repos.d/wazuh.repo"
-    UPGRADE_SCRIPT_PATH=${UPGRADE_SCRIPT_PATH:-'/var/ossec/active-response/bin/adorsys-upgrade.sh'}
+    UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
+    OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
 else
     error_message "Unsupported OS"
     exit 1
@@ -144,7 +158,7 @@ installation() {
   # Update and install Wazuh agent for Linux or download and install for macOS
   if [ "$OS" = "Linux" ]; then
       maybe_sudo $PACKAGE_MANAGER update
-      WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_REGISTRATION_SERVER="$WAZUH_REGISTRATION_SERVER" $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
+      $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
   elif [ "$OS" = "macOS" ]; then
       # Detect architecture (Intel or Apple Silicon)
       ARCH=$(uname -m)
@@ -213,34 +227,30 @@ enable_repo() {
 }
 
 config() {
-  # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for Linux
+  # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for unix systems
   if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
     # First remove <address till address>
     maybe_sudo sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during Wazuh agent certificate configuration."
+        error_message "Error occurred during old manager address removal."
         exit 1
     }
 
     maybe_sudo sed_alternative -i "/<server=*/ a\
       <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during Wazuh agent certificate configuration."
+        error_message "Error occurred during insertion of latest manager address."
         exit 1
     }
   fi
-
-  if ! maybe_sudo grep -q "<manager_address>$WAZUH_REGISTRATION_SERVER</manager_address>" "$OSSEC_CONF_PATH"; then
-    # First remove <manager_address till manager_address>
+  
+  # Delete REGISTRATION_SERVER_ADDRESS if it exists
+  if ! maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
+    # First remove <address till address>
     maybe_sudo sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during Wazuh agent certificate configuration."
-        exit 1
-    }
-
-    maybe_sudo sed_alternative -i "/<agent_name=*/ a\
-      <manager_address>$WAZUH_REGISTRATION_SERVER</manager_address>" "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during Wazuh agent certificate configuration."
+        error_message "Error occurred during old manager address removal."
         exit 1
     }
   fi
+  
 }
 
 start_agent() {
@@ -274,23 +284,124 @@ create_upgrade_script() {
 # Upgrade script from ADORSYS.
 # Copyright (C) 2024, ADORSYS Inc.
 
-set -u
+# Check if we're running in bash; if not, adjust behavior
+if [ -n "$BASH_VERSION" ]; then
+    set -euo pipefail
+else
+    set -eu
+fi
 
-LOCAL=$(dirname $0)
-cd $LOCAL
-cd ../../
-PWD=$(pwd)
-CMD=$(curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | sh)
+# Default log level and application details
+LOG_LEVEL=${LOG_LEVEL:-'INFO'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 
-echo "$(date) Starting wazuh upgrade..." >> ${PWD}/logs/active-responses.log
-eval "$CMD" 
-echo "$(date) Wazuh upgrade finished with success" >> ${PWD}/logs/active-responses.log
+# Define the log file path
+if [ "$(uname)" = "Darwin" ]; then
+    LOG_DIR='/Library/Ossec/logs/active-responses.log'
+    ARCH=$(uname -m)
+    if [ "$ARCH" = "x86_64" ]; then
+        BIN_FOLDER='/usr/local/bin'
+    else
+        BIN_FOLDER='/opt/homebrew/bin'
+    fi
+else
+    LOG_DIR='/var/ossec/logs/active-responses.log'
+    BIN_FOLDER='/usr/bin'
+fi
+
+
+TMP_FOLDER="$(mktemp -d)"
+
+# Define text formatting
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+NORMAL='\033[0m'
+
+# Function for logging with timestamp
+log() {
+    local LEVEL="$1"
+    shift
+    local MESSAGE="$*"
+    local TIMESTAMP
+    TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
+}
+
+# Logging helpers
+info_message() {
+    log "${BLUE}${BOLD}[===========> INFO]${NORMAL}" "$*"
+}
+
+error_message() {
+    log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
+}
+
+cleanup() {
+    # Remove temporary folder
+    if [ -d "$TMP_FOLDER" ]; then
+        rm -rf "$TMP_FOLDER"
+    fi
+}
+
+trap cleanup EXIT  | tee -a "$LOG_DIR"
+
+info_message "Add bin directory: $BIN_FOLDER to PATH environment"  | tee -a "$LOG_DIR"
+export PATH="$BIN_FOLDER:$PATH"
+ 
+echo $PATH | tee -a "$LOG_DIR"
+
+info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""  | tee -a "$LOG_DIR"
+
+# Download scripts
+info_message "Download all scripts..."  | tee -a "$LOG_DIR"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh > "$TMP_FOLDER/setup-agent.sh"  | tee -a "$LOG_DIR"
+
+
+# Download and install Wazuh agent
+info_message "Starting wazuh upgrade..." | tee -a ${LOG_DIR}
+
+if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") | tee -a ${LOG_DIR}; then
+    error_message "Failed to install wazuh-agent"  | tee -a "$LOG_DIR"
+    exit 1
+fi
+ 
+info_message "Wazuh upgrade finished with success" | tee -a ${LOG_DIR}
 EOF
     # Make the new script executable
     maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"
     maybe_sudo chmod 750 "$UPGRADE_SCRIPT_PATH"
     # Confirm creation
     info_message "Script created at $UPGRADE_SCRIPT_PATH"
+}
+
+# Validate agent installation
+validate_installation() {
+  info_message "Validating installation and configuration..."
+
+  # Check if the Wazuh agent service is running
+  if [ "$OS" = "Linux" ]; then
+      if maybe_sudo /var/ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
+          success_message "Wazuh agent service is running."
+      else
+          error_message "Wazuh agent service is not running."
+      fi
+  elif [ "$OS" = "macOS" ]; then
+      if maybe_sudo /Library/Ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
+          success_message "Wazuh agent service is running."
+      else
+          error_message "Wazuh agent service is not running."
+      fi
+  fi
+
+  # Check if the configuration file contains the correct manager and registration server
+  if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
+      warn_message "Wazuh manager address is not configured correctly in $OSSEC_CONF_PATH."
+  fi
+
+  success_message "Installation and configuration validated successfully."
 }
 
 # Main execution
@@ -301,5 +412,6 @@ disable_repo
 config
 create_upgrade_script
 start_agent 
+validate_installation
 
 # End of script

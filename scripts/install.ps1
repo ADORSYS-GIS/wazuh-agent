@@ -1,3 +1,6 @@
+$WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "test-cluster.wazuh.adorsys.team" }
+$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.9.2-1" }
+
 # Define text formatting
 $RED = "`e[0;31m"
 $GREEN = "`e[0;32m"
@@ -38,12 +41,10 @@ function Install-Agent {
     $OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"
 
     # Variables
-    $WazuhManager = "events.dev.wazuh.adorsys.team"
-    $WazuhRegistrationServer = "register.dev.wazuh.adorsys.team" # TODO Use this
-    $AgentVersion = "4.9.2-1"
-    $AgentFileName = "wazuh-agent-$AgentVersion.msi"
+
+    $AgentFileName = "wazuh-agent-$WAZUH_AGENT_VERSION.msi"
     $TempDir = $env:TEMP
-    $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$AgentVersion.msi"
+    $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.msi"
     $MsiPath = Join-Path -Path $TempDir -ChildPath $AgentFileName
 
     # Check if system architecture is supported
@@ -53,7 +54,7 @@ function Install-Agent {
     }
 
     # Download the Wazuh agent MSI package
-    info_message "Downloading Wazuh agent version $AgentVersion..."
+    info_message "Downloading Wazuh agent version $WAZUH_AGENT_VERSION..."
     try {
         Invoke-WebRequest -Uri $DownloadUrl -OutFile $MsiPath -ErrorAction Stop
     } catch {
@@ -65,8 +66,7 @@ function Install-Agent {
     $MsiArguments = @(
         "/i $MsiPath"
         "/q"
-        "WAZUH_MANAGER=`"$WazuhManager`""
-        "WAZUH_REGISTRATION_SERVER=`"$WazuhRegistrationServer`""
+        "WAZUH_MANAGER=`"$WAZUH_MANAGER`""
     )
 
     # Install the Wazuh agent
@@ -81,7 +81,7 @@ function Install-Agent {
     # Update the manager address in the configuration file
     try {
         [xml]$configXml = Get-Content -Path $OSSEC_CONF_PATH
-        $configXml.ossec_config.client.server.address = $WazuhManager
+        $configXml.ossec_config.client.server.address = $WAZUH_MANAGER
         $configXml.Save($OSSEC_CONF_PATH)
         info_message "Manager address updated successfully in ossec.conf."
     } catch {
@@ -102,5 +102,87 @@ function Install-Agent {
     info_message "Wazuh agent installed successfully."
 }
 
+function Create-Upgrade-Script {
+    $UPGRADE_SCRIPT_PATH = "C:\Program Files (x86)\ossec-agent\adorsys-update.ps1"
+    info_message "Creating update script at $UPGRADE_SCRIPT_PATH"
+
+    # Temporary directory
+    $TempFolder = New-TemporaryFile
+    Remove-Item $TempFolder -Force
+    New-Item -ItemType Directory -Path $TempFolder | Out-Null
+
+    try {
+        # Define upgrade script content
+        $UpgradeScript = @'
+# Upgrade script for Wazuh Agent
+# This script downloads and updates the Wazuh agent
+
+function Log {
+    param (
+        [string]$Level,
+        [string]$Message
+    )
+    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    Write-Host "$Timestamp [$Level] $Message"
+}
+
+function info_message {
+    param ([string]$Message)
+    Log "INFO" $Message
+}
+
+function error_message {
+    param ([string]$Message)
+    Log "ERROR" $Message
+}
+
+function Cleanup {
+    param ([string]$TempFolder)
+    if (Test-Path $TempFolder) {
+        Remove-Item -Path $TempFolder -Recurse -Force
+        info_message "Temporary folder removed: $TempFolder"
+    }
+}
+
+try {
+    $TempFolder = New-TemporaryFile
+    Remove-Item $TempFolder -Force
+    New-Item -ItemType Directory -Path $TempFolder | Out-Null
+
+    info_message "Starting Wazuh Agent Upgrade"
+
+    # Download the setup script
+    $SetupScriptURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.ps1"
+    $SetupScriptPath = Join-Path -Path $TempFolder -ChildPath "setup-agent.ps1"
+    Invoke-WebRequest -Uri $SetupScriptURL -OutFile $SetupScriptPath
+
+    # Execute the setup script
+    . $SetupScriptPath
+
+    info_message "Wazuh Agent Upgrade Completed"
+} catch {
+    error_message "Wazuh Agent Upgrade Failed: $_"
+    exit 1
+} finally {
+    Cleanup -TempFolder $TempFolder
+}
+'@
+
+        # Save the script
+        $UpgradeScript | Set-Content -Path $UPGRADE_SCRIPT_PATH -Force
+        Set-ItemProperty -Path $UPGRADE_SCRIPT_PATH -Name IsReadOnly -Value $true
+        info_message "Update script created successfully."
+    } catch {
+        error_message "Failed to create the upgrade script: $_"
+    } finally {
+        # Cleanup temporary directory
+        if (Test-Path $TempFolder) {
+            Remove-Item -Path $TempFolder -Recurse -Force
+        }
+    }
+}
+
+
 # Call the Install-Agent function to execute the installation
 Install-Agent
+Create-Upgrade-Script

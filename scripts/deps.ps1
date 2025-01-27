@@ -19,18 +19,6 @@ function Log-Error {
     Log "ERROR" $Message
 }
 
-#Function to check if pip module is installed
-function Is-ModuleInstalled {
-    param (
-        [string]$ModuleName
-    )
-    $result = pip show $ModuleName 2>&1
-    if ($result -match "Name:") {
-        return $true
-    } else {
-        return $false
-    }
-}
 
 function Ensure-Dependencies {
     Log-Info "Ensuring dependencies are installed (curl, jq)"   
@@ -64,47 +52,67 @@ function Ensure-Dependencies {
     }
 }
 
-function Check-PythonInstalled {
+function Install-GnuSed {
+    # Define the source URL and destination path
+    $SourceUrl = "https://downloads.sourceforge.net/project/gnuwin32/sed/4.2.1/sed-4.2.1-setup.exe?ts=gAAAAABnihwyfyy8CnXn7cxMYUNSQkpG2f2dUMFeiIGE8dM6A4aJ9G6yYtMvnuqpFQ658BS-pINAAB2fnD6SQOVdenwjEcrf0w%3D%3D&r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fgnuwin32%2Ffiles%2Fsed%2F4.2.1%2Fsed-4.2.1-setup.exe%2Fdownload%3Fuse_mirror%3Ddeac-fra%26r%3Dhttps%253A%252F%252Fsourceforge.net%252Fprojects%252Fgnuwin32%252Ffiles%252Fsed%252F4.2.1%252Fsed-4.2.1-setup.exe%252Fdownload%253Fuse_mirror%253Dnetcologne%2522"
+    $DestinationPath = "$env:TEMP\sed-4.2.1-setup.exe"
+
+    # Define a test command to check if GNU sed is installed
+    $TestCommand = "sed --version"
+    $DefaultInstallPath = "C:\Program Files (x86)\GnuWin32\bin"
+
     try {
-        $pythonVersion = & python --version 2>&1
-        if ($pythonVersion -match "Python (\d+)\.(\d+)\.(\d+)") {
-            $majorVersion = [int]$matches[1]
-            $minorVersion = [int]$matches[2]
-            $patchVersion = [int]$matches[3]
-            
-            if ($majorVersion -ge 3 -and $minorVersion -ge 9) {
-                Write-Host "Python $majorVersion.$minorVersion.$patchVersion is installed and is a recent version." -ForegroundColor Green
-                return $true
-            } else {
-                Write-Host "Python version is $majorVersion.$minorVersion.$patchVersion. Please install Python 3.9 or later and run the script again." -ForegroundColor Red
-                exit
-            }
-        } else {
-            throw "Python is not installed or not properly configured."
+        # Check if GNU sed is already installed
+        Write-Host "Checking if GNU sed is already installed..."
+        $versionOutput = & cmd /c $TestCommand 2>&1
+        if ($versionOutput -match "GNU sed") {
+            Write-Host "GNU sed is already installed." -ForegroundColor Green
+            return
         }
     } catch {
-        Write-Host "Python is not installed or not properly configured. Installing Python..." -ForegroundColor Yellow
-        Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.9.0/python-3.9.0-amd64.exe" -OutFile "$env:TEMP\python-3.9.0-amd64.exe"
-        Start-Process -FilePath "$env:TEMP\python-3.9.0-amd64.exe" -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait
-        Remove-Item -Path "$env:TEMP\python-3.9.0-amd64.exe"
-
-        # Update environment variables
-        [System.Environment]::SetEnvironmentVariable("Path", [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";C:\Program Files\Python39", "Process")
-
-        # Update pip to the latest version
-        try {
-            & python -m pip install --upgrade pip
-        } catch {
-            Write-Error "Failed to update pip: $_"
-            exit 1
-        }
+        Write-Host "GNU sed is not installed. Proceeding with download and installation..." -ForegroundColor Yellow
     }
+
+    try {
+        # Download the installer using BITS
+        Write-Host "Downloading GNU sed setup file to $DestinationPath..."
+        Start-BitsTransfer -Source $SourceUrl -Destination $DestinationPath
+
+        Write-Host "Download completed. Starting installation..." -ForegroundColor Green
+        
+        # Run the installer silently
+        Start-Process -FilePath $DestinationPath -ArgumentList "/silent" -Wait
+
+        Write-Host "GNU sed installed successfully." -ForegroundColor Green
+
+        # Check if the installation path exists
+        if (-Not (Test-Path $DefaultInstallPath)) {
+            Write-Host "Installation directory not found. Please verify the installation." -ForegroundColor Red
+            return
+        }
+
+        # Add sed to the system PATH if it's not already included
+        Write-Host "Checking if sed is in the PATH..."
+        $currentPath = [Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
+        if ($currentPath -notlike "*$DefaultInstallPath*") {
+            Write-Host "Adding GNU sed to the system PATH..." -ForegroundColor Yellow
+            [Environment]::SetEnvironmentVariable("Path", "$currentPath;$DefaultInstallPath", [System.EnvironmentVariableTarget]::Machine)
+            Write-Host "GNU sed added to the system PATH. Restart your terminal to apply changes." -ForegroundColor Green
+        } else {
+            Write-Host "GNU sed is already in the PATH." -ForegroundColor Green
+        }
+    } catch {
+        # Catch and display any errors
+        Write-Host "An error occurred: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    Remove-Item -Path $DestinationPath
 }
 
 
 
+
 # Function to check if Visual C++ Redistributable is installed
-function Check-VCppInstalled {
+function IsVCppInstalled {
     $vcppKey = "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"
     if (Test-Path $vcppKey) {
         $vcppInstalled = Get-ItemProperty -Path $vcppKey
@@ -119,17 +127,10 @@ function Check-VCppInstalled {
     Remove-Item -Path "$env:TEMP\vc_redist.x64.exe"
 }
 
-Check-PythonInstalled
-Check-VCppInstalled
+
+IsVCppInstalled
+Install-GnuSed
 Ensure-Dependencies
 
-    # Ensure valhallaAPI module is installed
-$moduleName = "valhallaAPI"
-if (Is-ModuleInstalled -ModuleName $moduleName) {
-    Write-Host "$moduleName is installed."
-} else {
-    Write-Host "$moduleName is not installed."
-    pip install $moduleName
-}
 
 
