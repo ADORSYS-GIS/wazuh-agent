@@ -81,7 +81,7 @@ function Install-GnuSed {
         Write-Host "Download completed. Starting installation..." -ForegroundColor Green
         
         # Run the installer silently
-        Start-Process -FilePath $DestinationPath -ArgumentList "/silent" -Wait
+        Start-Process -FilePath $DestinationPath  -Wait
 
         Write-Host "GNU sed installed successfully." -ForegroundColor Green
 
@@ -96,7 +96,9 @@ function Install-GnuSed {
         $currentPath = [Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
         if ($currentPath -notlike "*$DefaultInstallPath*") {
             Write-Host "Adding GNU sed to the system PATH..." -ForegroundColor Yellow
-            [Environment]::SetEnvironmentVariable("Path", "$currentPath;$DefaultInstallPath", [System.EnvironmentVariableTarget]::Machine)
+            
+            $env:Path += ";C:\Program Files (x86)\GnuWin32\bin"
+            [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
             Write-Host "GNU sed added to the system PATH. Restart your terminal to apply changes." -ForegroundColor Green
         } else {
             Write-Host "GNU sed is already in the PATH." -ForegroundColor Green
@@ -131,6 +133,7 @@ function IsVCppInstalled {
 IsVCppInstalled
 Install-GnuSed
 Ensure-Dependencies
+Install-GnuSed
 
 
 

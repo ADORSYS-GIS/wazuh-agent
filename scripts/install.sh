@@ -384,8 +384,6 @@ cleanup() {
     fi
 }
 
-trap cleanup EXIT  | tee -a "$LOG_DIR"
-
 info_message "Add bin directory: $BIN_FOLDER to PATH environment"  | tee -a "$LOG_DIR"
 export PATH="$BIN_FOLDER:$PATH"
  
@@ -405,6 +403,8 @@ if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") | t
     error_message "Failed to install wazuh-agent"  | tee -a "$LOG_DIR"
     exit 1
 fi
+
+trap cleanup EXIT  | tee -a "$LOG_DIR"
  
 info_message "Wazuh upgrade finished with success" | tee -a ${LOG_DIR}
 EOF
