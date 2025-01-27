@@ -12,7 +12,7 @@ LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
 WOPS_VERSION=${WOPS_VERSION:-"0.2.13"}
 WAZUH_YARA_VERSION=${WOPS_VERSION:-"0.1.1"}
-WAZUH_SNORT_VERSION=${WOPS_VERSION:-"0.1.1rc1"}
+WAZUH_SNORT_VERSION=${WOPS_VERSION:-"0.1.1-rc1"}
 # Define the OSSEC configuration path
 if [ "$(uname)" = "Darwin" ]; then
     # macOS
@@ -26,7 +26,7 @@ USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.2-1'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.10.0'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 
 TMP_FOLDER="$(mktemp -d)"
