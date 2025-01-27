@@ -11,6 +11,8 @@ fi
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
 WOPS_VERSION=${WOPS_VERSION:-"0.2.13"}
+WAZUH_YARA_VERSION=${WOPS_VERSION:-"0.1.1"}
+WAZUH_SNORT_VERSION=${WOPS_VERSION:-"0.1.1rc1"}
 # Define the OSSEC configuration path
 if [ "$(uname)" = "Darwin" ]; then
     # macOS
@@ -72,8 +74,8 @@ info_message "Download all scripts..."
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/main/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent-status.sh"
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/main/scripts/install.sh > "$TMP_FOLDER/install-yara.sh"
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/install.sh > "$TMP_FOLDER/install-snort.sh"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh > "$TMP_FOLDER/install-yara.sh"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/install.sh > "$TMP_FOLDER/install-snort.sh"
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
