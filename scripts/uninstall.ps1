@@ -78,7 +78,7 @@ function Uninstall-Agent {
     }
 }
 
-function Stop-WazuhService {
+function Remove-WazuhService {
     InfoMessage "Stopping Wazuh service if running"
     $service = Get-Service -Name WazuhSvc -ErrorAction SilentlyContinue
 
@@ -95,10 +95,23 @@ function Stop-WazuhService {
         } else {
             InfoMessage "Wazuh Service is already stopped"
         }
+
+        # Removing the Wazuh service
+        InfoMessage "Removing Wazuh service..."
+        try {
+            # Uninstall service using sc.exe or Remove-Service
+            sc.exe delete WazuhSvc
+            InfoMessage "Wazuh Service removed successfully"
+        }
+        catch {
+            ErrorMessage "Failed to remove Wazuh Service: $($_.Exception.Message)"
+        }
     } else {
         WarnMessage "Wazuh Service is not installed or not found"
     }
 }
+
+
 
 
 
@@ -119,7 +132,7 @@ function Cleanup-Files {
 }
 
 
-Stop-WazuhService
+Remove-WazuhService
 Uninstall-Agent
 Cleanup-Files
 
