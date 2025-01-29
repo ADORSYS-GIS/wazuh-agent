@@ -80,34 +80,44 @@ function Uninstall-Agent {
 
 function Stop-WazuhService {
     InfoMessage "Stopping Wazuh service if running"
-    $service = Get-Service -Name WazuhSvc
+    $service = Get-Service -Name WazuhSvc -ErrorAction SilentlyContinue
 
-    if ($service.Status -eq 'Running') {
-        InfoMessage "Wazuh Service is Running. Stopping Service..."
-        try {
-            Stop-Service -Name WazuhSvc -ErrorAction Stop
-            InfoMessage "Wazuh Service stopped succesfully"
-        }
-        catch {
-            ErrorMessage "Failed to Stop Wazuh Service: $($_.Exception.Message)"
+    if ($service) {
+        if ($service.Status -eq 'Running') {
+            InfoMessage "Wazuh Service is Running. Stopping Service..."
+            try {
+                Stop-Service -Name WazuhSvc -ErrorAction Stop
+                InfoMessage "Wazuh Service stopped successfully"
+            }
+            catch {
+                ErrorMessage "Failed to Stop Wazuh Service: $($_.Exception.Message)"
+            }
+        } else {
+            InfoMessage "Wazuh Service is already stopped"
         }
     } else {
-        InfoMessage "Wazuh Service is already stopped"
+        WarnMessage "Wazuh Service is not installed or not found"
     }
 }
+
 
 
 function Cleanup-Files {
-    InfoMessage "Cleaning up remain Wazuh files"
-    try {
-        Remove-Item -Path $OssecPath -Recurse -Force
-        InfoMessage "Wazuh Files removed succesfully"
-    }
-    catch {
-        ErrorMessage "Failed to Cleanup Files: $($_.Exception.Message)"
-    }
+    InfoMessage "Cleaning up remaining Wazuh files"
     
+    if (Test-Path -Path $OssecPath) {
+        try {
+            Remove-Item -Path $OssecPath -Recurse -Force
+            InfoMessage "Wazuh Files removed successfully"
+        }
+        catch {
+            ErrorMessage "Failed to Cleanup Files: $($_.Exception.Message)"
+        }
+    } else {
+        WarnMessage "Wazuh path does not exist. No files to remove."
+    }
 }
+
 
 Stop-WazuhService
 Uninstall-Agent
