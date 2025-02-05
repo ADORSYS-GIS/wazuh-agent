@@ -189,10 +189,10 @@ function Cleanup {
     InfoMessage "Removing msi executable $AgentVersion..."
     try {
         Remove-Item -Path $MsiPath -Recurse -Force
-        InfoMessage "Msi Executable $AgentVersion Removed"
+        info_message "Msi Executable $AgentVersion Removed"
     }
     catch {
-        ErrorMessage "Failed to remove msi executable $AgentVersion : $($_.Exception.Message)"
+        error_message "Failed to remove msi executable $AgentVersion : $($_.Exception.Message)"
     }
 }
 
