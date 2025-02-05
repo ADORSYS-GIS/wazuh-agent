@@ -76,6 +76,16 @@ function Uninstall-Agent {
     catch {
         ErrorMessage "Failed to uninstall Wazuh Agent: $($_.Exception.Message)"
     }
+
+
+    InfoMessage "Removing msi executable $AgentVersion..."
+    try {
+        Remove-Item -Path $TempFile -Recurse -Force
+        InfoMessage "Msi Executable $AgentVersion Removed"
+    }
+    catch {
+        ErrorMessage "Failed to remove msi executable $AgentVersion : $($_.Exception.Message)"
+    }
 }
 
 function Remove-WazuhService {
