@@ -186,7 +186,7 @@ try {
 }
 
 function Cleanup {
-    InfoMessage "Removing msi executable $AgentVersion..."
+    info_message "Removing msi executable $AgentVersion..."
     try {
         Remove-Item -Path $MsiPath -Recurse -Force
         info_message "Msi Executable $AgentVersion Removed"
