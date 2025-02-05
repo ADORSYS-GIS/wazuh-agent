@@ -1,4 +1,4 @@
-$WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "test-cluster.wazuh.adorsys.team" }
+$WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "manager.wazuh.adorsys.team" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.9.2-1" }
 
 # Define text formatting
@@ -8,6 +8,16 @@ $YELLOW = "`e[1;33m"
 $BLUE = "`e[1;34m"
 $BOLD = "`e[1m"
 $NORMAL = "`e[0m"
+
+# Global variables
+$OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"
+
+# Variables
+$AgentVersion = "4.9.2-1"
+$AgentFileName = "wazuh-agent-$AgentVersion.msi"
+$TempDir = $env:TEMP
+$DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$AgentVersion.msi"
+$MsiPath = Join-Path -Path $TempDir -ChildPath $AgentFileName
 
 # Function for logging with timestamp
 function log {
@@ -37,15 +47,7 @@ function error_message {
 # Function to install Wazuh Agent
 function Install-Agent {
 
-    # Global variables
-    $OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"
 
-    # Variables
-
-    $AgentFileName = "wazuh-agent-$WAZUH_AGENT_VERSION.msi"
-    $TempDir = $env:TEMP
-    $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.msi"
-    $MsiPath = Join-Path -Path $TempDir -ChildPath $AgentFileName
 
     # Check if system architecture is supported
     if (-not [System.Environment]::Is64BitOperatingSystem) {
@@ -101,6 +103,7 @@ function Install-Agent {
 
     info_message "Wazuh agent installed successfully."
 }
+
 
 function Create-Upgrade-Script {
     $UPGRADE_SCRIPT_PATH = "C:\Program Files (x86)\ossec-agent\adorsys-update.ps1"
@@ -182,7 +185,18 @@ try {
     }
 }
 
+function Cleanup {
+    InfoMessage "Removing msi executable $AgentVersion..."
+    try {
+        Remove-Item -Path $MsiPath -Recurse -Force
+        InfoMessage "Msi Executable $AgentVersion Removed"
+    }
+    catch {
+        ErrorMessage "Failed to remove msi executable $AgentVersion : $($_.Exception.Message)"
+    }
+}
 
 # Call the Install-Agent function to execute the installation
 Install-Agent
 Create-Upgrade-Script
+Cleanup
