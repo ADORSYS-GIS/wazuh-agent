@@ -152,8 +152,6 @@ function Uninstall-AgentStatus {
 # Main Execution
 SectionSeparator "Uninstalling Wazuh Agent"
 Uninstall-WazuhAgent
-# SectionSeparator "Uninstalling OAuth2Client"
-# Uninstall-OAuth2Client
 SectionSeparator "Uninstalling Agent Status"
 Uninstall-AgentStatus
 SectionSeparator "Uninstalling Yara"
