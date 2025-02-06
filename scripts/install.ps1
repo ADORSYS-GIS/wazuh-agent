@@ -143,7 +143,7 @@ function Cleanup {
     param ([string]$TempFolder)
     if (Test-Path $TempFolder) {
         Remove-Item -Path $TempFolder -Recurse -Force
-        info_message "Temporary folder removed: $TempFolder" | tee -a "C:\Program Files(x86)\ossec-agent\active-response\active-responses.log"
+        info_message "Temporary folder removed: $TempFolder" | tee -a "C:\Program Files (x86)\ossec-agent\active-response\active-responses.log"
     }
 }
 
@@ -152,7 +152,7 @@ try {
     Remove-Item $TempFolder -Force
     New-Item -ItemType Directory -Path $TempFolder | Out-Null
 
-    info_message "Starting Wazuh Agent Upgrade" | tee -a "C:\Program Files(x86)\ossec-agent\active-response\active-responses.log"
+    info_message "Starting Wazuh Agent Upgrade" | tee -a "C:\Program Files (x86)\ossec-agent\active-response\active-responses.log"
 
     # Download the setup script
     $SetupScriptURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.ps1"
@@ -160,11 +160,11 @@ try {
     Invoke-WebRequest -Uri $SetupScriptURL -OutFile $SetupScriptPath
 
     # Execute the setup script
-    . $SetupScriptPath
+    . $SetupScriptPath | tee -a "C:\Program Files (x86)\ossec-agent\active-response\active-responses.log"
 
-    info_message "Wazuh Agent Upgrade Completed" | tee -a "C:\Program Files(x86)\ossec-agent\active-response\active-responses.log"
+    info_message "Wazuh Agent Upgrade Completed" | tee -a "C:\Program Files (x86)\ossec-agent\active-response\active-responses.log"
 } catch {
-    error_message "Wazuh Agent Upgrade Failed: $_" | tee -a "C:\Program Files(x86)\ossec-agent\active-response\active-responses.log"
+    error_message "Wazuh Agent Upgrade Failed: $_" | tee -a "C:\Program Files (x86)\ossec-agent\active-response\active-responses.log"
     exit 1
 } finally {
     Cleanup -TempFolder $TempFolder
