@@ -27,6 +27,7 @@ GROUP=${GROUP:-"wazuh"}
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.10.1-1'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.2.5'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 
 TMP_FOLDER="$(mktemp -d)"
@@ -73,7 +74,7 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 info_message "Download all scripts..."
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/main/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent-status.sh"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent-status.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh > "$TMP_FOLDER/install-yara.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/install.sh > "$TMP_FOLDER/install-snort.sh"
 
