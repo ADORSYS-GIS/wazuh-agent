@@ -27,7 +27,7 @@ GROUP=${GROUP:-"wazuh"}
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.10.1-1'}
-WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.2.5'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.2.7'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 
 TMP_FOLDER="$(mktemp -d)"
@@ -65,8 +65,6 @@ cleanup() {
         rm -rf "$TMP_FOLDER"
     fi
 }
-
-trap cleanup EXIT
 
 info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
@@ -112,3 +110,5 @@ if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/
     error_message "Failed to install 'snort'"
     exit 1
 fi
+
+trap cleanup EXIT
