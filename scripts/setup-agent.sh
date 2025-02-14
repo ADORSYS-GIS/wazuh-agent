@@ -111,4 +111,3 @@ if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/
     exit 1
 fi
 
-trap cleanup EXIT
