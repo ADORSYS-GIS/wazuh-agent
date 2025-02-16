@@ -296,17 +296,18 @@ config() {
         esac
 
     # Download logo
-    if [ -f "$OSSEC_PATH/assets/wazuh-logo.png" ]; then
+    if [ -f "$OSSEC_PATH/wazuh-logo.png" ]; then
         info_message "Logo already downloaded. Skipping."
     else
         info_message "Downloading logo..."
-        curl "$REPO_ULR/assets/wazuh-logo.png" -o "$OSSEC_PATH/assets/wazuh-logo.png"
+        curl "$REPO_ULR/assets/wazuh-logo.png" -o "$OSSEC_PATH/wazuh-logo.png"
         info_message "Logo downloaded successfully."
     fi
 
     # Download version file
+    info_message "Downloading version file..."
     curl "$REPO_URL/version.txt" -o "$OSSEC_PATH/version.txt"
-  
+    info_message "Version file downloaded successfully."
 }
 
 start_agent() {
@@ -435,27 +436,37 @@ EOF
 
 # Validate agent installation
 validate_installation() {
-  info_message "Validating installation and configuration..."
+    info_message "Validating installation and configuration..."
 
-  # Check if the Wazuh agent service is running
-  if [ "$OS" = "Linux" ]; then
-      if maybe_sudo /var/ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
-          success_message "Wazuh agent service is running."
-      else
-          error_message "Wazuh agent service is not running."
-      fi
-  elif [ "$OS" = "macOS" ]; then
-      if maybe_sudo /Library/Ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
-          success_message "Wazuh agent service is running."
-      else
-          error_message "Wazuh agent service is not running."
-      fi
-  fi
+    # Check if the Wazuh agent service is running
+    if [ "$OS" = "Linux" ]; then
+        if maybe_sudo /var/ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
+            success_message "Wazuh agent service is running."
+        else
+            error_message "Wazuh agent service is not running."
+        fi
+    elif [ "$OS" = "macOS" ]; then
+        if maybe_sudo /Library/Ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
+            success_message "Wazuh agent service is running."
+        else
+            error_message "Wazuh agent service is not running."
+        fi
+    fi
 
-  # Check if the configuration file contains the correct manager and registration server
-  if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
-      warn_message "Wazuh manager address is not configured correctly in $OSSEC_CONF_PATH."
-  fi
+    # Check if the configuration file contains the correct manager and registration server
+    if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
+        warn_message "Wazuh manager address is not configured correctly in $OSSEC_CONF_PATH."
+    fi
+
+    # Check if the logo file exists
+    if maybe_sudo [ ! -f "$OSSEC_PATH/assets/wazuh-logo.png" ]; then
+        warn_message "Logo file has not been downloaded."
+    fi
+
+    # Check if the version file exists
+    if maybe_sudo [ ! -f "$OSSEC_PATH/version.txt" ]; then
+        warn_message "Version file has not been downloaded."
+    fi
 
   success_message "Installation and configuration validated successfully."
 }
