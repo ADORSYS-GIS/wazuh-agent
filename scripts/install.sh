@@ -300,13 +300,15 @@ config() {
         info_message "Logo already downloaded. Skipping."
     else
         info_message "Downloading logo..."
-        curl "$REPO_URL/assets/wazuh-logo.png" -o "$OSSEC_PATH/wazuh-logo.png"
+        maybe_sudo curl "$REPO_URL/assets/wazuh-logo.png" -o "$OSSEC_PATH/wazuh-logo.png"
+        maybe_sudo chmod +r "$OSSEC_PATH/wazuh-logo.png"
         info_message "Logo downloaded successfully."
     fi
 
     # Download version file
     info_message "Downloading version file..."
-    curl "$REPO_URL/version.txt" -o "$OSSEC_PATH/version.txt"
+    maybe_sudo curl "$REPO_URL/version.txt" > "$OSSEC_PATH/version.txt"
+    maybe_sudo chmod +r "$OSSEC_PATH/version.txt"
     info_message "Version file downloaded successfully."
 }
 
