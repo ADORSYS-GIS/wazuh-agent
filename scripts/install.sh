@@ -231,7 +231,7 @@ enable_repo() {
 }
 
 config() {
-    REPO_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
+    REPO_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/ota-update"
 
     # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for unix systems
     if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
@@ -300,7 +300,7 @@ config() {
         info_message "Logo already downloaded. Skipping."
     else
         info_message "Downloading logo..."
-        curl "$REPO_ULR/assets/wazuh-logo.png" -o "$OSSEC_PATH/wazuh-logo.png"
+        curl "$REPO_URL/assets/wazuh-logo.png" -o "$OSSEC_PATH/wazuh-logo.png"
         info_message "Logo downloaded successfully."
     fi
 
@@ -459,7 +459,7 @@ validate_installation() {
     fi
 
     # Check if the logo file exists
-    if maybe_sudo [ ! -f "$OSSEC_PATH/assets/wazuh-logo.png" ]; then
+    if maybe_sudo [ ! -f "$OSSEC_PATH/wazuh-logo.png" ]; then
         warn_message "Logo file has not been downloaded."
     fi
 
