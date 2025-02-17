@@ -150,7 +150,7 @@ function Install-Snort {
 
 # Step 5: Download and install Wazuh Agent Status with error handling
 function Install-AgentStatus {
-    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/main/scripts/install.ps1"  # Update the URL if needed
+    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/fix-windows/issue-181/scripts/install.ps1"  # Update the URL if needed
     $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
     $global:InstallerFiles += $AgentStatusScript
 
