@@ -19,10 +19,11 @@ $global:InstallerFiles = @()
 function Log {
     param (
         [string]$Level,
-        [string]$Message
+        [string]$Message,
+        [string]$Color = "White"  # Default color
     )
     $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp [$Level] $Message"
+    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
 }
 
 function SuccessMessage {
