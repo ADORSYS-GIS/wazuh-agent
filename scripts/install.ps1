@@ -27,7 +27,7 @@ function Log {
 # Logging helpers with colors
 function InfoMessage {
     param ([string]$Message)
-    Log "[INFO]" $Message "Blue"
+    Log "[INFO]" $Message "White"
 }
 
 function WarnMessage {
@@ -206,6 +206,7 @@ function Cleanup {
     try {
         Remove-Item -Path $MsiPath -Recurse -Force
         InfoMessage "Msi Executable $AgentVersion Removed"
+        SuccessMessage "Wazuh Installed Successfully"
     }
     catch {
         ErrorMessage "Failed to remove msi executable $AgentVersion : $($_.Exception.Message)"

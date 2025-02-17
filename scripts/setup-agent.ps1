@@ -25,16 +25,11 @@ function Log {
     Write-Host "$Timestamp [$Level] $Message"
 }
 
-# Logging helpers
-function Log-Info {
+function SuccessMessage {
     param ([string]$Message)
-    Log "INFO" $Message
+    Log "[SUCCESS]" $Message "Green"
 }
 
-function Log-Error {
-    param ([string]$Message)
-    Log "ERROR" $Message
-}
 
 function SectionSeparator {
     param (
@@ -189,4 +184,5 @@ try {
 finally {
     Write-Host "Cleaning up installer files..."
     Cleanup-Installers
+    SuccessMessage "Wazuh Agent Setup Completed Successfully"
 }
