@@ -27,7 +27,7 @@ function Log {
 # Logging helpers with colors
 function InfoMessage {
     param ([string]$Message)
-    Log "[INFO]" $Message "White"
+    Log "[INFO]" $Message "Blue"
 }
 
 function WarnMessage {
