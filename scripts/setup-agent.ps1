@@ -134,7 +134,7 @@ function Install-Yara {
     try {
         Write-Host "Downloading and executing YARA installation script..."
 
-        $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/heads/main/scripts/install.ps1"  # Update the URL if needed
+        $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/heads/develop/scripts/install.ps1"  # Update the URL if needed
         $YaraScript = "$env:TEMP\install.ps1"
 
         # Download the installation script
