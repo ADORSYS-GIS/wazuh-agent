@@ -3,7 +3,10 @@ Set-StrictMode -Version Latest
 
 # Variables (default log level, app details, paths)
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
-$OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf" # Adjust for Windows
+$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.2.0" }
+$WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.0" }
+$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.2.7" }
+$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "1.0.0" }
 
 # Function to log messages with a timestamp
 function Log {
@@ -41,7 +44,7 @@ function Uninstall-WazuhAgent {
     try {
         Write-Host "Downloading and executing Wazuh agent uninstall script..."
 
-        $UninstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/uninstall.ps1"  # Update the URL if needed
+        $UninstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_VERSION/scripts/uninstall.ps1"  # Update the URL if needed
         $UninstallerPath = "$env:TEMP\uninstall.ps1"
 
         # Download Wazuh agent Uninstaller script
@@ -70,7 +73,7 @@ function Uninstall-Yara {
     try {
         Write-Host "Downloading and executing YARA uninstall script..."
 
-        $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/heads/main/scripts/uninstall.ps1"  # Update the URL if needed
+        $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/uninstall.ps1"  # Update the URL if needed
         $YaraScript = "$env:TEMP\uninstall-yara.ps1"
 
         # Download the Uninstallation script
@@ -97,7 +100,7 @@ function Uninstall-Snort {
     try {
         Write-Host "Downloading and executing Snort uninstall script..."
 
-        $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/heads/main/scripts/windows/uninstall.ps1"  # Update the URL if needed
+        $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/windows/uninstall.ps1"  # Update the URL if needed
         $SnortScript = "$env:TEMP\uninstall-snort.ps1"
 
         # Download the Uninstallation script
@@ -124,7 +127,7 @@ function Uninstall-AgentStatus {
     try {
         Write-Host "Downloading and executing Wazuh Agent Status uninstall script..."
 
-        $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/main/scripts/uninstall.ps1"  # Update the URL if needed
+        $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/uninstall.ps1"  # Update the URL if needed
         $AgentStatusScript = "$env:TEMP\uninstall-agent-status.ps1"
 
         # Download the Uninstallation script
