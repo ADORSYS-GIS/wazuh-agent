@@ -368,7 +368,7 @@ else
     BIN_FOLDER='/usr/bin'
 fi
 
-
+# Create a temporary directory
 TMP_FOLDER="$(mktemp -d)"
 
 # Define text formatting
@@ -386,12 +386,12 @@ log() {
     local MESSAGE="$*"
     local TIMESTAMP
     TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
+    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}" >> "$LOG_DIR"
 }
 
 # Logging helpers
 info_message() {
-    log "${BLUE}${BOLD}[===========> INFO]${NORMAL}" "$*"
+    log "${BLUE}${BOLD}[INFO]${NORMAL}" "$*"
 }
 
 error_message() {
@@ -407,27 +407,34 @@ cleanup() {
 
 trap cleanup EXIT
 
-info_message "Add bin directory: $BIN_FOLDER to PATH environment"  | tee -a "$LOG_DIR"
-export PATH="$BIN_FOLDER:$PATH"
- 
-echo $PATH | tee -a "$LOG_DIR"
+# Log environment info
+info_message "Starting Wazuh agent upgrade..."
 
-info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""  | tee -a "$LOG_DIR"
+info_message "Adding bin directory: $BIN_FOLDER to PATH environment"
+export PATH="$BIN_FOLDER:$PATH"
+
+info_message "Current PATH: $PATH"
+
+info_message "Starting setup. Using temporary directory: $TMP_FOLDER"
 
 # Download scripts
-info_message "Download all scripts..."  | tee -a "$LOG_DIR"
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/ota-update/scripts/setup-agent.sh > "$TMP_FOLDER/setup-agent.sh"  | tee -a "$LOG_DIR"
+info_message "Downloading setup script..."
+SCRIPT_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/ota-update/scripts/setup-agent.sh"
 
-
-# Download and install Wazuh agent
-info_message "Starting wazuh upgrade..." | tee -a ${LOG_DIR}
-
-if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") | tee -a ${LOG_DIR}; then
-    error_message "Failed to install wazuh-agent"  | tee -a "$LOG_DIR"
+if ! curl -SL -s "$SCRIPT_URL" -o "$TMP_FOLDER/setup-agent.sh" >> "$LOG_DIR"; then
+    error_message "Failed to download setup-agent.sh"
     exit 1
 fi
 
-info_message "Wazuh upgrade finished with success" | tee -a ${LOG_DIR}
+chmod +x "$TMP_FOLDER/setup-agent.sh"
+
+if ! sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh" >> "$LOG_DIR"; then
+    error_message "Failed to install wazuh-agent"
+    exit 1
+fi
+
+info_message "Wazuh upgrade finished successfully"
+
 EOF
     # Make the new script executable
     maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"
