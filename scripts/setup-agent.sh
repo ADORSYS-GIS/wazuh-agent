@@ -66,6 +66,8 @@ cleanup() {
     fi
 }
 
+trap cleanup EXIT
+
 info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
 # Step -1: Download all scripts
@@ -110,5 +112,3 @@ if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/
     error_message "Failed to install 'snort'"
     exit 1
 fi
-
-trap cleanup EXIT
