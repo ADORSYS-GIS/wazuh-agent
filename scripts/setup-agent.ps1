@@ -55,7 +55,7 @@ function Cleanup-Installers {
 
 # Step 0: Download dependency script and execute
 function Install-Dependencies {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/fix-windows/issue-181/scripts/deps.ps1"  # Update the URL if needed
+    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/develop/scripts/deps.ps1"  # Update the URL if needed
     $InstallerPath = "$env:TEMP\deps.ps1"
     $global:InstallerFiles += $InstallerPath
 
@@ -74,7 +74,7 @@ function Install-Dependencies {
 
 # Step 1: Download and execute Wazuh agent script with error handling
 function Install-WazuhAgent {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/fix-windows/issue-181/scripts/install.ps1"  # Update the URL if needed
+    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/develop/scripts/install.ps1"  # Update the URL if needed
     $InstallerPath = "$env:TEMP\install.ps1"
     $global:InstallerFiles += $InstallerPath
 
@@ -93,7 +93,7 @@ function Install-WazuhAgent {
 
 # Step 2: Download and install wazuh-cert-oauth2-client with error handling
 function Install-OAuth2Client {
-    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/fix-windows/issue-181/scripts/install.ps1"  # Update the URL if needed
+    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/develop/scripts/install.ps1"  # Update the URL if needed
     $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
     $global:InstallerFiles += $OAuth2Script
 
@@ -112,7 +112,7 @@ function Install-OAuth2Client {
 
 # Step 3: Download and install YARA with error handling
 function Install-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/heads/fix/issue-181/scripts/install.ps1"  # Update the URL if needed
+    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/heads/develop/scripts/install.ps1"  # Update the URL if needed
     $YaraScript = "$env:TEMP\install_yara.ps1"
     $global:InstallerFiles += $YaraScript
 
@@ -131,7 +131,7 @@ function Install-Yara {
 
 # Step 4: Download and install Snort with error handling
 function Install-Snort {
-    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/fix/issue-181/scripts/windows/snort.ps1"  # Update the URL if needed
+    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/develop/scripts/windows/snort.ps1"  # Update the URL if needed
     $SnortScript = "$env:TEMP\snort.ps1"
     $global:InstallerFiles += $SnortScript
 
