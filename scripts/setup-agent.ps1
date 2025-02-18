@@ -77,7 +77,7 @@ function Install-WazuhAgent {
     try {
         Write-Host "Downloading and executing Wazuh agent script..."
 
-        $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/develop/scripts/install.ps1"  # Update the URL if needed
+        $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/install.ps1"  # Update the URL if needed
         $InstallerPath = "$env:TEMP\install.ps1"
 
         # Download Wazuh agent installer script
@@ -161,7 +161,7 @@ function Install-Snort {
     try {
         Write-Host "Downloading and executing Snort installation script..."
 
-        $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/heads/develop/scripts/windows/snort.ps1"  # Update the URL if needed
+        $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/develop/scripts/windows/snort.ps1"  # Update the URL if needed
         $SnortScript = "$env:TEMP\snort.ps1"
 
         # Download the installation script
