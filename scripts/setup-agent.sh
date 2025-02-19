@@ -63,6 +63,25 @@ error_message() {
     log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
 }
 
+# Check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Ensure root privileges, either directly or through sudo
+maybe_sudo() {
+    if [ "$(id -u)" -ne 0 ]; then
+        if command_exists sudo; then
+            sudo "$@"
+        else
+            error_message "This script requires root privileges. Please run with sudo or as root."
+            exit 1
+        fi
+    else
+        "$@"
+    fi
+}
+
 cleanup() {
     # Remove temporary folder
     if [ -d "$TMP_FOLDER" ]; then
