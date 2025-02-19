@@ -26,9 +26,6 @@ $RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads
 $APP_LOGO_URL = "$RepoUrl/assets/wazuh-logo.png"
 $APP_LOGO_PATH = Join-Path -Path $APP_DATA -ChildPath "wazuh-logo.png"
 
-$VERSION_FILE_URL = "$RepoUrl/version.txt"
-$VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
-
 # Function for logging with timestamp
 function log {
     param (
@@ -216,20 +213,6 @@ function Config {
         return
     } finally {
         info_message "App logo downloaded successfully"
-    }
-
-    info_message "Downloading version file..."
-    if (!(Test-Path -Path $OSSEC_PATH)) {
-        warn_message "ossec-agent folder does not exist. Skipping."
-    }
-    else {
-        try {
-            Invoke-WebRequest -Uri $VERSION_FILE_URL -OutFile $VERSION_FILE_PATH -ErrorAction Stop
-        } catch {
-            error_message "Failed to download version file: $($_.Exception.Message)"
-        } finally {
-            info_message "Version file downloaded successfully"
-        }
     }
 }
 

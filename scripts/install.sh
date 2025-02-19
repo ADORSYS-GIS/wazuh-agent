@@ -312,11 +312,6 @@ config() {
     maybe_sudo chmod +r "$LOCAL_PATH/wazuh-logo.png"
     info_message "Logo downloaded successfully."
 
-    # Download version file
-    info_message "Downloading version file..."
-    maybe_sudo curl "$REPO_URL/version.txt" > "$OSSEC_PATH/version.txt"
-    maybe_sudo chmod +r "$OSSEC_PATH/version.txt"
-    info_message "Version file downloaded successfully."
 }
 
 start_agent() {
@@ -439,9 +434,6 @@ if ! sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh" >> "$
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
-
-info_message "Wazuh upgrade finished successfully"
-
 EOF
     # Make the new script executable
     maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"

@@ -17,9 +17,11 @@ WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.1.1-rc3"}
 if [ "$(uname)" = "Darwin" ]; then
     # macOS
     OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
+    OSSEC_PATH="/Library/Ossec/etc"
 else
     # Linux
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
+    OSSEC_PATH="/var/ossec/etc"
 fi
 
 USER=${USER:-"root"}
@@ -29,6 +31,8 @@ WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.10.1-1'}
 WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.2.7'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
+
+REPO_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/ota-update"
 
 TMP_FOLDER="$(mktemp -d)"
 
@@ -112,3 +116,10 @@ if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/
     error_message "Failed to install 'snort'"
     exit 1
 fi
+
+# Download version file
+info_message "Downloading version file..."
+maybe_sudo curl "$REPO_URL/version.txt" > "$OSSEC_PATH/version.txt"
+info_message "Version file downloaded successfully."
+
+success_message "Wazuh has been setup successfully."
