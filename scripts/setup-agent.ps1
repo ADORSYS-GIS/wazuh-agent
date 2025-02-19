@@ -4,13 +4,14 @@ Set-StrictMode -Version Latest
 # Variables (default log level, app details, paths)
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-client" }
-$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.2.12" }
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "manager.wazuh.adorsys.team" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.10.1-1" }
 $OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"  # Adjust for Windows
-$TEMP_DIR = [System.IO.Path]::GetTempPath()
-$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.2.0" }
-$WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.0" }
+$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.2.1" }
+$WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.1" }
+$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.2.7" }
+$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "1.0.0" }
+$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.2.17" }
 
 # Global array to track installer files
 $global:InstallerFiles = @()
@@ -93,7 +94,7 @@ function Install-WazuhAgent {
 
 # Step 2: Download and install wazuh-cert-oauth2-client with error handling
 function Install-OAuth2Client {
-    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/main/scripts/install.ps1"  # Update the URL if needed
+    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.ps1"  # Update the URL if needed
     $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
     $global:InstallerFiles += $OAuth2Script
 
@@ -112,7 +113,7 @@ function Install-OAuth2Client {
 
 # Step 3: Download and install YARA with error handling
 function Install-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/heads/main/scripts/install.ps1"  # Update the URL if needed
+    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.ps1"  # Update the URL if needed
     $YaraScript = "$env:TEMP\install_yara.ps1"
     $global:InstallerFiles += $YaraScript
 
@@ -131,7 +132,7 @@ function Install-Yara {
 
 # Step 4: Download and install Snort with error handling
 function Install-Snort {
-    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/windows/snort.ps1"  # Update the URL if needed
+    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/windows/snort.ps1"  # Update the URL if needed
     $SnortScript = "$env:TEMP\snort.ps1"
     $global:InstallerFiles += $SnortScript
 
@@ -150,7 +151,7 @@ function Install-Snort {
 
 # Step 5: Download and install Wazuh Agent Status with error handling
 function Install-AgentStatus {
-    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/main/scripts/install.ps1"  # Update the URL if needed
+    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.ps1"  # Update the URL if needed
     $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
     $global:InstallerFiles += $AgentStatusScript
 
