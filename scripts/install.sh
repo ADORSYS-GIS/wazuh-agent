@@ -90,6 +90,7 @@ if [ "$(uname)" = "Darwin" ]; then
     UPGRADE_SCRIPT_PATH="/Library/Ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
     OSSEC_PATH="/Library/Ossec/etc"
+    LOCAL_PATH="~/Library/Application Support/Ossec"
 elif [ -f /etc/debian_version ]; then
     OS="Linux"
     PACKAGE_MANAGER="apt"
@@ -99,6 +100,7 @@ elif [ -f /etc/debian_version ]; then
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
     OSSEC_PATH="/var/ossec/etc"
+    LOCAL_PATH="/usr/share/pixmaps"
 elif [ -f /etc/redhat-release ]; then
     OS="Linux"
     PACKAGE_MANAGER="yum"
@@ -106,6 +108,7 @@ elif [ -f /etc/redhat-release ]; then
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
     OSSEC_PATH="/var/ossec/etc"
+    LOCAL_PATH="/usr/share/pixmaps"
 elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     OS="Linux"
     PACKAGE_MANAGER="zypper"
@@ -113,6 +116,7 @@ elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
     OSSEC_PATH="/var/ossec/etc"
+    LOCAL_PATH="/usr/share/pixmaps"
 else
     error_message "Unsupported OS"
     exit 1
@@ -296,14 +300,17 @@ config() {
         esac
 
     # Download logo
-    if [ -f "$OSSEC_PATH/wazuh-logo.png" ]; then
-        info_message "Logo already downloaded. Skipping."
+    if [ ! -d "$LOCAL_PATH" ]; then
+        info_message "Creating $LOCAL_PATH directory..."
+        mkdir -p "$LOCAL_PATH"
+        info_message "Directory created successfully."
     else
-        info_message "Downloading logo..."
-        maybe_sudo curl "$REPO_URL/assets/wazuh-logo.png" -o "$OSSEC_PATH/wazuh-logo.png"
-        maybe_sudo chmod +r "$OSSEC_PATH/wazuh-logo.png"
-        info_message "Logo downloaded successfully."
+        info_message "$LOCAL_PATH directory already exists."
     fi
+    info_message "Downloading logo..."
+    maybe_sudo curl "$REPO_URL/assets/wazuh-logo.png" -o "$LOCAL_PATH/wazuh-logo.png"
+    maybe_sudo chmod +r "$LOCAL_PATH/wazuh-logo.png"
+    info_message "Logo downloaded successfully."
 
     # Download version file
     info_message "Downloading version file..."
