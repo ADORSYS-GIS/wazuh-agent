@@ -11,6 +11,8 @@ $NORMAL = "`e[0m"
 
 # Global variables
 $OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"
+$OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
+$APP_DATA = "C:\ProgramData\ossec-agent\"
 
 # Variables
 
@@ -18,6 +20,14 @@ $AgentFileName = "wazuh-agent-$WAZUH_AGENT_VERSION.msi"
 $TempDir = $env:TEMP
 $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.msi"
 $MsiPath = Join-Path -Path $TempDir -ChildPath $AgentFileName
+
+$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/ota-update"
+
+$APP_LOGO_URL = "$RepoUrl/assets/wazuh-logo.png"
+$APP_LOGO_PATH = Join-Path -Path $APP_DATA -ChildPath "wazuh-logo.png"
+
+$VERSION_FILE_URL = "$RepoUrl/version.txt"
+$VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 
 # Function for logging with timestamp
 function log {
@@ -35,6 +45,13 @@ function info_message {
         [string]$MESSAGE
     )
     log "INFO" "$GREEN$MESSAGE$NORMAL"
+}
+
+function warn_message {
+    param (
+        [string]$MESSAGE
+    )
+    log "INFO" "$YELLOW$MESSAGE$NORMAL"
 }
 
 function error_message {
@@ -185,6 +202,37 @@ try {
     }
 }
 
+function Config {
+    info_message "Downloading app logo..."
+
+    if (!(Test-Path -Path $APP_DATA)) {
+        New-Item -ItemType Directory -Path $APP_DATA -Force | Out-Null
+    }
+
+    try {
+        Invoke-WebRequest -Uri $APP_LOGO_URL -OutFile $APP_LOGO_PATH -ErrorAction Stop
+    } catch {
+        error_message "Failed to download App logo: $($_.Exception.Message)"
+        return
+    } finally {
+        info_message "App logo downloaded successfully"
+    }
+
+    info_message "Downloading version file..."
+    if (!(Test-Path -Path $OSSEC_PATH)) {
+        warn_message "ossec-agent folder does not exist. Skipping."
+    }
+    else {
+        try {
+            Invoke-WebRequest -Uri $VERSION_FILE_URL -OutFile $VERSION_FILE_PATH -ErrorAction Stop
+        } catch {
+            error_message "Failed to download version file: $($_.Exception.Message)"
+        } finally {
+            info_message "Version file downloaded successfully"
+        }
+    }
+}
+
 function Cleanup {
     info_message "Removing msi executable $AgentVersion..."
     try {
@@ -199,4 +247,5 @@ function Cleanup {
 # Call the Install-Agent function to execute the installation
 Install-Agent
 Create-Upgrade-Script
+Config
 Cleanup
