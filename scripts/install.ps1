@@ -142,6 +142,8 @@ function Create-Upgrade-Script {
 # Upgrade script for Wazuh Agent
 # This script downloads and updates the Wazuh agent
 
+$WAZUH_AGENT_TAG = if ($env:WAZUH_AGENT_TAG) { $env:WAZUH_AGENT_TAG } else { "1.2.0" }
+
 function Log {
     param (
         [string]$Level,
