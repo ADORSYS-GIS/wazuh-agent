@@ -15,14 +15,11 @@ WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.1.2-rc4"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.1.1-rc3"}
 # Define the OSSEC configuration path
 if [ "$(uname)" = "Darwin" ]; then
-    # macOS
-    OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
     OSSEC_PATH="/Library/Ossec/etc"
 else
-    # Linux
-    OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
     OSSEC_PATH="/var/ossec/etc"
 fi
+OSSEC_CONF_PATH="$OSSEC_PATH/ossec.conf"
 
 USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
@@ -32,7 +29,7 @@ WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.10.1-1'}
 WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.2.7'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 
-REPO_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/ota-update"
+REPO_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
 
 TMP_FOLDER="$(mktemp -d)"
 
@@ -99,7 +96,7 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
 # Step -1: Download all scripts
 info_message "Download all scripts..."
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/ota-update/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent.sh"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent-status.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh > "$TMP_FOLDER/install-yara.sh"
@@ -140,9 +137,12 @@ if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/
     exit 1
 fi
 
-# Download version file
+# Step 6: Download version file
 info_message "Downloading version file..."
-maybe_sudo curl "$REPO_URL/version.txt" > "$OSSEC_PATH/version.txt"
+if ! (maybe_sudo curl "$REPO_URL/version.txt" > "$OSSEC_PATH/version.txt") 2>&1; then
+    error_message "Failed to download version file"
+    exit 1
+fi
 info_message "Version file downloaded successfully."
 
 success_message "Wazuh has been setup successfully."

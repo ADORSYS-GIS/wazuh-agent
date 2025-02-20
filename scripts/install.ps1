@@ -3,12 +3,11 @@ $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION 
 
 
 # Global variables
-$OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"
 $OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
+$OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
 $APP_DATA = "C:\ProgramData\ossec-agent\"
 
 # Variables
-
 $AgentFileName = "wazuh-agent-$WAZUH_AGENT_VERSION.msi"
 $TempDir = $env:TEMP
 $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.msi"

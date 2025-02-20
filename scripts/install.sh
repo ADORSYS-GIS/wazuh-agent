@@ -90,7 +90,7 @@ if [ "$(uname)" = "Darwin" ]; then
     UPGRADE_SCRIPT_PATH="/Library/Ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
     OSSEC_PATH="/Library/Ossec/etc"
-    LOCAL_PATH="~/Library/Application Support/Ossec"
+    LOCAL_PATH="/Library/Application Support/Ossec"
 elif [ -f /etc/debian_version ]; then
     OS="Linux"
     PACKAGE_MANAGER="apt"
@@ -421,7 +421,7 @@ info_message "Starting setup. Using temporary directory: $TMP_FOLDER"
 
 # Download scripts
 info_message "Downloading setup script..."
-SCRIPT_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/ota-update/scripts/setup-agent.sh"
+SCRIPT_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh"
 
 if ! curl -SL -s "$SCRIPT_URL" -o "$TMP_FOLDER/setup-agent.sh" >> "$LOG_DIR"; then
     error_message "Failed to download setup-agent.sh"
@@ -469,11 +469,6 @@ validate_installation() {
     # Check if the logo file exists
     if maybe_sudo [ ! -f "$OSSEC_PATH/wazuh-logo.png" ]; then
         warn_message "Logo file has not been downloaded."
-    fi
-
-    # Check if the version file exists
-    if maybe_sudo [ ! -f "$OSSEC_PATH/version.txt" ]; then
-        warn_message "Version file has not been downloaded."
     fi
 
   success_message "Installation and configuration validated successfully."
