@@ -15,12 +15,11 @@ WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.1.2-rc4"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.1.1-rc3"}
 # Define the OSSEC configuration path
 if [ "$(uname)" = "Darwin" ]; then
-    # macOS
-    OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
+    OSSEC_PATH="/Library/Ossec/etc"
 else
-    # Linux
-    OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
+    OSSEC_PATH="/var/ossec/etc"
 fi
+OSSEC_CONF_PATH="$OSSEC_PATH/ossec.conf"
 
 USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
@@ -29,6 +28,8 @@ WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.10.1-1'}
 WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.2.7'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
+
+REPO_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
 
 TMP_FOLDER="$(mktemp -d)"
 
@@ -59,12 +60,37 @@ error_message() {
     log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
 }
 
+success_message() {
+    log "${GREEN}${BOLD}[SUCCESS]${NORMAL}" "$*"
+}
+
+# Check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Ensure root privileges, either directly or through sudo
+maybe_sudo() {
+    if [ "$(id -u)" -ne 0 ]; then
+        if command_exists sudo; then
+            sudo "$@"
+        else
+            error_message "This script requires root privileges. Please run with sudo or as root."
+            exit 1
+        fi
+    else
+        "$@"
+    fi
+}
+
 cleanup() {
     # Remove temporary folder
     if [ -d "$TMP_FOLDER" ]; then
         rm -rf "$TMP_FOLDER"
     fi
 }
+
+trap cleanup EXIT
 
 info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
@@ -111,4 +137,12 @@ if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/
     exit 1
 fi
 
-trap cleanup EXIT
+# Step 6: Download version file
+info_message "Downloading version file..."
+if ! (maybe_sudo curl "$REPO_URL/version.txt" > "$OSSEC_PATH/version.txt") 2>&1; then
+    error_message "Failed to download version file"
+    exit 1
+fi
+info_message "Version file downloaded successfully."
+
+success_message "Wazuh has been setup successfully."

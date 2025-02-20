@@ -3,18 +3,23 @@ $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION 
 
 
 # Global variables
-$OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"
+$OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
+$OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
+$APP_DATA = "C:\ProgramData\ossec-agent\"
 
 # Variables
-
 $AgentFileName = "wazuh-agent-$WAZUH_AGENT_VERSION.msi"
 $TempDir = $env:TEMP
 $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.msi"
 $MsiPath = Join-Path -Path $TempDir -ChildPath $AgentFileName
 
-# Function to handle logging
+$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/ota-update"
 
-function Log {
+$APP_LOGO_URL = "$RepoUrl/assets/wazuh-logo.png"
+$APP_LOGO_PATH = Join-Path -Path $APP_DATA -ChildPath "wazuh-logo.png"
+
+# Function for logging with timestamp
+function log {
     param (
         [string]$Level,
         [string]$Message,
@@ -201,6 +206,23 @@ try {
     }
 }
 
+function Config {
+    InfoMessage "Downloading app logo..."
+
+    if (!(Test-Path -Path $APP_DATA)) {
+        New-Item -ItemType Directory -Path $APP_DATA -Force | Out-Null
+    }
+
+    try {
+        Invoke-WebRequest -Uri $APP_LOGO_URL -OutFile $APP_LOGO_PATH -ErrorAction Stop
+    } catch {
+        ErrorMessage "Failed to download App logo: $($_.Exception.Message)"
+        return
+    } finally {
+        InfoMessage "App logo downloaded successfully"
+    }
+}
+
 function Cleanup {
     InfoMessage "Removing msi executable $AgentVersion..."
     try {
@@ -216,4 +238,5 @@ function Cleanup {
 # Call the Install-Agent function to execute the installation
 Install-Agent
 Create-Upgrade-Script
+Config
 Cleanup
