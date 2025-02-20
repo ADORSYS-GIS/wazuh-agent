@@ -213,17 +213,17 @@ function Install-AgentStatus {
 }
 
 function DownloadVersionFile {
-    info_message "Downloading version file..."
+    Write-Host "Downloading version file..."
     if (!(Test-Path -Path $OSSEC_PATH)) {
-        warn_message "ossec-agent folder does not exist. Skipping."
+        Write-Host "ossec-agent folder does not exist. Skipping." -ForegroundColor Yellow
     }
     else {
         try {
             Invoke-WebRequest -Uri $VERSION_FILE_URL -OutFile $VERSION_FILE_PATH -ErrorAction Stop
         } catch {
-            error_message "Failed to download version file: $($_.Exception.Message)"
+            Write-Host "Failed to download version file: $($_.Exception.Message)" -ForegroundColor Red
         } finally {
-            info_message "Version file downloaded successfully"
+            Write-Host "Version file downloaded successfully"
         }
     }
 }
