@@ -89,6 +89,8 @@ if [ "$(uname)" = "Darwin" ]; then
     OS="macOS"
     UPGRADE_SCRIPT_PATH="/Library/Ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
+    OSSEC_PATH="/Library/Ossec/etc"
+    LOCAL_PATH="/Library/Application Support/Ossec"
 elif [ -f /etc/debian_version ]; then
     OS="Linux"
     PACKAGE_MANAGER="apt"
@@ -97,18 +99,24 @@ elif [ -f /etc/debian_version ]; then
     GPG_IMPORT_CMD="gpg --no-default-keyring --keyring $GPG_KEYRING --import"
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
+    OSSEC_PATH="/var/ossec/etc"
+    LOCAL_PATH="/usr/share/pixmaps"
 elif [ -f /etc/redhat-release ]; then
     OS="Linux"
     PACKAGE_MANAGER="yum"
     REPO_FILE="/etc/yum.repos.d/wazuh.repo"
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
+    OSSEC_PATH="/var/ossec/etc"
+    LOCAL_PATH="/usr/share/pixmaps"
 elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     OS="Linux"
     PACKAGE_MANAGER="zypper"
     REPO_FILE="/etc/zypp/repos.d/wazuh.repo"
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
+    OSSEC_PATH="/var/ossec/etc"
+    LOCAL_PATH="/usr/share/pixmaps"
 else
     error_message "Unsupported OS"
     exit 1
@@ -227,68 +235,83 @@ enable_repo() {
 }
 
 config() {
-  # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for unix systems
-  if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
-    # First remove <address till address>
-    maybe_sudo sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during old manager address removal."
-        exit 1
-    }
+    REPO_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
 
-    maybe_sudo sed_alternative -i "/<server=*/ a\
-      <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during insertion of latest manager address."
-        exit 1
-    }
-  fi
+    # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for unix systems
+    if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
+        # First remove <address till address>
+        maybe_sudo sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
+            error_message "Error occurred during old manager address removal."
+            exit 1
+        }
+
+        maybe_sudo sed_alternative -i "/<server=*/ a\
+        <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
+            error_message "Error occurred during insertion of latest manager address."
+            exit 1
+        }
+    fi
   
-  # Delete REGISTRATION_SERVER_ADDRESS if it exists
-  if ! maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
-    # First remove <address till address>
-    maybe_sudo sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
-        error_message "Error occurred during old manager address removal."
-        exit 1
-    }
-  fi
+    # Delete REGISTRATION_SERVER_ADDRESS if it exists
+    if ! maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
+        # First remove <address till address>
+        maybe_sudo sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
+            error_message "Error occurred during old manager address removal."
+            exit 1
+        }
+    fi
   
-  case "$(uname)" in
-      Linux*)
-        # Check if the specific <location> tag exists in the configuration file
-        if ! maybe_sudo grep -q "<location>/var/ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
+    case "$(uname)" in
+        Linux*)
+            # Check if the specific <location> tag exists in the configuration file
+            if ! maybe_sudo grep -q "<location>/var/ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
+                
+                sed_alternative -i '/<\/ossec_config>/i\
+                    <!-- active response logs -->\
+                    <localfile>\
+                        <log_format>syslog<\/log_format>\
+                        <location>\/var\/ossec\/logs\/active-responses.log<\/location>\
+                    <\/localfile>' "$OSSEC_CONF_PATH"
             
-            sed_alternative -i '/<\/ossec_config>/i\
-                <!-- active response logs -->\
-                <localfile>\
-                    <log_format>syslog<\/log_format>\
-                    <location>\/var\/ossec\/logs\/active-responses.log<\/location>\
-                <\/localfile>' "$OSSEC_CONF_PATH"
         
-    
-            info_message "active-response logs are now being monitored"
-        else
-            info_message "The active response already exists in $OSSEC_CONF_PATH"
-        fi
-        info_message "Wazuh agent certificate configuration completed successfully."
-        ;;
-      Darwin*)
-        if ! maybe_sudo grep -q "<location>/Library/Ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
-    
-            sed_alternative -i -e "/<\/ossec_config>/i\\
-                <!-- active response logs -->\\
-                <localfile>\\
-                    <log_format>syslog</log_format>\\
-                    <location>/Library/Ossec/logs/active-responses.log</location>\\
-                </localfile>" "$OSSEC_CONF_PATH"
+                info_message "active-response logs are now being monitored"
+            else
+                info_message "The active response already exists in $OSSEC_CONF_PATH"
+            fi
+            info_message "Wazuh agent certificate configuration completed successfully."
+            ;;
+        Darwin*)
+            if ! maybe_sudo grep -q "<location>/Library/Ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
         
-    
-            info_message "active-response logs are now being monitored"
-        else
-            info_message "The active response already exists in $OSSEC_CONF_PATH"
-        fi
-        info_message "Wazuh agent certificate configuration completed successfully."
-        ;;
-    esac
-  
+                sed_alternative -i -e "/<\/ossec_config>/i\\
+                    <!-- active response logs -->\\
+                    <localfile>\\
+                        <log_format>syslog</log_format>\\
+                        <location>/Library/Ossec/logs/active-responses.log</location>\\
+                    </localfile>" "$OSSEC_CONF_PATH"
+            
+        
+                info_message "active-response logs are now being monitored"
+            else
+                info_message "The active response already exists in $OSSEC_CONF_PATH"
+            fi
+            info_message "Wazuh agent certificate configuration completed successfully."
+            ;;
+        esac
+
+    # Download logo
+    if [ ! -d "$LOCAL_PATH" ]; then
+        info_message "Creating $LOCAL_PATH directory..."
+        mkdir -p "$LOCAL_PATH"
+        info_message "Directory created successfully."
+    else
+        info_message "$LOCAL_PATH directory already exists."
+    fi
+    info_message "Downloading logo..."
+    maybe_sudo curl "$REPO_URL/assets/wazuh-logo.png" -o "$LOCAL_PATH/wazuh-logo.png"
+    maybe_sudo chmod +r "$LOCAL_PATH/wazuh-logo.png"
+    info_message "Logo downloaded successfully."
+
 }
 
 start_agent() {
@@ -347,7 +370,7 @@ else
     BIN_FOLDER='/usr/bin'
 fi
 
-
+# Create a temporary directory
 TMP_FOLDER="$(mktemp -d)"
 
 # Define text formatting
@@ -365,12 +388,12 @@ log() {
     local MESSAGE="$*"
     local TIMESTAMP
     TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
+    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}" >> "$LOG_DIR"
 }
 
 # Logging helpers
 info_message() {
-    log "${BLUE}${BOLD}[===========> INFO]${NORMAL}" "$*"
+    log "${BLUE}${BOLD}[INFO]${NORMAL}" "$*"
 }
 
 error_message() {
@@ -384,29 +407,33 @@ cleanup() {
     fi
 }
 
-info_message "Add bin directory: $BIN_FOLDER to PATH environment"  | tee -a "$LOG_DIR"
-export PATH="$BIN_FOLDER:$PATH"
- 
-echo $PATH | tee -a "$LOG_DIR"
+trap cleanup EXIT
 
-info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""  | tee -a "$LOG_DIR"
+# Log environment info
+info_message "Starting Wazuh agent upgrade..."
+
+info_message "Adding bin directory: $BIN_FOLDER to PATH environment"
+export PATH="$BIN_FOLDER:$PATH"
+
+info_message "Current PATH: $PATH"
+
+info_message "Starting setup. Using temporary directory: $TMP_FOLDER"
 
 # Download scripts
-info_message "Download all scripts..."  | tee -a "$LOG_DIR"
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh > "$TMP_FOLDER/setup-agent.sh"  | tee -a "$LOG_DIR"
+info_message "Downloading setup script..."
+SCRIPT_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh"
 
-
-# Download and install Wazuh agent
-info_message "Starting wazuh upgrade..." | tee -a ${LOG_DIR}
-
-if ! (sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh") | tee -a ${LOG_DIR}; then
-    error_message "Failed to install wazuh-agent"  | tee -a "$LOG_DIR"
+if ! curl -SL -s "$SCRIPT_URL" -o "$TMP_FOLDER/setup-agent.sh" >> "$LOG_DIR"; then
+    error_message "Failed to download setup-agent.sh"
     exit 1
 fi
 
-trap cleanup EXIT  | tee -a "$LOG_DIR"
+chmod +x "$TMP_FOLDER/setup-agent.sh"
 
-info_message "Wazuh upgrade finished with success" | tee -a ${LOG_DIR}
+if ! sudo WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/setup-agent.sh" >> "$LOG_DIR"; then
+    error_message "Failed to install wazuh-agent"
+    exit 1
+fi
 EOF
     # Make the new script executable
     maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"
@@ -417,27 +444,32 @@ EOF
 
 # Validate agent installation
 validate_installation() {
-  info_message "Validating installation and configuration..."
+    info_message "Validating installation and configuration..."
 
-  # Check if the Wazuh agent service is running
-  if [ "$OS" = "Linux" ]; then
-      if maybe_sudo /var/ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
-          success_message "Wazuh agent service is running."
-      else
-          error_message "Wazuh agent service is not running."
-      fi
-  elif [ "$OS" = "macOS" ]; then
-      if maybe_sudo /Library/Ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
-          success_message "Wazuh agent service is running."
-      else
-          error_message "Wazuh agent service is not running."
-      fi
-  fi
+    # Check if the Wazuh agent service is running
+    if [ "$OS" = "Linux" ]; then
+        if maybe_sudo /var/ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
+            success_message "Wazuh agent service is running."
+        else
+            error_message "Wazuh agent service is not running."
+        fi
+    elif [ "$OS" = "macOS" ]; then
+        if maybe_sudo /Library/Ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
+            success_message "Wazuh agent service is running."
+        else
+            error_message "Wazuh agent service is not running."
+        fi
+    fi
 
-  # Check if the configuration file contains the correct manager and registration server
-  if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
-      warn_message "Wazuh manager address is not configured correctly in $OSSEC_CONF_PATH."
-  fi
+    # Check if the configuration file contains the correct manager and registration server
+    if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
+        warn_message "Wazuh manager address is not configured correctly in $OSSEC_CONF_PATH."
+    fi
+
+    # Check if the logo file exists
+    if maybe_sudo [ ! -f "$OSSEC_PATH/wazuh-logo.png" ]; then
+        warn_message "Logo file has not been downloaded."
+    fi
 
   success_message "Installation and configuration validated successfully."
 }
