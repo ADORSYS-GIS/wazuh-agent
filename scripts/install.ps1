@@ -1,13 +1,6 @@
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "manager.wazuh.adorsys.team" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.10.1-1" }
 
-# Define text formatting
-$RED = "`e[0;31m"
-$GREEN = "`e[0;32m"
-$YELLOW = "`e[1;33m"
-$BLUE = "`e[1;34m"
-$BOLD = "`e[1m"
-$NORMAL = "`e[0m"
 
 # Global variables
 $OSSEC_CONF_PATH = "C:\Program Files (x86)\ossec-agent\ossec.conf"
@@ -29,33 +22,48 @@ $APP_LOGO_PATH = Join-Path -Path $APP_DATA -ChildPath "wazuh-logo.png"
 # Function for logging with timestamp
 function log {
     param (
-        [string]$LEVEL,
-        [string]$MESSAGE
+        [string]$Level,
+        [string]$Message,
+        [string]$Color = "White"  # Default color
     )
-    $TIMESTAMP = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Output "$TIMESTAMP [$LEVEL] $MESSAGE"
+    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
 }
 
-# Logging helpers
-function info_message {
-    param (
-        [string]$MESSAGE
-    )
-    log "INFO" "$GREEN$MESSAGE$NORMAL"
+# Logging helpers with colors
+function InfoMessage {
+    param ([string]$Message)
+    Log "[INFO]" $Message "White"
 }
 
-function warn_message {
-    param (
-        [string]$MESSAGE
-    )
-    log "INFO" "$YELLOW$MESSAGE$NORMAL"
+function WarnMessage {
+    param ([string]$Message)
+    Log "[WARNING]" $Message "Yellow"
 }
 
-function error_message {
+function ErrorMessage {
+    param ([string]$Message)
+    Log "[ERROR]" $Message "Red"
+}
+
+function SuccessMessage {
+    param ([string]$Message)
+    Log "[SUCCESS]" $Message "Green"
+}
+
+function PrintStep {
     param (
-        [string]$MESSAGE
+        [int]$StepNumber,
+        [string]$Message
     )
-    log "ERROR" "$RED$MESSAGE$NORMAL"
+    Log "[STEP]" "Step ${StepNumber}: $Message" "White"
+}
+
+# Exit script with an error message
+function ErrorExit {
+    param ([string]$Message)
+    ErrorMessage $Message
+    exit 1
 }
 
 # Function to install Wazuh Agent
@@ -65,16 +73,16 @@ function Install-Agent {
 
     # Check if system architecture is supported
     if (-not [System.Environment]::Is64BitOperatingSystem) {
-        error_message "Unsupported architecture. Only 64-bit systems are supported."
+        ErrorMessage "Unsupported architecture. Only 64-bit systems are supported."
         return
     }
 
     # Download the Wazuh agent MSI package
-    info_message "Downloading Wazuh agent version $WAZUH_AGENT_VERSION..."
+    InfoMessage "Downloading Wazuh agent version $WAZUH_AGENT_VERSION..."
     try {
         Invoke-WebRequest -Uri $DownloadUrl -OutFile $MsiPath -ErrorAction Stop
     } catch {
-        error_message "Failed to download Wazuh agent: $($_.Exception.Message)"
+        ErrorMessage "Failed to download Wazuh agent: $($_.Exception.Message)"
         return
     }
 
@@ -86,11 +94,11 @@ function Install-Agent {
     )
 
     # Install the Wazuh agent
-    info_message "Installing Wazuh agent..."
+    InfoMessage "Installing Wazuh agent..."
     try {
         Start-Process "msiexec.exe" -ArgumentList $MsiArguments -Wait -ErrorAction Stop
     } catch {
-        error_message "Failed to install Wazuh agent: $($_.Exception.Message)"
+        ErrorMessage "Failed to install Wazuh agent: $($_.Exception.Message)"
         return
     }
 
@@ -99,29 +107,29 @@ function Install-Agent {
         [xml]$configXml = Get-Content -Path $OSSEC_CONF_PATH
         $configXml.ossec_config.client.server.address = $WAZUH_MANAGER
         $configXml.Save($OSSEC_CONF_PATH)
-        info_message "Manager address updated successfully in ossec.conf."
+        InfoMessage "Manager address updated successfully in ossec.conf."
     } catch {
-        error_message "Failed to update manager address: $($_.Exception.Message)"
+        ErrorMessage "Failed to update manager address: $($_.Exception.Message)"
         return
     }
     
     # Start the Wazuh service
-    info_message "Starting Wazuh service..."
+    InfoMessage "Starting Wazuh service..."
     try {
         Start-Service -Name "WazuhSvc" -ErrorAction Stop
-        info_message "Wazuh service started successfully."
+        InfoMessage "Wazuh service started successfully."
     } catch {
-        error_message "Failed to start Wazuh service: $($_.Exception.Message)"
+        ErrorMessage "Failed to start Wazuh service: $($_.Exception.Message)"
         return
     }
 
-    info_message "Wazuh agent installed successfully."
+    InfoMessage "Wazuh agent installed successfully."
 }
 
 
 function Create-Upgrade-Script {
     $UPGRADE_SCRIPT_PATH = "C:\Program Files (x86)\ossec-agent\adorsys-update.ps1"
-    info_message "Creating update script at $UPGRADE_SCRIPT_PATH"
+    InfoMessage "Creating update script at $UPGRADE_SCRIPT_PATH"
 
     # Temporary directory
     $TempFolder = New-TemporaryFile
@@ -188,9 +196,9 @@ try {
         # Save the script
         $UpgradeScript | Set-Content -Path $UPGRADE_SCRIPT_PATH -Force
         Set-ItemProperty -Path $UPGRADE_SCRIPT_PATH -Name IsReadOnly -Value $true
-        info_message "Update script created successfully."
+        InfoMessage "Update script created successfully."
     } catch {
-        error_message "Failed to create the upgrade script: $_"
+        ErrorMessage "Failed to create the upgrade script: $_"
     } finally {
         # Cleanup temporary directory
         if (Test-Path $TempFolder) {
@@ -200,7 +208,7 @@ try {
 }
 
 function Config {
-    info_message "Downloading app logo..."
+    InfoMessage "Downloading app logo..."
 
     if (!(Test-Path -Path $APP_DATA)) {
         New-Item -ItemType Directory -Path $APP_DATA -Force | Out-Null
@@ -209,21 +217,22 @@ function Config {
     try {
         Invoke-WebRequest -Uri $APP_LOGO_URL -OutFile $APP_LOGO_PATH -ErrorAction Stop
     } catch {
-        error_message "Failed to download App logo: $($_.Exception.Message)"
+        ErrorMessage "Failed to download App logo: $($_.Exception.Message)"
         return
     } finally {
-        info_message "App logo downloaded successfully"
+        InfoMessage "App logo downloaded successfully"
     }
 }
 
 function Cleanup {
-    info_message "Removing msi executable $AgentVersion..."
+    InfoMessage "Removing msi executable $AgentVersion..."
     try {
         Remove-Item -Path $MsiPath -Recurse -Force
-        info_message "Msi Executable $AgentVersion Removed"
+        InfoMessage "Msi Executable $AgentVersion Removed"
+        SuccessMessage "Wazuh Installed Successfully"
     }
     catch {
-        error_message "Failed to remove msi executable $AgentVersion : $($_.Exception.Message)"
+        ErrorMessage "Failed to remove msi executable $AgentVersion : $($_.Exception.Message)"
     }
 }
 
