@@ -1,5 +1,6 @@
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "manager.wazuh.adorsys.team" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.10.1-1" }
+$WAZUH_AGENT_TAG = if ($env:WAZUH_AGENT_TAG) { $env:WAZUH_AGENT_TAG } else { "1.2.0" }
 
 
 # Global variables
@@ -13,7 +14,7 @@ $TempDir = $env:TEMP
 $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.msi"
 $MsiPath = Join-Path -Path $TempDir -ChildPath $AgentFileName
 
-$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
+$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_TAG"
 
 $APP_LOGO_URL = "$RepoUrl/assets/wazuh-logo.png"
 $APP_LOGO_PATH = Join-Path -Path $APP_DATA -ChildPath "wazuh-logo.png"
@@ -141,6 +142,8 @@ function Create-Upgrade-Script {
 # Upgrade script for Wazuh Agent
 # This script downloads and updates the Wazuh agent
 
+$WAZUH_AGENT_TAG = if ($env:WAZUH_AGENT_TAG) { $env:WAZUH_AGENT_TAG } else { "1.2.0" }
+
 function Log {
     param (
         [string]$Level,
@@ -176,7 +179,7 @@ try {
     info_message "Starting Wazuh Agent Upgrade" | tee -a "C:\Program Files (x86)\ossec-agent\active-response\active-responses.log"
 
     # Download the setup script
-    $SetupScriptURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.ps1"
+    $SetupScriptURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_TAG/scripts/setup-agent.ps1"
     $SetupScriptPath = Join-Path -Path $TempFolder -ChildPath "setup-agent.ps1"
     Invoke-WebRequest -Uri $SetupScriptURL -OutFile $SetupScriptPath
 
