@@ -63,6 +63,10 @@ error_message() {
     log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
 }
 
+success_message() {
+    log "${GREEN}${BOLD}[SUCCESS]${NORMAL}" "$*"
+}
+
 # Check if a command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
