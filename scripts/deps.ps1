@@ -185,7 +185,6 @@ function IsVCppInstalled {
 IsVCppInstalled
 Install-GnuSed
 Ensure-Dependencies
-Install-GnuSed
 Install-BurntToastModule
 
 
