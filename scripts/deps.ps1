@@ -84,30 +84,35 @@ function Install-BurntToastModule {
     param()
 
     try {
-        # Check if the NuGet provider is installed (minimum version 2.8.5.201) without using a variable.
-        if (Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue) {
-            Write-Output "NuGet provider is already installed."
-        }
-        else {
-            Write-Output "NuGet provider not found. Installing NuGet provider..."
+        # 1. Ensure NuGet provider is installed (minimum version 2.8.5.201)
+        $nugetProvider = Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue
+        if (-not $nugetProvider) {
+            InfoMessage "NuGet provider not found. Installing silently..."
             Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false -ErrorAction Stop
-            Write-Output "NuGet provider installed successfully."
         }
 
-        # Check if the BurntToast module is already installed.
+        # 2. Trust the PSGallery repository so that it doesn't prompt for confirmation
+        $psGallery = Get-PSRepository -Name "PSGallery" -ErrorAction SilentlyContinue
+        if ($psGallery -and $psGallery.InstallationPolicy -ne "Trusted") {
+            InfoMessage "PSGallery is not trusted. Setting it to trusted..."
+            Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted -ErrorAction Stop
+        }
+
+        # 3. Check if BurntToast is already installed
         if (Get-Module -ListAvailable -Name BurntToast -ErrorAction SilentlyContinue) {
-            Write-Output "Module 'BurntToast' is already installed."
+            InfoMessage "The BurntToast module is already installed."
         }
         else {
-            Write-Output "Installing module 'BurntToast'..."
+            InfoMessage "Installing the BurntToast module..."
             Install-Module -Name BurntToast -Force -Confirm:$false -Scope CurrentUser -ErrorAction Stop
-            Write-Output "Module 'BurntToast' installed successfully."
+            InfoMessage "BurntToast module installed successfully."
         }
     }
     catch {
-        Write-Error "Failed to install module 'BurntToast'. Error details: $_"
+        ErrorMessage "Failed to install BurntToast module. Error details: $_"
     }
 }
+
 
 
 
