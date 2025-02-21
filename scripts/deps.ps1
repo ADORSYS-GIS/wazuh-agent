@@ -87,7 +87,7 @@ function Install-BurntToastModule {
     try {
         # Check if the module is already available
         if (Get-Module -ListAvailable -Name $moduleName -ErrorAction SilentlyContinue) {
-            WarnMessage "Module '$moduleName' is already installed."
+            InfoMessage "Module '$moduleName' is already installed."
         }
         else {
             InfoMessage "Installing module '$moduleName'..."
