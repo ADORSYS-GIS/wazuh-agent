@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Check if we're running in bash; if not, adjust behavior
 if [ -n "$BASH_VERSION" ]; then
@@ -10,21 +10,24 @@ fi
 # Default log level and application details
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
-WOPS_VERSION=${WOPS_VERSION:-"0.2.6"}
+WOPS_VERSION=${WOPS_VERSION:-"0.2.16"}
+WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.1.2-rc4"}
+WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.1.1-rc3"}
 # Define the OSSEC configuration path
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # macOS
-    OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
+if [ "$(uname)" = "Darwin" ]; then
+    OSSEC_PATH="/Library/Ossec/etc"
 else
-    # Linux
-    OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
+    OSSEC_PATH="/var/ossec/etc"
 fi
+OSSEC_CONF_PATH="$OSSEC_PATH/ossec.conf"
 
 USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
 
-WAZUH_MANAGER=${WAZUH_MANAGER:-'master.dev.wazuh.adorsys.team'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.8.1-1'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.10.1-1'}
+WAZUH_AGENT_TAG=${WAZUH_AGENT_TAG:-'1.2.0'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.2.7'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 
 TMP_FOLDER="$(mktemp -d)"
@@ -56,6 +59,29 @@ error_message() {
     log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
 }
 
+success_message() {
+    log "${GREEN}${BOLD}[SUCCESS]${NORMAL}" "$*"
+}
+
+# Check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Ensure root privileges, either directly or through sudo
+maybe_sudo() {
+    if [ "$(id -u)" -ne 0 ]; then
+        if command_exists sudo; then
+            sudo "$@"
+        else
+            error_message "This script requires root privileges. Please run with sudo or as root."
+            exit 1
+        fi
+    else
+        "$@"
+    fi
+}
+
 cleanup() {
     # Remove temporary folder
     if [ -d "$TMP_FOLDER" ]; then
@@ -69,23 +95,15 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
 # Step -1: Download all scripts
 info_message "Download all scripts..."
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/deps.sh > "$TMP_FOLDER/deps.sh"
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent.sh"
+curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_TAG/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/main/scripts/install.sh > "$TMP_FOLDER/install-wazuh-agent-status.sh"
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/main/scripts/install.sh > "$TMP_FOLDER/install-yara.sh"
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/install.sh > "$TMP_FOLDER/install-snort.sh"
-
-# Step 0: Install dependencies
-info_message "Install dependencies"
-if ! (sudo env bash "$TMP_FOLDER/deps.sh") 2>&1; then
-    error_message "Failed to install dependencies"
-    exit 1
-fi
+curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent-status.sh"
+curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-yara.sh"
+curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-snort.sh"
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
-if ! (sudo LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_NAME="$WAZUH_AGENT_NAME" bash "$TMP_FOLDER/install-wazuh-agent.sh") 2>&1; then
+if ! (sudo LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" bash "$TMP_FOLDER/install-wazuh-agent.sh") 2>&1; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
@@ -99,7 +117,7 @@ fi
 
 # Step 3: Download and install wazuh-agent-status
 info_message "Installing wazuh-agent-status"
-if ! (bash "$TMP_FOLDER/install-wazuh-agent-status.sh") 2>&1; then
+if ! (sudo bash "$TMP_FOLDER/install-wazuh-agent-status.sh") 2>&1; then
     error_message "Failed to install 'wazuh-agent-status'"
     exit 1
 fi
@@ -117,3 +135,13 @@ if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/
     error_message "Failed to install 'snort'"
     exit 1
 fi
+
+# Step 6: Download version file
+info_message "Downloading version file..."
+if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_TAG/version.txt" > "$OSSEC_PATH/version.txt") 2>&1; then
+    error_message "Failed to download version file"
+    exit 1
+fi
+info_message "Version file downloaded successfully."
+
+success_message "Wazuh has been setup successfully."
