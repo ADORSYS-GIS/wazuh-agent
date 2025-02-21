@@ -30,6 +30,7 @@ Wazuh agents collect and transmit security data from endpoints to the Wazuh Mana
 - [MacOS Enrollment Guide](/Agent%20Enrollment/macos-agent.md)
 - [Windows Enrollment Guide](/Agent%20Enrollment/windows-agent.md)
 
+
 ## Additional Notes
 ### Scripts Overview
 This repository includes several scripts for configuring and deploying Wazuh and additional security components:
