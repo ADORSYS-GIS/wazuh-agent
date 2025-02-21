@@ -78,28 +78,37 @@ function Ensure-Dependencies {
     }
 }
 
+
 function Install-BurntToastModule {
     [CmdletBinding()]
     param()
 
-    $moduleName = "BurntToast"
-
     try {
-        # Check if the module is already available
-        if (Get-Module -ListAvailable -Name $moduleName -ErrorAction SilentlyContinue) {
-            InfoMessage "Module '$moduleName' is already installed."
+        # Check if the NuGet provider is installed (minimum version 2.8.5.201) without using a variable.
+        if (Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue) {
+            Write-Output "NuGet provider is already installed."
         }
         else {
-            InfoMessage "Installing module '$moduleName'..."
-            # Install the module without prompting, forcing installation to bypass any prompts.
-            Install-Module -Name $moduleName -Force -Confirm:$false -Scope CurrentUser -ErrorAction Stop
-            SuccessMessage "Module '$moduleName' installed successfully."
+            Write-Output "NuGet provider not found. Installing NuGet provider..."
+            Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false -ErrorAction Stop
+            Write-Output "NuGet provider installed successfully."
+        }
+
+        # Check if the BurntToast module is already installed.
+        if (Get-Module -ListAvailable -Name BurntToast -ErrorAction SilentlyContinue) {
+            Write-Output "Module 'BurntToast' is already installed."
+        }
+        else {
+            Write-Output "Installing module 'BurntToast'..."
+            Install-Module -Name BurntToast -Force -Confirm:$false -Scope CurrentUser -ErrorAction Stop
+            Write-Output "Module 'BurntToast' installed successfully."
         }
     }
     catch {
-        ErrorMessage "Failed to install module '$moduleName'. Error details: $_"
+        Write-Error "Failed to install module 'BurntToast'. Error details: $_"
     }
 }
+
 
 
 function Install-GnuSed {
