@@ -1,3 +1,4 @@
+
 # Function to log messages with a timestamp
 function Log {
     param (
@@ -77,6 +78,30 @@ function Ensure-Dependencies {
     }
 }
 
+function Install-BurntToastModule {
+    [CmdletBinding()]
+    param()
+
+    $moduleName = "BurntToast"
+
+    try {
+        # Check if the module is already available
+        if (Get-Module -ListAvailable -Name $moduleName -ErrorAction SilentlyContinue) {
+            WarnMessage "Module '$moduleName' is already installed."
+        }
+        else {
+            InfoMessage "Installing module '$moduleName'..."
+            # Install the module without prompting, forcing installation to bypass any prompts.
+            Install-Module -Name $moduleName -Force -Confirm:$false -Scope CurrentUser -ErrorAction Stop
+            SuccessMessage "Module '$moduleName' installed successfully."
+        }
+    }
+    catch {
+        ErrorMessage "Failed to install module '$moduleName'. Error details: $_"
+    }
+}
+
+
 function Install-GnuSed {
     # Define the source URL and destination path
     $SourceUrl = "https://downloads.sourceforge.net/project/gnuwin32/sed/4.2.1/sed-4.2.1-setup.exe?ts=gAAAAABnihwyfyy8CnXn7cxMYUNSQkpG2f2dUMFeiIGE8dM6A4aJ9G6yYtMvnuqpFQ658BS-pINAAB2fnD6SQOVdenwjEcrf0w%3D%3D&r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fgnuwin32%2Ffiles%2Fsed%2F4.2.1%2Fsed-4.2.1-setup.exe%2Fdownload%3Fuse_mirror%3Ddeac-fra%26r%3Dhttps%253A%252F%252Fsourceforge.net%252Fprojects%252Fgnuwin32%252Ffiles%252Fsed%252F4.2.1%252Fsed-4.2.1-setup.exe%252Fdownload%253Fuse_mirror%253Dnetcologne%2522"
@@ -155,10 +180,12 @@ function IsVCppInstalled {
 }
 
 
+
+
 IsVCppInstalled
 Install-GnuSed
 Ensure-Dependencies
 Install-GnuSed
-
+Install-BurntToastModule
 
 
