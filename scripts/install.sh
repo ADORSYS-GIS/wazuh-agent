@@ -11,7 +11,6 @@ fi
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.2-1'}
-WAZUH_AGENT_TAG=${WAZUH_AGENT_TAG:-'1.3.0'}
 
 # Define text formatting
 RED='\033[0;31m'
@@ -236,7 +235,7 @@ enable_repo() {
 }
 
 config() {
-    REPO_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_TAG"
+    REPO_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
 
     # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for unix systems
     if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
@@ -356,7 +355,6 @@ fi
 # Default log level and application details
 LOG_LEVEL=${LOG_LEVEL:-'INFO'}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
-WAZUH_AGENT_TAG=${WAZUH_AGENT_TAG:-'1.3.0'}
 
 # Define the log file path
 if [ "$(uname)" = "Darwin" ]; then
@@ -423,7 +421,7 @@ info_message "Starting setup. Using temporary directory: $TMP_FOLDER"
 
 # Download scripts
 info_message "Downloading setup script..."
-SCRIPT_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_TAG/scripts/setup-agent.sh"
+SCRIPT_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh"
 
 if ! curl -SL -s "$SCRIPT_URL" -o "$TMP_FOLDER/setup-agent.sh" >> "$LOG_DIR"; then
     error_message "Failed to download setup-agent.sh"
