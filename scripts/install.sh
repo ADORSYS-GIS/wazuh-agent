@@ -11,7 +11,7 @@ fi
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.2-1'}
-WAZUH_AGENT_TAG=${WAZUH_AGENT_TAG:-'1.2.0'}
+WAZUH_AGENT_TAG=${WAZUH_AGENT_TAG:-'1.3.0'}
 
 # Define text formatting
 RED='\033[0;31m'
@@ -356,7 +356,7 @@ fi
 # Default log level and application details
 LOG_LEVEL=${LOG_LEVEL:-'INFO'}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
-WAZUH_AGENT_TAG=${WAZUH_AGENT_TAG:-'1.2.0'}
+WAZUH_AGENT_TAG=${WAZUH_AGENT_TAG:-'1.3.0'}
 
 # Define the log file path
 if [ "$(uname)" = "Darwin" ]; then

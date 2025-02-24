@@ -1,6 +1,6 @@
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "manager.wazuh.adorsys.team" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.10.1-1" }
-$WAZUH_AGENT_TAG = if ($env:WAZUH_AGENT_TAG) { $env:WAZUH_AGENT_TAG } else { "1.2.0" }
+$WAZUH_AGENT_TAG = if ($env:WAZUH_AGENT_TAG) { $env:WAZUH_AGENT_TAG } else { "1.3.0" }
 
 
 # Global variables
@@ -142,7 +142,7 @@ function Create-Upgrade-Script {
 # Upgrade script for Wazuh Agent
 # This script downloads and updates the Wazuh agent
 
-$WAZUH_AGENT_TAG = if ($env:WAZUH_AGENT_TAG) { $env:WAZUH_AGENT_TAG } else { "1.2.0" }
+$WAZUH_AGENT_TAG = if ($env:WAZUH_AGENT_TAG) { $env:WAZUH_AGENT_TAG } else { "1.3.0" }
 
 function Log {
     param (
