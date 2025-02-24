@@ -100,7 +100,7 @@ function Install-BurntToastModule {
         }
         else {
             Write-Output "Installing module 'BurntToast'..."
-            Install-Module -Name BurntToast -Force -Confirm:$false -Scope LocalMachine -ErrorAction Stop
+            Install-Module -Name BurntToast -Force -Confirm:$false -Scope AllUsers -ErrorAction Stop
             Write-Output "Module 'BurntToast' installed successfully."
         }
 
