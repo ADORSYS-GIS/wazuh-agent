@@ -138,7 +138,7 @@ fi
 
 # Step 6: Download version file
 info_message "Downloading version file..."
-if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_TAG/version.txt" > "$OSSEC_PATH/version.txt") 2>&1; then
+if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_TAG/version.txt" -o "$OSSEC_PATH/version.txt") 2>&1; then
     error_message "Failed to download version file"
     exit 1
 fi
