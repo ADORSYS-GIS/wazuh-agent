@@ -343,7 +343,7 @@ create_upgrade_script() {
     maybe_sudo cat << 'EOF' > "$UPGRADE_SCRIPT_PATH"
 #!/bin/sh
 # Upgrade script from ADORSYS.
-# Copyright (C) 2024, ADORSYS Inc.
+# Copyright (C) 2024, ADORSYS GmbH & CO KG.
 
 # Check if we're running in bash; if not, adjust behavior
 if [ -n "$BASH_VERSION" ]; then
