@@ -138,8 +138,8 @@ function Create-Upgrade-Script {
     try {
         # Define upgrade script content
         $UpgradeScript = @'
-# Upgrade script for Wazuh Agent
-# This script downloads and updates the Wazuh agent
+# Upgrade script from ADORSYS.
+# Copyright (C) 2024, ADORSYS GmbH & CO KG.
 
 function Log {
     param (
