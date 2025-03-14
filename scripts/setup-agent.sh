@@ -29,6 +29,8 @@ WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.10.1-1'}
 WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.3.0'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 
+INSTALL_TRIVY=${INSTALL_TRIVY:-'FALSE'}
+
 TMP_FOLDER="$(mktemp -d)"
 
 # Define text formatting
@@ -135,7 +137,17 @@ if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/
     exit 1
 fi
 
-# Step 6: Download version file
+# Step 6: Install Trivy if the flag is set
+if [ "$INSTALL_TRIVY" = "TRUE" ]; then
+    info_message "Installing Trivy..."
+    curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/install.sh" > "$TMP_FOLDER/install-trivy.sh"
+    if ! (maybe_sudo bash "$TMP_FOLDER/install-trivy.sh") 2>&1; then
+        error_message "Failed to install trivy"
+        exit 1
+    fi
+fi
+
+# Step 7: Download version file
 info_message "Downloading version file..."
 if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/version.txt" -o "$OSSEC_PATH/version.txt") 2>&1; then
     error_message "Failed to download version file"
