@@ -24,6 +24,11 @@ Download the setup script from the repository and run it to configure the Wazuh 
 curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | WAZUH_MANAGER=manager.wazuh.adorsys.team bash
 ```
 
+**Remark**: For servers with container engines, you can add **trivy** for vulnerabilty scanning of containers image with this comamnd
+```bash
+curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | WAZUH_MANAGER=manager.wazuh.adorsys.team INSTALL_TRIVY=TRUE bash
+```
+
 #### Components Installed by the Script:
 
 **1. Wazuh Agent:**
