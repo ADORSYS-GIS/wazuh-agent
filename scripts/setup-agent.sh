@@ -104,14 +104,14 @@ curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
-if ! (maybe_sudo OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" bash "$TMP_FOLDER/install-wazuh-agent.sh") 2>&1; then
+if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" maybe_sudo bash "$TMP_FOLDER/install-wazuh-agent.sh") 2>&1; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
 
 # Step 2: Download and install wazuh-cert-oauth2-client
 info_message "Installing wazuh-cert-oauth2-client"
-if ! (maybe_sudo OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh") 2>&1; then
+if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" maybe_sudo bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh") 2>&1; then
     error_message "Failed to install 'wazuh-cert-oauth2-client'"
     exit 1
 fi
