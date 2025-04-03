@@ -35,7 +35,10 @@ Design a Security Operations Center (SOC) framework that leverages Wazuh as the 
 
 **ii.  Incident Classification:** Define severity (Low, Medium, High, Critical).
 
-**iii.  Automated Notification and ticket creation:** Alerts sent to Slack/Jira with relevant logs.
+**iii.  Automated Notification and ticket creation:** 
+- Alerts sent to Slack with relevant logs.
+- Critical alerts → A Jira ticket is automatically created for tracking. (Based of wazuh rule [classification](https://documentation.wazuh.com/current/user-manual/ruleset/rules/rules-classification.html#rules-classification))
+
 
 **iv.  Remediation:**
 
@@ -45,6 +48,8 @@ Design a Security Operations Center (SOC) framework that leverages Wazuh as the 
 
 #### v. Post-Incident Review: 
 SOC team documents findings and updates security policies.
+
+<img src="/Agent Enrollment/images/Screenshot from 2025-04-03 18-23-02.png">
 
 
 ## 3. Demo Use Cases
