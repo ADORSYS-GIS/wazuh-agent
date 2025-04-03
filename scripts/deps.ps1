@@ -86,31 +86,31 @@ function Install-BurntToastModule {
     try {
         # Check if the NuGet provider is installed (minimum version 2.8.5.201) without using a variable.
         if (Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue) {
-            Write-Output "NuGet provider is already installed."
+            InfoMessage "NuGet provider is already installed."
         }
         else {
-            Write-Output "NuGet provider not found. Installing NuGet provider..."
+            WarnMessage "NuGet provider not found. Installing NuGet provider..."
             Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false -ErrorAction Stop
-            Write-Output "NuGet provider installed successfully."
+            InfoMessage "NuGet provider installed successfully."
         }
 
         # Check if the BurntToast module is already installed.
         if (Get-Module -ListAvailable -Name BurntToast -ErrorAction SilentlyContinue) {
-            Write-Output "Module 'BurntToast' is already installed."
+            InfoMessage "Module 'BurntToast' is already installed."
         }
         else {
-            Write-Output "Installing module 'BurntToast'..."
+            InfoMessage "BurnToast Module not found. Installing module 'BurntToast'..."
             Install-Module -Name BurntToast -Force -Confirm:$false -ErrorAction Stop
-            Write-Output "Module 'BurntToast' installed successfully."
+            InfoMessage "Module 'BurntToast' installed successfully."
         }
 
         # Import the BurntToast module to ensure commands like New-BurntToastNotification are recognized.
-        Write-Output "Importing module 'BurntToast'..."
+        InfoMessage "Importing module 'BurntToast'..."
         Import-Module BurntToast -ErrorAction Stop
-        Write-Output "Module 'BurntToast' imported successfully."
+        InfoMessage "Module 'BurntToast' imported successfully."
     }
     catch {
-        Write-Error "Failed to install or import module 'BurntToast'. Error details: $_"
+        ErrorMessage "Failed to install or import module 'BurntToast'. Error details: $_"
     }
 }
 
