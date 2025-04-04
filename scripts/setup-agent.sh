@@ -11,7 +11,7 @@ fi
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
 WOPS_VERSION=${WOPS_VERSION:-"0.2.16"}
-WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.0"}
+WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.1"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.2"}
 # Define the OSSEC configuration path
 if [ "$(uname)" = "Darwin" ]; then

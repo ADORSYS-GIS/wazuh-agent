@@ -1,3 +1,4 @@
+
 # Function to log messages with a timestamp
 function Log {
     param (
@@ -77,6 +78,46 @@ function Ensure-Dependencies {
     }
 }
 
+
+function Install-BurntToastModule {
+    [CmdletBinding()]
+    param()
+
+    try {
+        # Check if the NuGet provider is installed (minimum version 2.8.5.201) without using a variable.
+        if (Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue) {
+            InfoMessage "NuGet provider is already installed."
+        }
+        else {
+            WarnMessage "NuGet provider not found. Installing NuGet provider..."
+            Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false -ErrorAction Stop
+            InfoMessage "NuGet provider installed successfully."
+        }
+
+        # Check if the BurntToast module is already installed.
+        if (Get-Module -ListAvailable -Name BurntToast -ErrorAction SilentlyContinue) {
+            InfoMessage "Module 'BurntToast' is already installed."
+        }
+        else {
+            InfoMessage "BurnToast Module not found. Installing module 'BurntToast'..."
+            Install-Module -Name BurntToast -Force -Confirm:$false -ErrorAction Stop
+            InfoMessage "Module 'BurntToast' installed successfully."
+        }
+
+        # Import the BurntToast module to ensure commands like New-BurntToastNotification are recognized.
+        InfoMessage "Importing module 'BurntToast'..."
+        Import-Module BurntToast -ErrorAction Stop
+        InfoMessage "Module 'BurntToast' imported successfully."
+    }
+    catch {
+        ErrorMessage "Failed to install or import module 'BurntToast'. Error details: $_"
+    }
+}
+
+
+
+
+
 function Install-GnuSed {
     # Define the source URL and destination path
     $SourceUrl = "https://downloads.sourceforge.net/project/gnuwin32/sed/4.2.1/sed-4.2.1-setup.exe?ts=gAAAAABnihwyfyy8CnXn7cxMYUNSQkpG2f2dUMFeiIGE8dM6A4aJ9G6yYtMvnuqpFQ658BS-pINAAB2fnD6SQOVdenwjEcrf0w%3D%3D&r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fgnuwin32%2Ffiles%2Fsed%2F4.2.1%2Fsed-4.2.1-setup.exe%2Fdownload%3Fuse_mirror%3Ddeac-fra%26r%3Dhttps%253A%252F%252Fsourceforge.net%252Fprojects%252Fgnuwin32%252Ffiles%252Fsed%252F4.2.1%252Fsed-4.2.1-setup.exe%252Fdownload%253Fuse_mirror%253Dnetcologne%2522"
@@ -155,10 +196,11 @@ function IsVCppInstalled {
 }
 
 
+
+
 IsVCppInstalled
 Install-GnuSed
 Ensure-Dependencies
-Install-GnuSed
-
+Install-BurntToastModule
 
 
