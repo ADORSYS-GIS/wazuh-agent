@@ -10,7 +10,7 @@ fi
 # Variables
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'manager.wazuh.adorsys.team'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.9.2-1'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.11.1-1'}
 
 # Define text formatting
 RED='\033[0;31m'
