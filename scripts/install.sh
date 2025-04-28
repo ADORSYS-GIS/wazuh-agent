@@ -506,7 +506,7 @@ validate_installation() {
     fi
 
     # Check if the logo file exists
-    if maybe_sudo [ ! -f "$OSSEC_PATH/wazuh-logo.png" ]; then
+    if maybe_sudo [ ! -f "$LOCAL_PATH/wazuh-logo.png" ]; then
         warn_message "Logo file has not been downloaded."
     fi
 
