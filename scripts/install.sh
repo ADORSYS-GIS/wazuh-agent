@@ -9,7 +9,7 @@ fi
 
 # Variables
 LOG_LEVEL=${LOG_LEVEL:-INFO}
-WAZUH_MANAGER=${WAZUH_MANAGER:-'127.0.0.1'}
+WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.11.1-1'}
 
 # Define text formatting
