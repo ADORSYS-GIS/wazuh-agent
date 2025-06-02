@@ -31,11 +31,25 @@ function Log {
     Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
 }
 
+function InfoMessage {
+    param ([string]$Message)
+    Log "[INFO]" $Message "Cyan"
+}
+
+function WarningMessage {
+    param ([string]$Message)
+    Log "[WARNING]" $Message "Yellow"
+}
+
 function SuccessMessage {
     param ([string]$Message)
     Log "[SUCCESS]" $Message "Green"
 }
 
+function ErrorMessage {
+    param ([string]$Message)
+    Log "[ERROR]" $Message "Red"
+}
 
 function SectionSeparator {
     param (
@@ -53,139 +67,200 @@ function Cleanup-Installers {
     foreach ($file in $global:InstallerFiles) {
         if (Test-Path $file) {
             Remove-Item $file -Force
-            Write-Host "Removed installer file: $file"
+            InfoMessage "Removed installer file: $file"
         }
     }
 }
 
 # Step 0: Download dependency script and execute
 function Install-Dependencies {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/deps.ps1"  # Update the URL if needed
+    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/deps.ps1"
     $InstallerPath = "$env:TEMP\deps.ps1"
     $global:InstallerFiles += $InstallerPath
 
     try {
-        Write-Host "Downloading and executing dependency script..."
-        # Download dependency script
+        InfoMessage "Downloading and executing dependency script..."
         Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
-        Write-Host "Dependency script downloaded successfully."
-        # Execute the downloaded script
+        InfoMessage "Dependency script downloaded successfully."
         & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ErrorAction Stop
     }
     catch {
-        Write-Host "Error during dependency installation: $($_.Exception.Message)" -ForegroundColor Red
+        ErrorMessage "Error during dependency installation: $($_.Exception.Message)"
     }
 }
 
 # Step 1: Download and execute Wazuh agent script with error handling
 function Install-WazuhAgent {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.ps1"  # Update the URL if needed
+    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.ps1"
     $InstallerPath = "$env:TEMP\install.ps1"
     $global:InstallerFiles += $InstallerPath
 
     try {
-        Write-Host "Downloading and executing Wazuh agent script..."
-        # Download Wazuh agent installer script
+        InfoMessage "Downloading and executing Wazuh agent script..."
         Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
-        Write-Host "Wazuh agent script downloaded successfully."
-        # Execute the downloaded script
+        InfoMessage "Wazuh agent script downloaded successfully."
         & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ErrorAction Stop
     }
     catch {
-        Write-Host "Error during Wazuh agent installation: $($_.Exception.Message)" -ForegroundColor Red
+        ErrorMessage "Error during Wazuh agent installation: $($_.Exception.Message)"
     }
 }
 
 # Step 2: Download and install wazuh-cert-oauth2-client with error handling
 function Install-OAuth2Client {
-    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.ps1"  # Update the URL if needed
+    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.ps1"
     $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
     $global:InstallerFiles += $OAuth2Script
 
     try {
-        Write-Host "Downloading and executing wazuh-cert-oauth2-client script..."
-        # Download the installer script
+        InfoMessage "Downloading and executing wazuh-cert-oauth2-client script..."
         Invoke-WebRequest -Uri $OAuth2Url -OutFile $OAuth2Script -ErrorAction Stop
-        Write-Host "wazuh-cert-oauth2-client script downloaded successfully."
-        # Execute the downloaded script with required parameters
+        InfoMessage "wazuh-cert-oauth2-client script downloaded successfully."
         & powershell.exe -ExecutionPolicy Bypass -File $OAuth2Script -ArgumentList "-LOG_LEVEL", $LOG_LEVEL, "-OSSEC_CONF_PATH", $OSSEC_CONF_PATH, "-APP_NAME", $APP_NAME, "-WOPS_VERSION", $WOPS_VERSION -ErrorAction Stop
     }
     catch {
-        Write-Host "Error during wazuh-cert-oauth2-client installation: $($_.Exception.Message)" -ForegroundColor Red
+        ErrorMessage "Error during wazuh-cert-oauth2-client installation: $($_.Exception.Message)"
     }
 }
 
 # Step 3: Download and install YARA with error handling
 function Install-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.ps1"  # Update the URL if needed
+    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.ps1"
     $YaraScript = "$env:TEMP\install_yara.ps1"
     $global:InstallerFiles += $YaraScript
 
     try {
-        Write-Host "Downloading and executing YARA installation script..."
-        # Download the YARA installation script
+        InfoMessage "Downloading and executing YARA installation script..."
         Invoke-WebRequest -Uri $YaraUrl -OutFile $YaraScript -ErrorAction Stop
-        Write-Host "YARA installation script downloaded successfully."
-        # Execute the installation script
+        InfoMessage "YARA installation script downloaded successfully."
         & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
     }
     catch {
-        Write-Host "Error during YARA installation: $($_.Exception.Message)" -ForegroundColor Red
+        ErrorMessage "Error during YARA installation: $($_.Exception.Message)"
     }
 }
 
 # Step 4: Download and install Snort with error handling
 function Install-Snort {
-    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/windows/snort.ps1"  # Update the URL if needed
+    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/windows/snort.ps1"
     $SnortScript = "$env:TEMP\snort.ps1"
     $global:InstallerFiles += $SnortScript
 
     try {
-        Write-Host "Downloading and executing Snort installation script..."
-        # Download the Snort installation script
+        InfoMessage "Downloading and executing Snort installation script..."
         Invoke-WebRequest -Uri $SnortUrl -OutFile $SnortScript -ErrorAction Stop
-        Write-Host "Snort installation script downloaded successfully."
-        # Execute the installation script
+        InfoMessage "Snort installation script downloaded successfully."
         & powershell.exe -ExecutionPolicy Bypass -File $SnortScript -ErrorAction Stop
     }
     catch {
-        Write-Host "Error during Snort installation: $($_.Exception.Message)" -ForegroundColor Red
+        ErrorMessage "Error during Snort installation: $($_.Exception.Message)"
     }
 }
 
-# Step 5: Download and install Wazuh Agent Status with error handling
+# Step 5: Download and install Suricata with error handling
+function Install-Suricata {
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/heads/main/scripts/install.ps1"
+    $SuricataScript = "$env:TEMP\suricata.ps1"
+    $global:InstallerFiles += $SuricataScript
+
+    try {
+        InfoMessage "Downloading and executing Suricata installation script..."
+        Invoke-WebRequest -Uri $SuricataUrl -OutFile $SuricataScript -ErrorAction Stop
+        InfoMessage "Suricata installation script downloaded successfully."
+        & powershell.exe -ExecutionPolicy Bypass -File $SuricataScript -ErrorAction Stop
+    }
+    catch {
+        ErrorMessage "Error during Suricata installation: $($_.Exception.Message)"
+    }
+}
+
+# Step 6: Download and install Wazuh Agent Status with error handling
 function Install-AgentStatus {
-    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.ps1"  # Update the URL if needed
+    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.ps1"
     $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
     $global:InstallerFiles += $AgentStatusScript
 
     try {
-        Write-Host "Downloading and executing Wazuh Agent Status installation script..."
-        # Download the Agent Status installation script
+        InfoMessage "Downloading and executing Wazuh Agent Status installation script..."
         Invoke-WebRequest -Uri $AgentStatusUrl -OutFile $AgentStatusScript -ErrorAction Stop
-        Write-Host "Agent Status installation script downloaded successfully."
-        # Execute the installation script
+        InfoMessage "Agent Status installation script downloaded successfully."
         & powershell.exe -ExecutionPolicy Bypass -File $AgentStatusScript -ErrorAction Stop
     }
     catch {
-        Write-Host "Error during Agent Status installation: $($_.Exception.Message)" -ForegroundColor Red
+        ErrorMessage "Error during Agent Status installation: $($_.Exception.Message)"
     }
 }
 
 function DownloadVersionFile {
-    Write-Host "Downloading version file..."
+    InfoMessage "Downloading version file..."
     if (!(Test-Path -Path $OSSEC_PATH)) {
-        Write-Host "ossec-agent folder does not exist. Skipping." -ForegroundColor Yellow
+        WarningMessage "ossec-agent folder does not exist. Skipping."
     }
     else {
         try {
             Invoke-WebRequest -Uri $VERSION_FILE_URL -OutFile $VERSION_FILE_PATH -ErrorAction Stop
         } catch {
-            Write-Host "Failed to download version file: $($_.Exception.Message)" -ForegroundColor Red
+            ErrorMessage "Failed to download version file: $($_.Exception.Message)"
         } finally {
-            Write-Host "Version file downloaded successfully"
+            InfoMessage "Version file downloaded successfully"
         }
     }
+}
+
+---
+
+## Help Function
+
+This function provides information on how to use the script, including available parameters and their effects.
+
+```powershell
+function Show-Help {
+    Write-Host "Usage:  .\install.ps1 [-InstallSnort] [-InstallSuricata] [-Help]" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "This script automates the installation of various Wazuh components and related tools." -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Parameters:" -ForegroundColor Cyan
+    Write-Host "  -InstallSnort      : Installs Snort. Cannot be used with -InstallSuricata." -ForegroundColor Cyan
+    Write-Host "  -InstallSuricata   : Installs Suricata. Cannot be used with -InstallSnort." -ForegroundColor Cyan
+    Write-Host "  -Help              : Displays this help message." -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Environment Variables (optional):" -ForegroundColor Cyan
+    Write-Host "  LOG_LEVEL          : Sets the logging level (e.g., INFO, DEBUG). Default: INFO" -ForegroundColor Cyan
+    Write-Host "  APP_NAME           : Sets the application name. Default: wazuh-cert-oauth2-client" -ForegroundColor Cyan
+    Write-Host "  WAZUH_MANAGER      : Sets the Wazuh Manager address. Default: wazuh.example.com" -ForegroundColor Cyan
+    Write-Host "  WAZUH_AGENT_VERSION: Sets the Wazuh Agent version. Default: 4.10.1-1" -ForegroundColor Cyan
+    Write-Host "  WAZUH_YARA_VERSION : Sets the Wazuh YARA module version. Default: 0.3.4" -ForegroundColor Cyan
+    Write-Host "  WAZUH_SNORT_VERSION: Sets the Wazuh Snort module version. Default: 0.2.2" -ForegroundColor Cyan
+    Write-Host "  WAZUH_SURICATA_VERSION: Sets the Wazuh Suricata module version. Default: 0.1.0" -ForegroundColor Cyan
+    Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: 0.3.2" -ForegroundColor Cyan
+    Write-Host "  WOPS_VERSION       : Sets the WOPS client version. Default: 0.2.18" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Examples:" -ForegroundColor Cyan
+    Write-Host "  .\install.ps1 -InstallSnort" -ForegroundColor Cyan
+    Write-Host "  .\install.ps1 -InstallSuricata" -ForegroundColor Cyan
+    Write-Host "  .\install.ps1 -Help" -ForegroundColor Cyan
+    Write-Host "  $env:LOG_LEVEL='DEBUG'; .\install.ps1 -InstallSuricata" -ForegroundColor Cyan
+    Write-Host ""
+}
+
+# Parameters for Snort and Suricata installation
+param(
+    [switch]$InstallSnort,
+    [switch]$InstallSuricata,
+    [switch]$Help
+)
+
+# Show help if -Help is specified
+if ($Help) {
+    Show-Help
+    Exit 0
+}
+
+# Validate Snort and Suricata choice
+if ($InstallSnort -and $InstallSuricata) {
+    ErrorMessage "Cannot install both Snort and Suricata. Please choose one."
+    Show-Help
+    Exit 1
 }
 
 # Main Execution wrapped in a try-finally to ensure cleanup runs even if errors occur.
@@ -200,13 +275,25 @@ try {
     Install-AgentStatus
     SectionSeparator "Installing Yara"
     Install-Yara
-    SectionSeparator "Installing Snort"
-    Install-Snort
+
+    # Install Snort or Suricata based on user choice
+    if ($InstallSnort) {
+        SectionSeparator "Installing Snort"
+        Install-Snort
+    }
+    elseif ($InstallSuricata) {
+        SectionSeparator "Installing Suricata"
+        Install-Suricata
+    }
+    else {
+        WarningMessage "Neither Snort nor Suricata selected for installation. Skipping."
+    }
+
     SectionSeparator "Downloading Version File"
     DownloadVersionFile
 }
 finally {
-    Write-Host "Cleaning up installer files..."
+    InfoMessage "Cleaning up installer files..."
     Cleanup-Installers
     SuccessMessage "Wazuh Agent Setup Completed Successfully"
 }
