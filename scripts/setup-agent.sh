@@ -212,9 +212,9 @@ fi
 # Step 5: Install the selected IDS Engine (Snort or Suricata)
 if [ "$IDS_ENGINE" = "suricata" ]; then
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
-    curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/main/scripts/install.sh" > "$TMP_FOLDER/install-suricata.sh"
+    curl -sL --progress-bar "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/main/scripts/install.sh" > "$TMP_FOLDER/install-suricata.sh"
     # Pass the selected mode to the suricata install script
-    if ! (maybe_sudo bash "$TMP_FOLDER/install-suricata.sh --mode $SURICATA_MODE") 2>&1; then
+    if ! (maybe_sudo bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE") 2>&1; then
         error_message "Failed to install 'suricata'"
         exit 1
     fi

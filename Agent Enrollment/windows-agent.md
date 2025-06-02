@@ -21,10 +21,15 @@ When prompted, respond with A [Yes to All], to enable the execution policy.
 ### Step 1: Download and Run the Setup Script
    Download the setup script from the repository and run it to configure the Wazuh agent with the necessary parameters for secure communication with the Wazuh Manager.
    
-   ```powershell
+```powershell
 $env:WAZUH_MANAGER = "manager.wazuh.adorsys.team"
-Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/setup-agent.ps1' | Invoke-Expression 
-   ```
+Invoke-Expression -Command ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/setup-agent.ps1').Content)) -ArgumentList '-InstallSnort'
+```
+
+**NB:** You have other components that can be installed from this script, to know of them and how to install then run this command
+```powershell
+Invoke-Expression -Command ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/setup-agent.ps1').Content)) -ArgumentList '-Help'
+```
 
 ### Step 2: Gnu Sed Installation
 
