@@ -113,7 +113,7 @@ help_message() {
     echo "    and can optionally include a vulnerability scanner."
     echo ""
     echo -e "${BOLD}USAGE:${NORMAL}"
-    echo "  ./install.sh [-s <mode> | -n] [-t] [-h]"
+    echo "  ./setup-agent.sh [-s <mode> | -n] [-t] [-h]"
     echo ""
     echo -e "${BOLD}OPTIONS:${NORMAL}"
     echo -e "  ${YELLOW}-s <mode>${NORMAL}  Install ${BOLD}Suricata${NORMAL}. The <mode> must be 'ids' (detection) or 'ips' (prevention)."
@@ -125,10 +125,10 @@ help_message() {
     echo ""
     echo -e "${BOLD}EXAMPLES:${NORMAL}"
     echo "  # Install all core components + Suricata (IDS mode) + Trivy:"
-    echo "  ./install.sh -s ids -t"
+    echo "  ./setup-agent.sh -s ids -t"
     echo ""
     echo "  # Install all core components + Snort:"
-    echo "  ./install.sh -n"
+    echo "  ./setup-agent.sh -n"
 }
 
 # ==============================================================================

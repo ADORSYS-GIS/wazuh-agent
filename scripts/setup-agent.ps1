@@ -236,10 +236,10 @@ function Show-Help {
     Write-Host "  WOPS_VERSION       : Sets the WOPS client version. Default: 0.2.18" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Examples:" -ForegroundColor Cyan
-    Write-Host "  .\install.ps1 -InstallSnort" -ForegroundColor Cyan
-    Write-Host "  .\install.ps1 -InstallSuricata" -ForegroundColor Cyan
-    Write-Host "  .\install.ps1 -Help" -ForegroundColor Cyan
-    Write-Host "  $env:LOG_LEVEL='DEBUG'; .\install.ps1 -InstallSuricata" -ForegroundColor Cyan
+    Write-Host "  .\setup-agent.ps1 -InstallSnort" -ForegroundColor Cyan
+    Write-Host "  .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
+    Write-Host "  .\setup-agent.ps1 -Help" -ForegroundColor Cyan
+    Write-Host "  $env:LOG_LEVEL='DEBUG'; .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
     Write-Host ""
 }
 
