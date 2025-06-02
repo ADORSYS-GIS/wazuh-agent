@@ -214,14 +214,14 @@ if [ "$IDS_ENGINE" = "suricata" ]; then
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
     curl -sL --progress-bar "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/main/scripts/install.sh" > "$TMP_FOLDER/install-suricata.sh"
     # Pass the selected mode to the suricata install script
-    if ! (maybe_sudo bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE") 2>&1; then
+    if ! (bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE") 2>&1; then
         error_message "Failed to install 'suricata'"
         exit 1
     fi
 elif [ "$IDS_ENGINE" = "snort" ]; then
     info_message "Installing Snort..."
     curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-snort.sh"
-    if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH="$OSSEC_CONF_PATH" bash "$TMP_FOLDER/install-snort.sh") 2>&1; then
+    if ! (env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH="$OSSEC_CONF_PATH" bash "$TMP_FOLDER/install-snort.sh") 2>&1; then
         error_message "Failed to install 'snort'"
         exit 1
     fi
@@ -231,7 +231,7 @@ fi
 if [ "$INSTALL_TRIVY" = "TRUE" ]; then
     info_message "Installing Trivy..."
     curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/install.sh" > "$TMP_FOLDER/install-trivy.sh"
-    if ! (maybe_sudo bash "$TMP_FOLDER/install-trivy.sh") 2>&1; then
+    if ! (bash "$TMP_FOLDER/install-trivy.sh") 2>&1; then
         error_message "Failed to install trivy"
         exit 1
     fi
