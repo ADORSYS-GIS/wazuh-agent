@@ -250,6 +250,12 @@ param(
     [switch]$Help
 )
 
+# Provide a non-interactive default for NIDS selection (default: Snort)
+if (-not $InstallSnort -and -not $InstallSuricata) {
+    InfoMessage "No NIDS selected, defaulting to: Snort. Use -InstallSuricata or -InstallSnort to override."
+    $InstallSnort = $true
+}
+
 # Show help if -Help is specified
 if ($Help) {
     Show-Help

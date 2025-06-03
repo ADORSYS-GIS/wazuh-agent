@@ -230,8 +230,21 @@ This is a **very** important step, the installation will not work well if this s
    Get-Content 'C:\Program Files (x86)\ossec-agent\ossec.log' -Tail 20
    ```
 
+## Uninstallation Guide
+
+Should you need to uninstall the Wazuh agent, follow these steps:
+
+### Step 1: Download and Run the Uninstall Script
+   Download the uninstall script from the repository and run it to remove the Wazuh agent and its components.
+   
+```powershell
+Invoke-Expression -Command ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/uninstall-agent.ps1').Content)) -ArgumentList '-UninstallSnort'
+```
+  **NB:** Use the `-UninstallSnort` option for **Snort** or the `-UninstallSuricata` for **Suricata**. For Suricata, you do not need to specify a mode; the uninstall script will remove all Suricata components regardless of mode.
+
+- Reboot the user's machine
+
 
 
 ### Additional Resources
 - [Wazuh Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html#wazuh-agent)
-

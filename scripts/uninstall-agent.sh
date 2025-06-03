@@ -40,9 +40,10 @@ NORMAL='\033[0m'
 log() {
     LEVEL="$1"
     shift
-    MESSAGE="$*"
+    local MESSAGE="$*"
+    local TIMESTAMP
     TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    printf "%s %b %b\n" "$TIMESTAMP" "$LEVEL" "$MESSAGE"
+    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
 }
 
 info_message() { log "${BLUE}${BOLD}[===========> INFO]${NORMAL}" "$*"; }
@@ -113,9 +114,8 @@ help_message() {
     printf "%s\n" "  ./uninstall-agent.sh -n"
 }
 
-# ==============================================================================
-# Argument Parsing
-# ==============================================================================
+# Provide a non-interactive default for NIDS selection (default: snort)
+default_nids="snort"
 
 while getopts "s:nth" opt; do
     case ${opt} in
@@ -143,10 +143,10 @@ if [ -n "$SURICATA_MODE" ] && [ "$IDS_ENGINE" = "snort" ]; then
     exit 1
 fi
 
+# If no NIDS selected, use default
 if [ -z "$IDS_ENGINE" ]; then
-    error_message "You must choose an IDS to uninstall. Use -s <mode> for Suricata or -n for Snort."
-    help_message
-    exit 1
+    info_message "No NIDS selected, defaulting to: $default_nids. Use -s <mode> for Suricata or -n for Snort."
+    IDS_ENGINE="$default_nids"
 fi
 
 # ==============================================================================
@@ -195,7 +195,7 @@ fi
 # Step 4: Uninstall IDS engine
 if [ "$IDS_ENGINE" = "suricata" ]; then
     print_step 4 "Uninstalling suricata..."
-    if ! (bash "$TMP_FOLDER/uninstall-suricata.sh --mode $SURICATA_MODE") 2>&1; then
+    if ! (bash "$TMP_FOLDER/uninstall-suricata.sh") 2>&1; then
         error_message "Failed to uninstall 'suricata'"
         exit 1
     fi

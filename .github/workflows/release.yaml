@@ -8,19 +8,43 @@ on:
     tags:
       - 'v*'
 
-jobs:    
-  release:
-    name: Release
-    permissions: write-all
+jobs:
+  lint-bash-scripts:
+    name: ShellCheck (Bash/Linters)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+      - name: Run ShellCheck
+        uses: reviewdog/action-shellcheck@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: 'scripts/*.sh'
+          
+  lint-powershell-scripts:
+    name: PSScriptAnalyzer (PowerShell)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: lint
+      uses: devblackops/github-action-psscriptanalyzer@master
+      with:
+        repoToken: ${{ secrets.GITHUB_TOKEN }}
+        rootPath: scripts
+
+  release:
+    name: Release
+    permissions: write-all
+    runs-on: ubuntu-latest
+    needs: [lint-bash-scripts, lint-powershell-scripts]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Get the version
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
-
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

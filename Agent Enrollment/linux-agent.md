@@ -150,7 +150,7 @@ Ping an admin for confirmation that the agent appears in the Wazuh Manager dashb
   ```bash
   bash <(curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall-agent.sh) -n
   ```
-   **NB:** Use the `-n` option for **snort** or the `-s` for **suricata**
+  **NB:** Use the `-n` option for **Snort** or the `-s` for **Suricata**. For Suricata, you do not need to specify a mode; the uninstall script will remove all Suricata components regardless of mode.
 
 - Reboot the user's machine
   

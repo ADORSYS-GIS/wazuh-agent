@@ -135,6 +135,9 @@ help_message() {
 # Argument Parsing
 # ==============================================================================
 
+# Provide a non-interactive default for NIDS selection (default: snort)
+default_nids="snort"
+
 while getopts "s:nth" opt; do
     case ${opt} in
         s)
@@ -161,10 +164,10 @@ if [ -n "$SURICATA_MODE" ] && [ "$IDS_ENGINE" = "snort" ]; then
     exit 1
 fi
 
+# If no NIDS selected, use default
 if [ -z "$IDS_ENGINE" ]; then
-    error_message "You must choose an IDS to install. Use -s <mode> for Suricata or -n for Snort."
-    help_message
-    exit 1
+    info_message "No NIDS selected, defaulting to: $default_nids. Use -s <mode> for Suricata or -n for Snort."
+    IDS_ENGINE="$default_nids"
 fi
 
 
