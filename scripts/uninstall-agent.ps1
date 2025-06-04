@@ -1,3 +1,12 @@
+# Parameters for Snort, Suricata, Trivy uninstallation
+param(
+    [switch]$UninstallSnort,
+    [switch]$UninstallSuricata,
+    [switch]$UninstallTrivy,
+    [switch]$Help
+)
+
+
 # Set strict mode for script execution
 Set-StrictMode -Version Latest
 
@@ -6,7 +15,7 @@ $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.4" }
 $WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.2" }
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.3.2" }
-$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.10.1-1" }
+$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.11.1-1" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.2.18" }
 
 # Global array to track uninstaller files
@@ -48,14 +57,13 @@ function Cleanup-Uninstallers {
 
 # Help Function
 function Show-Help {
-    Write-Host "Usage:  .\uninstall-agent.ps1 [-UninstallSnort] [-UninstallSuricata] [-UninstallTrivy] [-Help]" -ForegroundColor Cyan
+    Write-Host "Usage:  .\uninstall-agent.ps1 [-UninstallSnort] [-UninstallSuricata] [-Help]" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "This script automates the uninstallation of various Wazuh components and related tools." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Parameters:" -ForegroundColor Cyan
     Write-Host "  -UninstallSnort      : Uninstalls Snort. Cannot be used with -UninstallSuricata." -ForegroundColor Cyan
     Write-Host "  -UninstallSuricata   : Uninstalls Suricata. Cannot be used with -UninstallSnort." -ForegroundColor Cyan
-    Write-Host "  -UninstallTrivy      : Optionally uninstalls Trivy." -ForegroundColor Cyan
     Write-Host "  -Help                : Displays this help message." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Environment Variables (optional):" -ForegroundColor Cyan
@@ -64,36 +72,29 @@ function Show-Help {
     Write-Host "  WAZUH_SNORT_VERSION      : Sets the Wazuh Snort module version. Default: 0.2.2" -ForegroundColor Cyan
     Write-Host "  WAZUH_SURICATA_VERSION   : Sets the Wazuh Suricata module version. Default: 0.1.0" -ForegroundColor Cyan
     Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: 0.3.2" -ForegroundColor Cyan
-    Write-Host "  WAZUH_AGENT_VERSION      : Sets the Wazuh Agent version. Default: 4.10.1-1" -ForegroundColor Cyan
+    Write-Host "  WAZUH_AGENT_VERSION      : Sets the Wazuh Agent version. Default: 4.11.1-1" -ForegroundColor Cyan
     Write-Host "  WOPS_VERSION             : Sets the WOPS client version. Default: 0.2.18" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Examples:" -ForegroundColor Cyan
     Write-Host "  .\uninstall-agent.ps1 -UninstallSnort" -ForegroundColor Cyan
     Write-Host "  .\uninstall-agent.ps1 -UninstallSuricata" -ForegroundColor Cyan
-    Write-Host "  .\uninstall-agent.ps1 -UninstallTrivy" -ForegroundColor Cyan
     Write-Host "  .\uninstall-agent.ps1 -Help" -ForegroundColor Cyan
     Write-Host "  $env:LOG_LEVEL='DEBUG'; .\uninstall-agent.ps1 -UninstallSuricata" -ForegroundColor Cyan
     Write-Host ""
 }
 
-# Parameters for Snort, Suricata, Trivy uninstallation
-param(
-    [switch]$UninstallSnort,
-    [switch]$UninstallSuricata,
-    [switch]$UninstallTrivy,
-    [switch]$Help
-)
 
-# Provide a non-interactive default for NIDS selection (default: Snort)
-if (-not $UninstallSnort -and -not $UninstallSuricata) {
-    InfoMessage "No NIDS selected, defaulting to: Snort. Use -UninstallSuricata or -UninstallSnort to override."
-    $UninstallSnort = $true
-}
 
 # Show help if -Help is specified
 if ($Help) {
     Show-Help
     Exit 0
+}
+
+# Provide a non-interactive default for NIDS selection (default: Snort)
+if (-not $UninstallSnort -and -not $UninstallSuricata) {
+    InfoMessage "No NIDS selected, defaulting to: Snort. Use -UninstallSuricata or -UninstallSnort to override."
+    $UninstallSnort = $true
 }
 
 # Validate Snort and Suricata choice
@@ -111,7 +112,7 @@ if (-not $UninstallSnort -and -not $UninstallSuricata) {
 
 # Step 1: Download and execute Wazuh agent uninstall script with error handling
 function Uninstall-WazuhAgent {
-    $UninstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_VERSION/scripts/uninstall.ps1"
+    $UninstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall.ps1"
     $UninstallerPath = "$env:TEMP\uninstall-wazuh-agent.ps1"
     $global:UninstallerFiles += $UninstallerPath
     try {
@@ -189,22 +190,6 @@ function Uninstall-Suricata {
     }
 }
 
-# Step 6: Download and Uninstall Trivy with error handling
-function Uninstall-Trivy {
-    $TrivyUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/uninstall.ps1"
-    $TrivyScript = "$env:TEMP\uninstall-trivy.ps1"
-    $global:UninstallerFiles += $TrivyScript
-    try {
-        InfoMessage "Downloading and executing Trivy uninstall script..."
-        Invoke-WebRequest -Uri $TrivyUrl -OutFile $TrivyScript -ErrorAction Stop
-        InfoMessage "Trivy Uninstallation script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $TrivyScript -ErrorAction Stop
-    }
-    catch {
-        ErrorMessage "Error during Trivy Uninstallation: $($_.Exception.Message)"
-    }
-}
-
 # Main Execution wrapped in a try-finally to ensure cleanup runs even if errors occur.
 try {
     SectionSeparator "Uninstalling Wazuh Agent"
@@ -219,10 +204,6 @@ try {
     } elseif ($UninstallSuricata) {
         SectionSeparator "Uninstalling Suricata"
         Uninstall-Suricata
-    }
-    if ($UninstallTrivy) {
-        SectionSeparator "Uninstalling Trivy"
-        Uninstall-Trivy
     }
 }
 finally {

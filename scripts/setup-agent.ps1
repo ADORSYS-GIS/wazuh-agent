@@ -1,11 +1,17 @@
-# Set strict mode for script execution
+param(
+    [switch]$InstallSnort,
+    [switch]$InstallSuricata,
+    [switch]$Help
+)
+
+# Set strict mode for script execution (after param declaration)
 Set-StrictMode -Version Latest
 
 # Variables (default log level, app details, paths)
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-client" }
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
-$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.10.1-1" }
+$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.11.1-1" }
 $OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\" 
 $OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
 $RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
@@ -207,15 +213,8 @@ function DownloadVersionFile {
     }
 }
 
----
-
-## Help Function
-
-This function provides information on how to use the script, including available parameters and their effects.
-
-```powershell
 function Show-Help {
-    Write-Host "Usage:  .\install.ps1 [-InstallSnort] [-InstallSuricata] [-Help]" -ForegroundColor Cyan
+    Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-Help]" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "This script automates the installation of various Wazuh components and related tools." -ForegroundColor Cyan
     Write-Host ""
@@ -228,7 +227,7 @@ function Show-Help {
     Write-Host "  LOG_LEVEL          : Sets the logging level (e.g., INFO, DEBUG). Default: INFO" -ForegroundColor Cyan
     Write-Host "  APP_NAME           : Sets the application name. Default: wazuh-cert-oauth2-client" -ForegroundColor Cyan
     Write-Host "  WAZUH_MANAGER      : Sets the Wazuh Manager address. Default: wazuh.example.com" -ForegroundColor Cyan
-    Write-Host "  WAZUH_AGENT_VERSION: Sets the Wazuh Agent version. Default: 4.10.1-1" -ForegroundColor Cyan
+    Write-Host "  WAZUH_AGENT_VERSION: Sets the Wazuh Agent version. Default: 4.11.1-1" -ForegroundColor Cyan
     Write-Host "  WAZUH_YARA_VERSION : Sets the Wazuh YARA module version. Default: 0.3.4" -ForegroundColor Cyan
     Write-Host "  WAZUH_SNORT_VERSION: Sets the Wazuh Snort module version. Default: 0.2.2" -ForegroundColor Cyan
     Write-Host "  WAZUH_SURICATA_VERSION: Sets the Wazuh Suricata module version. Default: 0.1.0" -ForegroundColor Cyan
@@ -243,23 +242,16 @@ function Show-Help {
     Write-Host ""
 }
 
-# Parameters for Snort and Suricata installation
-param(
-    [switch]$InstallSnort,
-    [switch]$InstallSuricata,
-    [switch]$Help
-)
+# Show help if -Help is specified
+if ($Help) {
+    Show-Help
+    Exit 0
+}
 
 # Provide a non-interactive default for NIDS selection (default: Snort)
 if (-not $InstallSnort -and -not $InstallSuricata) {
     InfoMessage "No NIDS selected, defaulting to: Snort. Use -InstallSuricata or -InstallSnort to override."
     $InstallSnort = $true
-}
-
-# Show help if -Help is specified
-if ($Help) {
-    Show-Help
-    Exit 0
 }
 
 # Validate Snort and Suricata choice
