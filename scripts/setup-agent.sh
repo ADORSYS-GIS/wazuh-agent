@@ -7,12 +7,16 @@ else
     set -eu
 fi
 
-# Default log level and application details
+# ==============================================================================
+# Default Configuration
+# ==============================================================================
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
 WOPS_VERSION=${WOPS_VERSION:-"0.2.18"}
 WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.4"}
-WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.2"}
+WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.3"}
+WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.0"}
+
 # Define the OSSEC configuration path
 if [ "$(uname)" = "Darwin" ]; then
     OSSEC_PATH="/Library/Ossec/etc"
@@ -29,7 +33,10 @@ WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.11.1-1'}
 WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.3.2'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 
-INSTALL_TRIVY=${INSTALL_TRIVY:-'FALSE'}
+# Installation choice variables
+IDS_ENGINE=""
+SURICATA_MODE=""
+INSTALL_TRIVY="FALSE"
 
 TMP_FOLDER="$(mktemp -d)"
 
@@ -41,6 +48,10 @@ BLUE='\033[1;34m'
 BOLD='\033[1m'
 NORMAL='\033[0m'
 
+# ==============================================================================
+# Helper Functions
+# ==============================================================================
+
 # Function for logging with timestamp
 log() {
     local LEVEL="$1"
@@ -51,18 +62,9 @@ log() {
     echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
 }
 
-# Logging helpers
-info_message() {
-    log "${BLUE}${BOLD}[===========> INFO]${NORMAL}" "$*"
-}
-
-error_message() {
-    log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
-}
-
-success_message() {
-    log "${GREEN}${BOLD}[SUCCESS]${NORMAL}" "$*"
-}
+info_message() { log "${BLUE}${BOLD}[===========> INFO]${NORMAL}" "$*"; }
+error_message() { log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"; }
+success_message() { log "${GREEN}${BOLD}[SUCCESS]${NORMAL}" "$*"; }
 
 # Check if a command exists
 command_exists() {
@@ -89,18 +91,98 @@ cleanup() {
         rm -rf "$TMP_FOLDER"
     fi
 }
-
 trap cleanup EXIT
+
+# Help function to display usage
+help_message() {
+    echo -e "${BOLD}Wazuh Agent Comprehensive Installation Script${NORMAL}"
+    echo ""
+    echo -e "${BOLD}DESCRIPTION:${NORMAL}"
+    echo "  This script automates the full setup of a Wazuh agent and a suite of essential"
+    echo "  security integrations. It installs core components automatically and lets you"
+    echo "  configure the installation with your choice of optional tools."
+    echo ""
+    echo -e "  ${BLUE}CORE COMPONENTS (Always Installed):${NORMAL}"
+    echo "    - Wazuh Agent: The core agent for monitoring and response."
+    echo "    - Wazuh Cert OAuth2: Client for certificate-based authentication."
+    echo "    - Wazuh Agent Status: Tool to monitor the agent's health."
+    echo "    - Yara Integration: For malware detection using Yara rules."
+    echo ""
+    echo -e "  ${YELLOW}CONFIGURABLE COMPONENTS (User Choice):${NORMAL}"
+    echo "    You must select ONE of the following Network Intrusion Detection Systems (NIDS)"
+    echo "    and can optionally include a vulnerability scanner."
+    echo ""
+    echo -e "${BOLD}USAGE:${NORMAL}"
+    echo "  ./setup-agent.sh [-s <mode> | -n] [-t] [-h]"
+    echo ""
+    echo -e "${BOLD}OPTIONS:${NORMAL}"
+    echo -e "  ${YELLOW}-s <mode>${NORMAL}  Install ${BOLD}Suricata${NORMAL}. The <mode> must be 'ids' (detection) or 'ips' (prevention)."
+    echo -e "              (Cannot be used with -n)"
+    echo -e "  ${YELLOW}-n${NORMAL}         Install ${BOLD}Snort${NORMAL} as the NIDS engine."
+    echo -e "              (Cannot be used with -s)"
+    echo -e "  ${YELLOW}-t${NORMAL}         Optionally install ${BOLD}Trivy${NORMAL} for vulnerability scanning."
+    echo -e "  ${YELLOW}-h${NORMAL}         Display this help message and exit."
+    echo ""
+    echo -e "${BOLD}EXAMPLES:${NORMAL}"
+    echo "  # Install all core components + Suricata (IDS mode) + Trivy:"
+    echo "  ./setup-agent.sh -s ids -t"
+    echo ""
+    echo "  # Install all core components + Snort:"
+    echo "  ./setup-agent.sh -n"
+}
+
+# ==============================================================================
+# Argument Parsing
+# ==============================================================================
+
+# Provide a non-interactive default for NIDS selection (default: snort)
+default_nids="snort"
+
+while getopts "s:nth" opt; do
+    case ${opt} in
+        s)
+            IDS_ENGINE="suricata"
+            SURICATA_MODE=$(echo "$OPTARG" | tr '[:upper:]' '[:lower:]') # store mode in lowercase
+            if [ "$SURICATA_MODE" != "ids" ] && [ "$SURICATA_MODE" != "ips" ]; then
+                error_message "Invalid mode for Suricata: '$OPTARG'. Must be 'ids' or 'ips'."
+                help_message
+                exit 1
+            fi
+            ;;
+        n) IDS_ENGINE="snort" ;;
+        t) INSTALL_TRIVY="TRUE" ;;
+        h) help_message; exit 0 ;;
+        \?) error_message "Invalid option: -$OPTARG" >&2; help_message; exit 1 ;;
+        :) error_message "Option -$OPTARG requires an argument." >&2; help_message; exit 1 ;;
+    esac
+done
+
+# Validate that Snort and Suricata are not chosen together
+if [ -n "$SURICATA_MODE" ] && [ "$IDS_ENGINE" = "snort" ]; then
+    error_message "Invalid options: You cannot install both Suricata (-s) and Snort (-n)."
+    help_message
+    exit 1
+fi
+
+# If no NIDS selected, use default
+if [ -z "$IDS_ENGINE" ]; then
+    info_message "No NIDS selected, defaulting to: $default_nids. Use -s <mode> for Suricata or -n for Snort."
+    IDS_ENGINE="$default_nids"
+fi
+
+
+# ==============================================================================
+# Main Installation Logic
+# ==============================================================================
 
 info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
-# Step -1: Download all scripts
-info_message "Download all scripts..."
+# Step -1: Download all core scripts
+info_message "Downloading core component scripts..."
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent-status.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-yara.sh"
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-snort.sh"
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
@@ -130,18 +212,29 @@ if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/
     exit 1
 fi
 
-# Step 5: Download and install snort
-info_message "Installing snort"
-if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/install-snort.sh") 2>&1; then
-    error_message "Failed to install 'snort'"
-    exit 1
+# Step 5: Install the selected IDS Engine (Snort or Suricata)
+if [ "$IDS_ENGINE" = "suricata" ]; then
+    info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
+    curl -sL --progress-bar "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/main/scripts/install.sh" > "$TMP_FOLDER/install-suricata.sh"
+    # Pass the selected mode to the suricata install script
+    if ! (bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE") 2>&1; then
+        error_message "Failed to install 'suricata'"
+        exit 1
+    fi
+elif [ "$IDS_ENGINE" = "snort" ]; then
+    info_message "Installing Snort..."
+    curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-snort.sh"
+    if ! (env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH="$OSSEC_CONF_PATH" bash "$TMP_FOLDER/install-snort.sh") 2>&1; then
+        error_message "Failed to install 'snort'"
+        exit 1
+    fi
 fi
 
 # Step 6: Install Trivy if the flag is set
 if [ "$INSTALL_TRIVY" = "TRUE" ]; then
     info_message "Installing Trivy..."
     curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/install.sh" > "$TMP_FOLDER/install-trivy.sh"
-    if ! (maybe_sudo bash "$TMP_FOLDER/install-trivy.sh") 2>&1; then
+    if ! (bash "$TMP_FOLDER/install-trivy.sh") 2>&1; then
         error_message "Failed to install trivy"
         exit 1
     fi
@@ -155,4 +248,4 @@ if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazu
 fi
 info_message "Version file downloaded successfully."
 
-success_message "Wazuh has been setup successfully."
+success_message "Wazuh setup has been completed successfully."

@@ -8,7 +8,7 @@ on:
     tags:
       - 'v*'
 
-jobs:    
+jobs:
   release:
     name: Release
     permissions: write-all
@@ -16,11 +16,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
       - name: Get the version
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
-
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
