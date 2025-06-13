@@ -57,7 +57,7 @@ info_message "Starting uninstallation. Using temporary directory: \"$TMP_FOLDER\
 
 # Step 0: Download all uninstall scripts
 info_message "Downloading all uninstall scripts..."
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-wazuh-agent.sh"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/Improve-install.sh/issue-78/scripts/install.sh > "$TMP_FOLDER/uninstall-wazuh-agent.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/main/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-wazuh-agent-status.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/main/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-yara.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/main/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-snort.sh"
