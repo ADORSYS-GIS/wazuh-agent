@@ -220,27 +220,64 @@ installation() {
 disable_repo() {
   # Disable Wazuh repository after installation for Linux
   if [ "$OS" = "Linux" ]; then
+      if [ ! -f "$REPO_FILE" ]; then
+          error_message "Repository file not found: $REPO_FILE"
+          return 1
+      fi
+      
       if [ "$PACKAGE_MANAGER" = "apt" ]; then
-          sed_alternative -i "s/^deb/#deb/" $REPO_FILE
+          if ! sed_alternative -i "s/^deb/#deb/" "$REPO_FILE"; then
+              error_message "Failed to disable APT repository"
+              return 1
+          fi
       elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
-          sed_alternative -i "s/^enabled=1/enabled=0/" $REPO_FILE
+          if ! sed_alternative -i "s/^enabled=1/enabled=0/" "$REPO_FILE"; then
+              error_message "Failed to disable YUM/Zypper repository"
+              return 1
+          fi
+      else
+          error_message "Unsupported package manager: $PACKAGE_MANAGER"
+          return 1
       fi
       info_message "Wazuh repository disabled successfully."
+      return 0
   fi
 }
 
 enable_repo() {
-  if [ -f /etc/apt/sources.list.d/wazuh.list ]; then
-    info_message "Should enable wazuh repository"
-    if [ "$PACKAGE_MANAGER" = "apt" ]; then
-      sed_alternative -i "s/^#deb/deb/" $REPO_FILE
-    elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
-      sed_alternative -i "s/^enabled=0/enabled=1/" $REPO_FILE
-    fi
-
-    maybe_sudo $PACKAGE_MANAGER update
-    info_message "Wazuh repository enabled successfully."
+  if [ "$OS" != "Linux" ]; then
+      return 0
   fi
+
+  if [ ! -f "$REPO_FILE" ]; then
+      error_message "Repository file not found: $REPO_FILE"
+      return 1
+  fi
+
+  info_message "Enabling wazuh repository"
+  
+  if [ "$PACKAGE_MANAGER" = "apt" ]; then
+      if ! sed_alternative -i "s/^#deb/deb/" "$REPO_FILE"; then
+          error_message "Failed to enable APT repository"
+          return 1
+      fi
+  elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
+      if ! sed_alternative -i "s/^enabled=0/enabled=1/" "$REPO_FILE"; then
+          error_message "Failed to enable YUM/Zypper repository"
+          return 1
+      fi
+  else
+      error_message "Unsupported package manager: $PACKAGE_MANAGER"
+      return 1
+  fi
+
+  if ! maybe_sudo "$PACKAGE_MANAGER" update; then
+      error_message "Failed to update package manager cache"
+      return 1
+  fi
+  
+  info_message "Wazuh repository enabled successfully."
+  return 0
 }
 
 config() {
