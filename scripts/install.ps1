@@ -65,6 +65,35 @@ function ErrorExit {
     exit 1
 }
 
+# Version Check Functions
+function Get-InstalledAgentVersion {
+    try {
+        # Check via WMI (works for MSI installations)
+        $wazuhProduct = Get-WmiObject -Class Win32_Product | 
+                        Where-Object { $_.Name -match 'wazuh-agent' } |
+                        Select-Object -First 1
+        
+        if ($wazuhProduct) {
+            return $wazuhProduct.Version
+        }
+
+        # Fallback check in registry (for non-MSI installations)
+        $uninstallPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
+        $wazuhEntry = Get-ItemProperty $uninstallPath | 
+                      Where-Object { $_.DisplayName -match 'wazuh-agent' } |
+                      Select-Object -First 1
+
+        if ($wazuhEntry) {
+            return $wazuhEntry.DisplayVersion
+        }
+
+        return $null
+    } catch {
+        ErrorMessage "Failed to check installed version: $_"
+        return $null
+    }
+}
+
 # Function to install Wazuh Agent
 function Install-Agent {
 
@@ -235,7 +264,19 @@ function Cleanup {
     }
 }
 
-# Call the Install-Agent function to execute the installation
+# Main execution
+
+$currentVersion = Get-InstalledAgentVersion
+
+if ($currentVersion -and ($currentVersion -eq $WAZUH_AGENT_VERSION)) {
+    InfoMessage "[INFO] Wazuh agent $WAZUH_AGENT_VERSION is already installed. Skipping."
+    exit 0
+}
+elseif ($currentVersion) {
+    InfoMessage "[INFO] Current version: $currentVersion, Target version: $WAZUH_AGENT_VERSION"
+}
+
+# YOUR EXISTING INSTALLATION CODE BELOW (keep everything exactly as is)
 Install-Agent
 Create-Upgrade-Script
 Config
