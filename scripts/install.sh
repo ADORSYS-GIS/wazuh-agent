@@ -292,14 +292,8 @@ get_installed_version() {
             fi
             ;;
         Darwin*)
-            # macOS (Homebrew)
-            if command -v brew >/dev/null; then
-                brew list --versions wazuh-agent | awk '{print $2}'
             # macOS (PKG)
-            else
-                pkgutil --pkgs | grep -i wazuh-agent | xargs -I {} \
-                sh -c 'pkgutil --pkg-info "{}" | grep version | awk "{print \$2}"'
-            fi
+            plutil -p /var/db/receipts/com.wazuh.pkg.wazuh-agent.plist | grep PackageFileName | sed -E 's/.*wazuh-agent-([0-9.]+-[0-9]+)\..*/\1/'
             ;;
     esac
 }
