@@ -235,6 +235,7 @@ function Cleanup {
     }
 }
 
+# Call the Install-Agent function to execute the installation
 Install-Agent
 Create-Upgrade-Script
 Config
