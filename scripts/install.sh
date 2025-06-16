@@ -280,6 +280,30 @@ enable_repo() {
   return 0
 }
 
+get_installed_version() {
+    case "$(uname -s)" in
+        Linux*)
+            # Ubuntu/Debian
+            if command -v dpkg >/dev/null; then
+                dpkg -l | grep wazuh-agent | awk '{print $3}'
+            # RHEL/CentOS
+            elif command -v rpm >/dev/null; then
+                rpm -qa --queryformat '%{VERSION}-%{RELEASE}\n' wazuh-agent | head -1
+            fi
+            ;;
+        Darwin*)
+            # macOS (Homebrew)
+            if command -v brew >/dev/null; then
+                brew list --versions wazuh-agent | awk '{print $2}'
+            # macOS (PKG)
+            else
+                pkgutil --pkgs | grep -i wazuh-agent | xargs -I {} \
+                sh -c 'pkgutil --pkg-info "{}" | grep version | awk "{print \$2}"'
+            fi
+            ;;
+    esac
+}
+
 config() {
     REPO_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
 
@@ -551,13 +575,25 @@ validate_installation() {
 }
 
 # Main execution
-import_keys
-enable_repo
-installation
-disable_repo
-config
-create_upgrade_script
-start_agent 
-validate_installation
+INSTALLED_VERSION=$(get_installed_version)
 
+if [ "$INSTALLED_VERSION" = "$WAZUH_AGENT_VERSION" ]; then
+    info_message "Wazuh agent $WAZUH_AGENT_VERSION is already installed. Skipping."
+    exit 0
+else
+    if [ -z "$INSTALLED_VERSION" ]; then
+        info_message "Installing fresh Wazuh agent $WAZUH_AGENT_VERSION..."
+    else
+        info_message "Upgrading Wazuh agent ($INSTALLED_VERSION → $WAZUH_AGENT_VERSION)..."
+    fi
+    # Start the installation process
+    import_keys
+    enable_repo
+    installation
+    disable_repo
+    config
+    create_upgrade_script
+    start_agent 
+    validate_installation
+fi
 # End of script
