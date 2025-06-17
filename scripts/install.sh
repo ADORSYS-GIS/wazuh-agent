@@ -585,9 +585,10 @@ else
     enable_repo
     installation
     disable_repo
-    config
-    create_upgrade_script
-    start_agent 
-    validate_installation
 fi
+# Always update config/scripts
+config
+create_upgrade_script
+start_agent 
+validate_installation
 # End of script
