@@ -572,8 +572,7 @@ validate_installation() {
 INSTALLED_VERSION=$(get_installed_version)
 
 if [ "$INSTALLED_VERSION" = "$WAZUH_AGENT_VERSION" ]; then
-    info_message "Wazuh agent $WAZUH_AGENT_VERSION is already installed. Skipping."
-    exit 0
+    info_message "Wazuh agent $WAZUH_AGENT_VERSION is already installed. Skipping installatio."
 else
     if [ -z "$INSTALLED_VERSION" ]; then
         info_message "Installing fresh Wazuh agent $WAZUH_AGENT_VERSION..."
@@ -585,10 +584,10 @@ else
     enable_repo
     installation
     disable_repo
+    validate_installation
 fi
 # Always update config/scripts
 config
 create_upgrade_script
 start_agent 
-validate_installation
 # End of script
