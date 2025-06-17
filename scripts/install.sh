@@ -572,7 +572,7 @@ validate_installation() {
 INSTALLED_VERSION=$(get_installed_version)
 
 if [ "$INSTALLED_VERSION" = "$WAZUH_AGENT_VERSION" ]; then
-    info_message "Wazuh agent $WAZUH_AGENT_VERSION is already installed. Skipping installatio."
+    info_message "Wazuh agent $WAZUH_AGENT_VERSION is already installed. Skipping installation."
 else
     if [ -z "$INSTALLED_VERSION" ]; then
         info_message "Installing fresh Wazuh agent $WAZUH_AGENT_VERSION..."
