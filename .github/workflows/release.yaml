@@ -1,4 +1,4 @@
-name: Release
+name: CI/CD Pipeline
 
 on:
   push:
@@ -7,26 +7,70 @@ on:
       - develop
     tags:
       - 'v*'
+  pull_request:
+    branches:
+      - main
+      - develop
 
 jobs:
-  release:
-    name: Release
-    permissions: write-all
+  test-unix:
+    name: Test Unix
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Get the version
+        
+      - name: Install BATS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+          
+      - name: Run Unix tests
+        run: |
+          sudo bats tests/unix_tests.bats
+          
+  test-windows:
+    name: Test Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Install Pester
+        run: |
+          Install-Module -Name Pester -Force -SkipPublisherCheck
+          Import-Module Pester
+          
+      - name: Run Windows tests
+        run: |
+          Invoke-Pester ./tests/windows_tests.ps1 -Output Detailed
+          
+  release:
+    name: Create Release
+    needs: [test-unix, test-windows]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Get version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
+          name: Release ${{ steps.get_version.outputs.VERSION }}
           tag_name: ${{ steps.get_version.outputs.VERSION }}
-          release_name: Release ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ### Changes
+            - Automated release
+            - Tested on both Unix and Windows platforms
           draft: false
           prerelease: false
+          files: |
+            scripts/setup-agent.sh
+            scripts/setup-agent.ps1
