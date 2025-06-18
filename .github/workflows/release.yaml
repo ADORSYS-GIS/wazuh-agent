@@ -27,13 +27,8 @@ jobs:
             brew install bats-core
           fi
 
-      - name: Run non-privileged tests
-        run: bats tests/setup-agent.bats
-
-      - name: Run privileged tests
-        run: |
-          sudo bats tests/setup-agent.bats || echo "::notice::Some privileged tests require manual verification"
-          exit 0  # Don't fail the job for privileged test failures
+      - name: Run tests
+        run: sudo bats tests/setup-agent.bats
 
   release:
     name: Create Release
