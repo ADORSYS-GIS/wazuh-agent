@@ -285,15 +285,25 @@ get_installed_version() {
         Linux*)
             # Ubuntu/Debian
             if command -v dpkg >/dev/null; then
-                dpkg -l | grep wazuh-agent | awk '{print $3}'
+                dpkg -l | awk '/wazuh-agent/ {print $3; exit}'
             # RHEL/CentOS
             elif command -v rpm >/dev/null; then
-                rpm -qa --queryformat '%{VERSION}-%{RELEASE}\n' wazuh-agent | head -1
+                rpm -qa --queryformat '%{VERSION}-%{RELEASE}\n' wazuh-agent 2>/dev/null | head -1
+            else
+                warn_message "Cannot determine installed version on Linux."
+                exit 0
             fi
             ;;
         Darwin*)
             # macOS (PKG)
-            plutil -p /var/db/receipts/com.wazuh.pkg.wazuh-agent.plist | grep PackageFileName | sed -E 's/.*wazuh-agent-([0-9.]+-[0-9]+)\..*/\1/'
+            if [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" ]; then
+                plutil -p "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" 2>/dev/null | \
+                awk -F'"' '/PackageFileName/ {print $4}' | \
+                sed -E 's/.*wazuh-agent-([0-9.]+-[0-9]+).*/\1/'            
+            else
+                warn_message "Cannot determine installed version on macOS."
+                exit 0
+            fi
             ;;
     esac
 }
@@ -584,10 +594,10 @@ else
     enable_repo
     installation
     disable_repo
-    validate_installation
 fi
 # Always update config/scripts
 config
 create_upgrade_script
 start_agent 
+validate_installation
 # End of script
