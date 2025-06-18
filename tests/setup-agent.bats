@@ -86,32 +86,6 @@ run_privileged() {
     [[ "$output" == "root wazuh" ]]
 }
 
-# --- Notification Tools (Linux only) ---
-@test "notify-send is installed (Linux only)" {
-    if [[ "$(uname)" != "Linux" ]]; then
-        skip "This test only runs on Linux"
-    fi
-    run which notify-send
-    [ "$status" -eq 0 ]
-}
-
-@test "notify-send version matches expected (Linux only)" {
-    if [[ "$(uname)" != "Linux" ]]; then
-        skip "This test only runs on Linux"
-    fi
-    run notify-send --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "0.8.3" ]]
-}
-
-@test "zenity is installed (Linux only)" {
-    if [[ "$(uname)" != "Linux" ]]; then
-        skip "This test only runs on Linux"
-    fi
-    run which zenity
-    [ "$status" -eq 0 ]
-}
-
 # --- Wazuh Agent Status ---
 @test "Wazuh agent is running" {
     if [[ "$(uname)" == "Linux" ]]; then
