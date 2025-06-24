@@ -23,14 +23,14 @@ When prompted, respond with A [Yes to All], to enable the execution policy.
    
 ```powershell
 $env:WAZUH_MANAGER = "manager.wazuh.adorsys.team"
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/develop/scripts/setup-agent.ps1' `
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.ps1' `
   -UseBasicParsing -OutFile "$env:TEMP\setup-agent.ps1"; `
 & "$env:TEMP\setup-agent.ps1" 
 ```
 
 **NB:** You have other components that can be installed from this script, to know of them and how to install then run this command
 ```powershell
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/develop/scripts/setup-agent.ps1' `
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.ps1' `
   -UseBasicParsing -OutFile "$env:TEMP\setup-agent.ps1"; `
 & "$env:TEMP\setup-agent.ps1" -Help
 ```
@@ -242,7 +242,9 @@ Should you need to uninstall the Wazuh agent, follow these steps:
    Download the uninstall script from the repository and run it to remove the Wazuh agent and its components.
    
 ```powershell
-Invoke-Expression -Command ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/uninstall-agent.ps1').Content)) -ArgumentList '-UninstallSnort'
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/uninstall-agent.ps1' `
+  -UseBasicParsing -OutFile "$env:TEMP\uninstall-agent.ps1"; `
+& "$env:TEMP\uninstall-agent.ps1" -UninstallSnort
 ```
   **NB:** Use the `-UninstallSnort` option for **Snort** or the `-UninstallSuricata` for **Suricata**. For Suricata, you do not need to specify a mode; the uninstall script will remove all Suricata components regardless of mode.
 
