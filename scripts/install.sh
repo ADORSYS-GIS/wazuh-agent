@@ -10,7 +10,7 @@ fi
 # Variables
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.11.1-1'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.12.0-1'}
 
 # Define text formatting
 RED='\033[0;31m'
@@ -220,27 +220,92 @@ installation() {
 disable_repo() {
   # Disable Wazuh repository after installation for Linux
   if [ "$OS" = "Linux" ]; then
+      if [ ! -f "$REPO_FILE" ]; then
+          error_message "Repository file not found: $REPO_FILE"
+          return 1
+      fi
+      
       if [ "$PACKAGE_MANAGER" = "apt" ]; then
-          sed_alternative -i "s/^deb/#deb/" $REPO_FILE
+          if ! sed_alternative -i "s/^deb/#deb/" "$REPO_FILE"; then
+              error_message "Failed to disable APT repository"
+              return 1
+          fi
       elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
-          sed_alternative -i "s/^enabled=1/enabled=0/" $REPO_FILE
+          if ! sed_alternative -i "s/^enabled=1/enabled=0/" "$REPO_FILE"; then
+              error_message "Failed to disable YUM/Zypper repository"
+              return 1
+          fi
+      else
+          error_message "Unsupported package manager: $PACKAGE_MANAGER"
+          return 1
       fi
       info_message "Wazuh repository disabled successfully."
+      return 0
   fi
 }
 
 enable_repo() {
-  if [ -f /etc/apt/sources.list.d/wazuh.list ]; then
-    info_message "Should enable wazuh repository"
-    if [ "$PACKAGE_MANAGER" = "apt" ]; then
-      sed_alternative -i "s/^#deb/deb/" $REPO_FILE
-    elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
-      sed_alternative -i "s/^enabled=0/enabled=1/" $REPO_FILE
-    fi
-
-    maybe_sudo $PACKAGE_MANAGER update
-    info_message "Wazuh repository enabled successfully."
+  if [ "$OS" != "Linux" ]; then
+      return 0
   fi
+
+  if [ ! -f "$REPO_FILE" ]; then
+      error_message "Repository file not found: $REPO_FILE"
+      return 1
+  fi
+
+  info_message "Enabling wazuh repository"
+  
+  if [ "$PACKAGE_MANAGER" = "apt" ]; then
+      if ! sed_alternative -i "s/^#deb/deb/" "$REPO_FILE"; then
+          error_message "Failed to enable APT repository"
+          return 1
+      fi
+  elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
+      if ! sed_alternative -i "s/^enabled=0/enabled=1/" "$REPO_FILE"; then
+          error_message "Failed to enable YUM/Zypper repository"
+          return 1
+      fi
+  else
+      error_message "Unsupported package manager: $PACKAGE_MANAGER"
+      return 1
+  fi
+
+  if ! maybe_sudo "$PACKAGE_MANAGER" update; then
+      error_message "Failed to update package manager cache"
+      return 1
+  fi
+  
+  info_message "Wazuh repository enabled successfully."
+  return 0
+}
+
+get_installed_version() {
+    case "$(uname -s)" in
+        Linux*)
+            # Ubuntu/Debian
+            if command -v dpkg >/dev/null; then
+                dpkg -l | awk '/wazuh-agent/ {print $3; exit}'
+            # RHEL/CentOS
+            elif command -v rpm >/dev/null; then
+                rpm -qa --queryformat '%{VERSION}-%{RELEASE}\n' wazuh-agent 2>/dev/null | head -1
+            else
+                warn_message "Cannot determine installed version on Linux."
+                exit 0
+            fi
+            ;;
+        Darwin*)
+            # macOS (PKG)
+            if [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" ]; then
+                plutil -p "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" 2>/dev/null | \
+                awk -F'"' '/PackageFileName/ {print $4}' | \
+                sed -E 's/.*wazuh-agent-([0-9.]+-[0-9]+).*/\1/'            
+            else
+                warn_message "Cannot determine installed version on macOS."
+                exit 0
+            fi
+            ;;
+    esac
 }
 
 config() {
@@ -514,13 +579,25 @@ validate_installation() {
 }
 
 # Main execution
-import_keys
-enable_repo
-installation
-disable_repo
+INSTALLED_VERSION=$(get_installed_version)
+
+if [ "$INSTALLED_VERSION" = "$WAZUH_AGENT_VERSION" ]; then
+    info_message "Wazuh agent $WAZUH_AGENT_VERSION is already installed. Skipping installation."
+else
+    if [ -z "$INSTALLED_VERSION" ]; then
+        info_message "Installing fresh Wazuh agent $WAZUH_AGENT_VERSION..."
+    else
+        info_message "Upgrading Wazuh agent ($INSTALLED_VERSION → $WAZUH_AGENT_VERSION)..."
+    fi
+    # Start the installation process
+    import_keys
+    enable_repo
+    installation
+    disable_repo
+fi
+# Always update config/scripts
 config
 create_upgrade_script
 start_agent 
 validate_installation
-
 # End of script

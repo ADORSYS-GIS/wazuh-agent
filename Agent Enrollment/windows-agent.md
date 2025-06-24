@@ -21,10 +21,19 @@ When prompted, respond with A [Yes to All], to enable the execution policy.
 ### Step 1: Download and Run the Setup Script
    Download the setup script from the repository and run it to configure the Wazuh agent with the necessary parameters for secure communication with the Wazuh Manager.
    
-   ```powershell
+```powershell
 $env:WAZUH_MANAGER = "manager.wazuh.adorsys.team"
-Invoke-WebRequest -UseBasicParsing -Uri  'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/setup-agent.ps1' | Invoke-Expression 
-   ```
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.ps1' `
+  -UseBasicParsing -OutFile "$env:TEMP\setup-agent.ps1"; `
+& "$env:TEMP\setup-agent.ps1" 
+```
+
+**NB:** You have other components that can be installed from this script, to know of them and how to install then run this command
+```powershell
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.ps1' `
+  -UseBasicParsing -OutFile "$env:TEMP\setup-agent.ps1"; `
+& "$env:TEMP\setup-agent.ps1" -Help
+```
 
 ### Step 2: Gnu Sed Installation
 
@@ -225,8 +234,23 @@ This is a **very** important step, the installation will not work well if this s
    Get-Content 'C:\Program Files (x86)\ossec-agent\ossec.log' -Tail 20
    ```
 
+## Uninstallation Guide
+
+Should you need to uninstall the Wazuh agent, follow these steps:
+
+### Step 1: Download and Run the Uninstall Script
+   Download the uninstall script from the repository and run it to remove the Wazuh agent and its components.
+   
+```powershell
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/uninstall-agent.ps1' `
+  -UseBasicParsing -OutFile "$env:TEMP\uninstall-agent.ps1"; `
+& "$env:TEMP\uninstall-agent.ps1" -UninstallSnort
+```
+  **NB:** Use the `-UninstallSnort` option for **Snort** or the `-UninstallSuricata` for **Suricata**. For Suricata, you do not need to specify a mode; the uninstall script will remove all Suricata components regardless of mode.
+
+- Reboot the user's machine
+
 
 
 ### Additional Resources
 - [Wazuh Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html#wazuh-agent)
-
