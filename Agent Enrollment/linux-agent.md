@@ -20,12 +20,12 @@ This guide walks you through the process of enrolling a Linux system with the Wa
 Download the setup script from the repository and run it to configure the Wazuh agent with the necessary parameters for secure communication with the Wazuh Manager.
 
 ```bash
-WAZUH_MANAGER="manager.wazuh.adorsys.team" bash <(curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh) -n
+curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | WAZUH_MANAGER=master.wazuh.adorsys.team bash
 ```
 
 **Remark**: For servers with container engines, you can add **trivy** for vulnerability scanning of container images with this command:
 ```bash
-WAZUH_MANAGER="manager.wazuh.adorsys.team" bash <(curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh) -n -t
+WAZUH_MANAGER="manager.wazuh.adorsys.team" bash <(curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh) -t
 ```
 
 **NB:** You have other components that can be installed from this script, to know of them and how to install then run this command
@@ -148,7 +148,7 @@ Ping an admin for confirmation that the agent appears in the Wazuh Manager dashb
 - Use this command to uninstall
 
   ```bash
-  bash <(curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall-agent.sh) -n
+  curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall-agent.sh | bash
   ```
   **NB:** Use the `-n` option for **Snort** or the `-s` for **Suricata**. For Suricata, you do not need to specify a mode; the uninstall script will remove all Suricata components regardless of mode.
 
