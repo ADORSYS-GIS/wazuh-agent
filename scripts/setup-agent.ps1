@@ -163,20 +163,61 @@ function Install-Snort {
     }
 }
 
+# Helper functions to uninstall Snort and Suricata
+function Uninstall-Snort {
+    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/uninstall.ps1"
+    $UninstallSnortScript = "$env:TEMP\uninstall_snort.ps1"
+    $global:InstallerFiles += $UninstallSnortScript
+    $TaskName = "SnortStartup"
+
+    $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    if ($task) {
+        try {
+            InfoMessage "Downloading and executing Snort uninstallation script..."
+            Invoke-WebRequest -Uri $SnortUrl -OutFile $UninstallSnortScript -ErrorAction Stop
+            InfoMessage "Snort uninstallation script downloaded successfully."
+            & powershell.exe -ExecutionPolicy Bypass -File $UninstallSnortScript -ErrorAction Stop
+        }
+        catch {
+            ErrorMessage "Error during Snort uninstallation: $($_.Exception.Message)"
+        }
+    }
+}
+
 # Step 5: Download and install Suricata with error handling
 function Install-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/heads/main/scripts/install.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/tags/v$WAZUH_SURICATA_VERSION/scripts/install.ps1"
     $SuricataScript = "$env:TEMP\suricata.ps1"
     $global:InstallerFiles += $SuricataScript
 
     try {
-        InfoMessage "Downloading and executing Suricata installation script..."
+        InfoMessage "Snort is installed. Downloading and executing Suricata installation script..."
         Invoke-WebRequest -Uri $SuricataUrl -OutFile $SuricataScript -ErrorAction Stop
         InfoMessage "Suricata installation script downloaded successfully."
         & powershell.exe -ExecutionPolicy Bypass -File $SuricataScript -ErrorAction Stop
     }
     catch {
         ErrorMessage "Error during Suricata installation: $($_.Exception.Message)"
+    }
+}
+
+function Uninstall-Suricata {
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/tags/v$WAZUH_SURICATA_VERSION/scripts/uninstall.ps1"
+    $UninstallSuricataScript = "$env:TEMP\uninstall_suricata.ps1"
+    $global:InstallerFiles += $UninstallSuricataScript
+    $TaskName = "SuricataStartup"
+
+    $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    if ($task) {
+        try {
+            InfoMessage "Suricata is installed. Downloading and executing Suricata uninstallation script..."
+            Invoke-WebRequest -Uri $SuricataUrl -OutFile $UninstallSuricataScript -ErrorAction Stop
+            InfoMessage "Suricata uninstallation script downloaded successfully."
+            & powershell.exe -ExecutionPolicy Bypass -File $UninstallSuricataScript -ErrorAction Stop
+        }
+        catch {
+            ErrorMessage "Error during Suricata uninstallation: $($_.Exception.Message)"
+        }
     }
 }
 
@@ -248,10 +289,10 @@ if ($Help) {
     Exit 0
 }
 
-# Provide a non-interactive default for NIDS selection (default: Snort)
+# Provide a non-interactive default for NIDS selection (default: Suricata)
 if (-not $InstallSnort -and -not $InstallSuricata) {
-    InfoMessage "No NIDS selected, defaulting to: Snort. Use -InstallSuricata or -InstallSnort to override."
-    $InstallSnort = $true
+    InfoMessage "No NIDS selected, defaulting to: Suricata. Use -InstallSuricata or -InstallSnort to override."
+    $InstallSuricata = $true
 }
 
 # Validate Snort and Suricata choice
@@ -276,10 +317,12 @@ try {
 
     # Install Snort or Suricata based on user choice
     if ($InstallSnort) {
+        Uninstall-Suricata
         SectionSeparator "Installing Snort"
         Install-Snort
     }
     elseif ($InstallSuricata) {
+        Uninstall-Snort
         SectionSeparator "Installing Suricata"
         Install-Suricata
     }

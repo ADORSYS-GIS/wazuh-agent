@@ -135,8 +135,8 @@ help_message() {
 # Argument Parsing
 # ==============================================================================
 
-# Provide a non-interactive default for NIDS selection (default: snort)
-default_nids="snort"
+# Provide a non-interactive default for NIDS selection (default: suricata)
+default_nids="suricata"
 
 while getopts "s:nth" opt; do
     case ${opt} in
@@ -170,6 +170,34 @@ if [ -z "$IDS_ENGINE" ]; then
     IDS_ENGINE="$default_nids"
 fi
 
+# If Suricata is selected but no mode is given, default to 'ids'
+if [ "$IDS_ENGINE" = "suricata" ] && [ -z "$SURICATA_MODE" ]; then
+    info_message "No mode specified for Suricata, defaulting to 'ids' mode."
+    SURICATA_MODE="ids"
+fi
+
+# Helper functions to uninstall snort and suricata
+uninstall_snort() {
+    if command_exists snort; then
+        info_message "Uninstalling Snort..."
+        curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/uninstall.sh" > "$TMP_FOLDER/uninstall-snort.sh"
+        if ! (bash "$TMP_FOLDER/uninstall-snort.sh") 2>&1; then
+            error_message "Failed to uninstall 'snort'"
+            exit 1
+        fi
+    fi
+}
+
+uninstall_suricata() {
+    if command_exists suricata; then
+        info_message "Uninstalling Suricata..."
+        curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/tags/v$WAZUH_SURICATA_VERSION/scripts/uninstall.sh" > "$TMP_FOLDER/uninstall-suricata.sh"
+        if ! (bash "$TMP_FOLDER/uninstall-suricata.sh") 2>&1; then
+            error_message "Failed to uninstall 'suricata'"
+            exit 1
+        fi
+    fi
+}
 
 # ==============================================================================
 # Main Installation Logic
@@ -214,14 +242,16 @@ fi
 
 # Step 5: Install the selected IDS Engine (Snort or Suricata)
 if [ "$IDS_ENGINE" = "suricata" ]; then
+    uninstall_snort
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
-    curl -sL --progress-bar "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/main/scripts/install.sh" > "$TMP_FOLDER/install-suricata.sh"
+    curl -sL --progress-bar "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/v$WAZUH_SURICATA_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-suricata.sh"
     # Pass the selected mode to the suricata install script
     if ! (bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE") 2>&1; then
         error_message "Failed to install 'suricata'"
         exit 1
     fi
 elif [ "$IDS_ENGINE" = "snort" ]; then
+    uninstall_suricata
     info_message "Installing Snort..."
     curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-snort.sh"
     if ! (env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH="$OSSEC_CONF_PATH" bash "$TMP_FOLDER/install-snort.sh") 2>&1; then

@@ -18,8 +18,6 @@ WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.0"}
 WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-"0.3.2"}
 
 # Uninstall choice variables
-IDS_ENGINE=""
-SURICATA_MODE=""
 UNINSTALL_TRIVY="FALSE"
 
 TMP_FOLDER="$(mktemp -d)"
@@ -84,70 +82,39 @@ help_message() {
     printf "\n"
     printf "%b\n" "${BOLD}DESCRIPTION:${NORMAL}"
     printf "%s\n" "  This script automates the full removal of a Wazuh agent and its integrations."
-    printf "%s\n" "  It uninstalls core components automatically and lets you configure the uninstallation of optional tools."
+    printf "%s\n" "  It uninstalls core components automatically and will also uninstall Snort and Suricata NIDS engines if they are installed."
     printf "\n"
     printf "%b\n" "  ${BLUE}CORE COMPONENTS (Always Uninstalled):${NORMAL}"
     printf "%s\n" "    - Wazuh Agent"
     printf "%s\n" "    - Wazuh Agent Status"
     printf "%s\n" "    - Yara Integration"
+    printf "%s\n" "    - Snort (if installed)"
+    printf "%s\n" "    - Suricata (if installed)"
     printf "\n"
     printf "%b\n" "  ${YELLOW}CONFIGURABLE COMPONENTS (User Choice):${NORMAL}"
-    printf "%s\n" "    You must select ONE of the following Network Intrusion Detection Systems (NIDS)"
-    printf "%s\n" "    and can optionally include a vulnerability scanner."
+    printf "%s\n" "    You can optionally include a vulnerability scanner."
     printf "\n"
     printf "%b\n" "${BOLD}USAGE:${NORMAL}"
-    printf "%s\n" "  ./uninstall-agent.sh [-s | -n] [-t] [-h]"
+    printf "%s\n" "  ./uninstall-agent.sh [-t] [-h]"
     printf "\n"
     printf "%b\n" "${BOLD}OPTIONS:${NORMAL}"
-    printf "%b\n" "  ${YELLOW}-s${NORMAL}  Uninstall ${BOLD}Suricata${NORMAL}."
-    printf "%b\n" "              (Cannot be used with -n)"
-    printf "%b\n" "  ${YELLOW}-n${NORMAL}         Uninstall ${BOLD}Snort${NORMAL} as the NIDS engine."
-    printf "%b\n" "              (Cannot be used with -s)"
     printf "%b\n" "  ${YELLOW}-t${NORMAL}         Optionally uninstall ${BOLD}Trivy${NORMAL}."
     printf "%b\n" "  ${YELLOW}-h${NORMAL}         Display this help message and exit."
     printf "\n"
     printf "%b\n" "${BOLD}EXAMPLES:${NORMAL}"
-    printf "%s\n" "  # Uninstall all core components + Suricata (IDS mode) + Trivy:"
-    printf "%s\n" "  ./uninstall-agent.sh -s ids -t"
+    printf "%s\n" "  # Uninstall all core components + Trivy:"
+    printf "%s\n" "  ./uninstall-agent.sh -t"
     printf "\n"
-    printf "%s\n" "  # Uninstall all core components + Snort:"
-    printf "%s\n" "  ./uninstall-agent.sh -n"
 }
 
-# Provide a non-interactive default for NIDS selection (default: snort)
-default_nids="snort"
-
-while getopts "s:nth" opt; do
+# Only -t and -h options remain
+while getopts "th" opt; do
     case ${opt} in
-        s)
-            IDS_ENGINE="suricata"
-            SURICATA_MODE=$(echo "$OPTARG" | tr '[:upper:]' '[:lower:]')
-            if [ "$SURICATA_MODE" != "ids" ] && [ "$SURICATA_MODE" != "ips" ]; then
-                error_message "Invalid mode for Suricata: '$OPTARG'. Must be 'ids' or 'ips'."
-                help_message
-                exit 1
-            fi
-            ;;
-        n) IDS_ENGINE="snort" ;;
         t) UNINSTALL_TRIVY="TRUE" ;;
         h) help_message; exit 0 ;;
         \?) error_message "Invalid option: -$OPTARG" >&2; help_message; exit 1 ;;
-        :) error_message "Option -$OPTARG requires an argument." >&2; help_message; exit 1 ;;
     esac
 done
-
-# Validate that Snort and Suricata are not chosen together
-if [ -n "$SURICATA_MODE" ] && [ "$IDS_ENGINE" = "snort" ]; then
-    error_message "Invalid options: You cannot uninstall both Suricata (-s) and Snort (-n)."
-    help_message
-    exit 1
-fi
-
-# If no NIDS selected, use default
-if [ -z "$IDS_ENGINE" ]; then
-    info_message "No NIDS selected, defaulting to: $default_nids. Use -s <mode> for Suricata or -n for Snort."
-    IDS_ENGINE="$default_nids"
-fi
 
 # ==============================================================================
 # Main Uninstallation Logic
@@ -161,11 +128,9 @@ curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scrip
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-wazuh-agent-status.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-yara.sh"
 
-if [ "$IDS_ENGINE" = "suricata" ]; then
-    curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/main/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-suricata.sh"
-elif [ "$IDS_ENGINE" = "snort" ]; then
-    curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-snort.sh"
-fi
+# Always download both NIDS uninstallers
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/tags/v$WAZUH_SURICATA_VERSION/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-suricata.sh"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-snort.sh"
 
 if [ "$UNINSTALL_TRIVY" = "TRUE" ]; then
     curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/uninstall.sh > "$TMP_FOLDER/uninstall-trivy.sh"
@@ -192,14 +157,16 @@ if ! (bash "$TMP_FOLDER/uninstall-yara.sh") 2>&1; then
     exit 1
 fi
 
-# Step 4: Uninstall IDS engine
-if [ "$IDS_ENGINE" = "suricata" ]; then
+# Step 4: Uninstall IDS engines if present
+if command_exists suricata; then
     print_step 4 "Uninstalling suricata..."
     if ! (bash "$TMP_FOLDER/uninstall-suricata.sh") 2>&1; then
         error_message "Failed to uninstall 'suricata'"
         exit 1
     fi
-elif [ "$IDS_ENGINE" = "snort" ]; then
+fi
+
+if command_exists snort; then
     print_step 4 "Uninstalling snort..."
     if ! (bash "$TMP_FOLDER/uninstall-snort.sh") 2>&1; then
         error_message "Failed to uninstall 'snort'"
