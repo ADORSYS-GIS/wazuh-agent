@@ -543,7 +543,7 @@ if ! sudo WAZUH_MANAGER="\$WAZUH_MANAGER" bash "\$TMP_FOLDER/setup-agent.sh" >> 
     exit 1
 fi
 
-send_notification "Update completed successfully!"
+send_notification "Update completed successfully! Please save your work and reboot your device to complete the update."
 EOF
     # Make the new script executable
     maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"
