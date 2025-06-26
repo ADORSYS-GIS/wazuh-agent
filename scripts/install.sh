@@ -510,7 +510,7 @@ send_notification() {
 trap cleanup EXIT
 
 # Notify user about the upcoming update and wait 5 minutes
-PREPARE_MSG="A remote update of Wazuh will begin in ~5 minutes. Please save your work and keep your device powered and connected."
+PREPARE_MSG="A remote update of Wazuh will begin in ~5 minutes. Please keep your device powered and connected."
 send_notification "\$PREPARE_MSG"
 info_message "Preparation notification sent. Waiting 5 minutes before starting update."
 sleep 300
