@@ -132,29 +132,29 @@ else
 fi
 
 import_keys() {
-  info_message "Importing GPG key and setting up the repository for $OS"
-  # Import GPG key and set up the repository for Linux
-  GPG_KEY_URL="https://packages.wazuh.com/key/GPG-KEY-WAZUH"
-  if [ "$OS" = "Linux" ]; then
-      if [ "$PACKAGE_MANAGER" = "yum" ]; then
-        if ! rpm -q gpg-pubkey --qf '%{SUMMARY}\n' | grep -q "Wazuh"; then
-            curl -s $GPG_KEY_URL | $GPG_IMPORT_CMD
-            info_message "GPG key imported successfully."
+    info_message "Importing GPG key and setting up the repository for $OS"
+    # Import GPG key and set up the repository for Linux
+    GPG_KEY_URL="https://packages.wazuh.com/key/GPG-KEY-WAZUH"
+    if [ "$OS" = "Linux" ]; then
+        if [ "$PACKAGE_MANAGER" = "yum" ]; then
+            if ! rpm -q gpg-pubkey --qf '%{SUMMARY}\n' | grep -q "Wazuh"; then
+                curl -s $GPG_KEY_URL | $GPG_IMPORT_CMD
+                info_message "GPG key imported successfully."
+            fi
         fi
-      fi
 
-      if [ "$PACKAGE_MANAGER" = "apt" ]; then
-          if [ ! -f $GPG_KEYRING ]; then
-              curl -s $GPG_KEY_URL | gpg --no-default-keyring --keyring $GPG_KEYRING --import && chmod 644 $GPG_KEYRING
-              info_message "GPG key imported successfully."
-          fi
-          if ! grep -q "wazuh" $REPO_FILE; then
-              echo "deb [signed-by=$GPG_KEYRING] https://packages.wazuh.com/4.x/apt/ stable main" | tee $REPO_FILE
-              info_message "Wazuh repository configured successfully."
-          fi
-      elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
-          if ! grep -q "wazuh" $REPO_FILE; then
-              cat > $REPO_FILE << EOF
+        if [ "$PACKAGE_MANAGER" = "apt" ]; then
+            if [ ! -f $GPG_KEYRING ]; then
+                curl -s $GPG_KEY_URL | gpg --no-default-keyring --keyring $GPG_KEYRING --import && chmod 644 $GPG_KEYRING
+                info_message "GPG key imported successfully."
+            fi
+            if ! grep -q "wazuh" $REPO_FILE; then
+                echo "deb [signed-by=$GPG_KEYRING] https://packages.wazuh.com/4.x/apt/ stable main" | tee $REPO_FILE
+                info_message "Wazuh repository configured successfully."
+            fi
+        elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
+            if ! grep -q "wazuh" $REPO_FILE; then
+                cat >$REPO_FILE <<EOF
 [wazuh]
 gpgcheck=1
 gpgkey=$GPG_KEY_URL
@@ -163,148 +163,146 @@ name=EL-\$releasever - Wazuh
 baseurl=https://packages.wazuh.com/4.x/yum/
 protect=1
 EOF
-              info_message "Wazuh repository configured successfully."
-          fi
-      fi
-  fi
-  info_message "GPG key and repository configured successfully."
+                info_message "Wazuh repository configured successfully."
+            fi
+        fi
+    fi
+    info_message "GPG key and repository configured successfully."
 }
 
 installation() {
-  info_message "Installing Wazuh agent for $OS"
-  # Update and install Wazuh agent for Linux or download and install for macOS
-  if [ "$OS" = "Linux" ]; then
-      maybe_sudo $PACKAGE_MANAGER update
-      $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
-  elif [ "$OS" = "macOS" ]; then
-      # Detect architecture (Intel or Apple Silicon)
-      ARCH=$(uname -m)
-      BASE_URL="https://packages.wazuh.com/4.x/macos"
-      
-      if [ "$ARCH" = "x86_64" ]; then
-          # Intel architecture
-          PKG_NAME="wazuh-agent-$WAZUH_AGENT_VERSION.intel64.pkg"
-      elif [ "$ARCH" = "arm64" ]; then
-          # Apple Silicon chip
-          PKG_NAME="wazuh-agent-$WAZUH_AGENT_VERSION.arm64.pkg"
-      else
-          error_message "Unsupported architecture: $ARCH"
-          exit 1
-      fi
+    info_message "Installing Wazuh agent for $OS"
+    # Update and install Wazuh agent for Linux or download and install for macOS
+    if [ "$OS" = "Linux" ]; then
+        maybe_sudo $PACKAGE_MANAGER update
+        $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
+    elif [ "$OS" = "macOS" ]; then
+        # Detect architecture (Intel or Apple Silicon)
+        ARCH=$(uname -m)
+        BASE_URL="https://packages.wazuh.com/4.x/macos"
 
-      PKG_URL="$BASE_URL/$PKG_NAME"
+        if [ "$ARCH" = "x86_64" ]; then
+            # Intel architecture
+            PKG_NAME="wazuh-agent-$WAZUH_AGENT_VERSION.intel64.pkg"
+        elif [ "$ARCH" = "arm64" ]; then
+            # Apple Silicon chip
+            PKG_NAME="wazuh-agent-$WAZUH_AGENT_VERSION.arm64.pkg"
+        else
+            error_message "Unsupported architecture: $ARCH"
+            exit 1
+        fi
 
-      # Create a unique temporary directory
-      TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'wazuh_install')
-      info_message "Using temporary directory: $TMP_DIR"
+        PKG_URL="$BASE_URL/$PKG_NAME"
 
-      # Download the correct Wazuh agent package based on architecture
-      curl -o "$TMP_DIR/$PKG_NAME" "$PKG_URL"
-      info_message "Wazuh agent downloaded successfully."
+        # Create a unique temporary directory
+        TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'wazuh_install')
+        info_message "Using temporary directory: $TMP_DIR"
 
-      # Set environment variable for Wazuh manager
-      echo "WAZUH_MANAGER='$WAZUH_MANAGER'" > /tmp/wazuh_envs
+        # Download the correct Wazuh agent package based on architecture
+        curl -o "$TMP_DIR/$PKG_NAME" "$PKG_URL"
+        info_message "Wazuh agent downloaded successfully."
 
-      # Install Wazuh agent using the package
-      maybe_sudo installer -pkg "$TMP_DIR/$PKG_NAME" -target /
+        # Set environment variable for Wazuh manager
+        echo "WAZUH_MANAGER='$WAZUH_MANAGER'" >/tmp/wazuh_envs
 
-      # Clean up the temporary directory after installation
-      rm -rf "$TMP_DIR"
-      info_message "Temporary directory cleaned up."
-  fi
-  info_message "Wazuh agent installed successfully."
+        # Install Wazuh agent using the package
+        maybe_sudo installer -pkg "$TMP_DIR/$PKG_NAME" -target /
+
+        # Clean up the temporary directory after installation
+        rm -rf "$TMP_DIR"
+        info_message "Temporary directory cleaned up."
+    fi
+    info_message "Wazuh agent installed successfully."
 }
 
-
-
 disable_repo() {
-  # Disable Wazuh repository after installation for Linux
-  if [ "$OS" = "Linux" ]; then
-      if [ ! -f "$REPO_FILE" ]; then
-          error_message "Repository file not found: $REPO_FILE"
-          return 1
-      fi
-      
-      if [ "$PACKAGE_MANAGER" = "apt" ]; then
-          if ! sed_alternative -i "s/^deb/#deb/" "$REPO_FILE"; then
-              error_message "Failed to disable APT repository"
-              return 1
-          fi
-      elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
-          if ! sed_alternative -i "s/^enabled=1/enabled=0/" "$REPO_FILE"; then
-              error_message "Failed to disable YUM/Zypper repository"
-              return 1
-          fi
-      else
-          error_message "Unsupported package manager: $PACKAGE_MANAGER"
-          return 1
-      fi
-      info_message "Wazuh repository disabled successfully."
-      return 0
-  fi
+    # Disable Wazuh repository after installation for Linux
+    if [ "$OS" = "Linux" ]; then
+        if [ ! -f "$REPO_FILE" ]; then
+            error_message "Repository file not found: $REPO_FILE"
+            return 1
+        fi
+
+        if [ "$PACKAGE_MANAGER" = "apt" ]; then
+            if ! sed_alternative -i "s/^deb/#deb/" "$REPO_FILE"; then
+                error_message "Failed to disable APT repository"
+                return 1
+            fi
+        elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
+            if ! sed_alternative -i "s/^enabled=1/enabled=0/" "$REPO_FILE"; then
+                error_message "Failed to disable YUM/Zypper repository"
+                return 1
+            fi
+        else
+            error_message "Unsupported package manager: $PACKAGE_MANAGER"
+            return 1
+        fi
+        info_message "Wazuh repository disabled successfully."
+        return 0
+    fi
 }
 
 enable_repo() {
-  if [ "$OS" != "Linux" ]; then
-      return 0
-  fi
+    if [ "$OS" != "Linux" ]; then
+        return 0
+    fi
 
-  if [ ! -f "$REPO_FILE" ]; then
-      error_message "Repository file not found: $REPO_FILE"
-      return 1
-  fi
+    if [ ! -f "$REPO_FILE" ]; then
+        error_message "Repository file not found: $REPO_FILE"
+        return 1
+    fi
 
-  info_message "Enabling wazuh repository"
-  
-  if [ "$PACKAGE_MANAGER" = "apt" ]; then
-      if ! sed_alternative -i "s/^#deb/deb/" "$REPO_FILE"; then
-          error_message "Failed to enable APT repository"
-          return 1
-      fi
-  elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
-      if ! sed_alternative -i "s/^enabled=0/enabled=1/" "$REPO_FILE"; then
-          error_message "Failed to enable YUM/Zypper repository"
-          return 1
-      fi
-  else
-      error_message "Unsupported package manager: $PACKAGE_MANAGER"
-      return 1
-  fi
+    info_message "Enabling wazuh repository"
 
-  if ! maybe_sudo "$PACKAGE_MANAGER" update; then
-      error_message "Failed to update package manager cache"
-      return 1
-  fi
-  
-  info_message "Wazuh repository enabled successfully."
-  return 0
+    if [ "$PACKAGE_MANAGER" = "apt" ]; then
+        if ! sed_alternative -i "s/^#deb/deb/" "$REPO_FILE"; then
+            error_message "Failed to enable APT repository"
+            return 1
+        fi
+    elif [ "$PACKAGE_MANAGER" = "yum" ] || [ "$PACKAGE_MANAGER" = "zypper" ]; then
+        if ! sed_alternative -i "s/^enabled=0/enabled=1/" "$REPO_FILE"; then
+            error_message "Failed to enable YUM/Zypper repository"
+            return 1
+        fi
+    else
+        error_message "Unsupported package manager: $PACKAGE_MANAGER"
+        return 1
+    fi
+
+    if ! maybe_sudo "$PACKAGE_MANAGER" update; then
+        error_message "Failed to update package manager cache"
+        return 1
+    fi
+
+    info_message "Wazuh repository enabled successfully."
+    return 0
 }
 
 get_installed_version() {
     case "$(uname -s)" in
-        Linux*)
-            # Ubuntu/Debian
-            if command -v dpkg >/dev/null; then
-                dpkg -l | awk '/wazuh-agent/ {print $3; exit}'
-            # RHEL/CentOS
-            elif command -v rpm >/dev/null; then
-                rpm -qa --queryformat '%{VERSION}-%{RELEASE}\n' wazuh-agent 2>/dev/null | head -1
-            else
-                warn_message "Cannot determine installed version on Linux."
-                exit 0
-            fi
-            ;;
-        Darwin*)
-            # macOS (PKG)
-            if [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" ]; then
-                plutil -p "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" 2>/dev/null | \
-                awk -F'"' '/PackageFileName/ {print $4}' | \
-                sed -E 's/.*wazuh-agent-([0-9.]+-[0-9]+).*/\1/'            
-            else
-                warn_message "Cannot determine installed version on macOS."
-                exit 0
-            fi
-            ;;
+    Linux*)
+        # Ubuntu/Debian
+        if command -v dpkg >/dev/null; then
+            dpkg -l | awk '/wazuh-agent/ {print $3; exit}'
+        # RHEL/CentOS
+        elif command -v rpm >/dev/null; then
+            rpm -qa --queryformat '%{VERSION}-%{RELEASE}\n' wazuh-agent 2>/dev/null | head -1
+        else
+            warn_message "Cannot determine installed version on Linux."
+            exit 0
+        fi
+        ;;
+    Darwin*)
+        # macOS (PKG)
+        if [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" ]; then
+            plutil -p "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" 2>/dev/null |
+                awk -F'"' '/PackageFileName/ {print $4}' |
+                sed -E 's/.*wazuh-agent-([0-9.]+-[0-9]+).*/\1/'
+        else
+            warn_message "Cannot determine installed version on macOS."
+            exit 0
+        fi
+        ;;
     esac
 }
 
@@ -325,7 +323,7 @@ config() {
             exit 1
         }
     fi
-  
+
     # Delete REGISTRATION_SERVER_ADDRESS if it exists
     if ! maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
         # First remove <address till address>
@@ -334,44 +332,42 @@ config() {
             exit 1
         }
     fi
-  
+
     case "$(uname)" in
-        Linux*)
-            # Check if the specific <location> tag exists in the configuration file
-            if ! maybe_sudo grep -q "<location>/var/ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
-                
-                sed_alternative -i '/<\/ossec_config>/i\
+    Linux*)
+        # Check if the specific <location> tag exists in the configuration file
+        if ! maybe_sudo grep -q "<location>/var/ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
+
+            sed_alternative -i '/<\/ossec_config>/i\
                     <!-- active response logs -->\
                     <localfile>\
                         <log_format>syslog<\/log_format>\
                         <location>\/var\/ossec\/logs\/active-responses.log<\/location>\
                     <\/localfile>' "$OSSEC_CONF_PATH"
-            
-        
-                info_message "active-response logs are now being monitored"
-            else
-                info_message "The active response already exists in $OSSEC_CONF_PATH"
-            fi
-            info_message "Wazuh agent certificate configuration completed successfully."
-            ;;
-        Darwin*)
-            if ! maybe_sudo grep -q "<location>/Library/Ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
-        
-                sed_alternative -i -e "/<\/ossec_config>/i\\
+
+            info_message "active-response logs are now being monitored"
+        else
+            info_message "The active response already exists in $OSSEC_CONF_PATH"
+        fi
+        info_message "Wazuh agent certificate configuration completed successfully."
+        ;;
+    Darwin*)
+        if ! maybe_sudo grep -q "<location>/Library/Ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
+
+            sed_alternative -i -e "/<\/ossec_config>/i\\
                     <!-- active response logs -->\\
                     <localfile>\\
                         <log_format>syslog</log_format>\\
                         <location>/Library/Ossec/logs/active-responses.log</location>\\
                     </localfile>" "$OSSEC_CONF_PATH"
-            
-        
-                info_message "active-response logs are now being monitored"
-            else
-                info_message "The active response already exists in $OSSEC_CONF_PATH"
-            fi
-            info_message "Wazuh agent certificate configuration completed successfully."
-            ;;
-        esac
+
+            info_message "active-response logs are now being monitored"
+        else
+            info_message "The active response already exists in $OSSEC_CONF_PATH"
+        fi
+        info_message "Wazuh agent certificate configuration completed successfully."
+        ;;
+    esac
 
     # Download logo
     if [ ! -d "$LOCAL_PATH" ]; then
@@ -389,35 +385,35 @@ config() {
 }
 
 start_agent() {
-  # Reload systemd daemon and enable/start services based on init system for Linux
-  if [ "$OS" = "Linux" ]; then
-      SYSTEMD_RUNNING=$(ps -C systemd > /dev/null 2>&1 && echo "yes" || echo "no")
-      if [ "$SYSTEMD_RUNNING" = "yes" ]; then
-          systemctl daemon-reload
-          systemctl enable wazuh-agent
-          systemctl start wazuh-agent
-      elif [ -f /etc/init.d/wazuh-agent ]; then
-          if [ "$PACKAGE_MANAGER" = "yum" ]; then
-              chkconfig --add wazuh-agent
-              service wazuh-agent start
-          elif [ "$PACKAGE_MANAGER" = "apt" ]; then
-              update-rc.d wazuh-agent defaults 95 10
-              service wazuh-agent start
-          fi
-      else
-          /var/ossec/bin/wazuh-control start
-      fi
-  elif [ "$OS" = "macOS" ]; then
-      /Library/Ossec/bin/wazuh-control start
-  fi
-  info_message "Wazuh agent started successfully."
+    # Reload systemd daemon and enable/start services based on init system for Linux
+    if [ "$OS" = "Linux" ]; then
+        SYSTEMD_RUNNING=$(ps -C systemd >/dev/null 2>&1 && echo "yes" || echo "no")
+        if [ "$SYSTEMD_RUNNING" = "yes" ]; then
+            systemctl daemon-reload
+            systemctl enable wazuh-agent
+            systemctl start wazuh-agent
+        elif [ -f /etc/init.d/wazuh-agent ]; then
+            if [ "$PACKAGE_MANAGER" = "yum" ]; then
+                chkconfig --add wazuh-agent
+                service wazuh-agent start
+            elif [ "$PACKAGE_MANAGER" = "apt" ]; then
+                update-rc.d wazuh-agent defaults 95 10
+                service wazuh-agent start
+            fi
+        else
+            /var/ossec/bin/wazuh-control start
+        fi
+    elif [ "$OS" = "macOS" ]; then
+        /Library/Ossec/bin/wazuh-control start
+    fi
+    info_message "Wazuh agent started successfully."
 }
 
 create_upgrade_script() {
-    maybe_sudo cat << EOF > "$UPGRADE_SCRIPT_PATH"
+    maybe_sudo cat <<EOF >"$UPGRADE_SCRIPT_PATH"
 #!/bin/sh
 # Upgrade script from ADORSYS.
-# Copyright (C) 2024, ADORSYS GmbH & CO KG.
+# Copyright (C) 2025, ADORSYS GmbH & CO KG.
 
 # Check if we're running in bash; if not, adjust behavior
 if [ -n "\$BASH_VERSION" ]; then
@@ -426,12 +422,19 @@ else
     set -eu
 fi
 
+#SCRIPT_DIR=\$(CDPATH= cd -- "\$(dirname -- "\$0")" && pwd -P)
+SCRIPT_FULL_PATH="$UPGRADE_SCRIPT_PATH"
+
 # Default log level and application details
 LOG_LEVEL=\${LOG_LEVEL:-'INFO'}
 WAZUH_MANAGER="$WAZUH_MANAGER"
+SCRIPT_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh"
+
+OS_TYPE=\$(uname -s)
 
 # Define the log file path
-if [ "\$(uname)" = "Darwin" ]; then
+if [ "\$OS_TYPE" = "Darwin" ]; then
+    ICON_PATH='/Library/Ossec/etc/wazuh-logo.png'
     LOG_FILE='/Library/Ossec/logs/active-responses.log'
     ARCH=\$(uname -m)
     if [ "\$ARCH" = "x86_64" ]; then
@@ -440,6 +443,7 @@ if [ "\$(uname)" = "Darwin" ]; then
         BIN_FOLDER='/opt/homebrew/bin'
     fi
 else
+    ICON_PATH='/usr/share/pixmaps/wazuh-logo.png'
     LOG_FILE='/var/ossec/logs/active-responses.log'
     BIN_FOLDER='/usr/bin'
 fi
@@ -470,6 +474,14 @@ info_message() {
     log "\${BLUE}\${BOLD}[INFO]\${NORMAL}" "\$*"
 }
 
+debug_message() {
+    log "\${NORMAL}\${BOLD}[DEBUG]\${NORMAL}" "\$*"
+}
+
+warning_message() {
+    log "\${YELLOW}\${BOLD}[WARNING]\${NORMAL}" "\$*"
+}
+
 error_message() {
     log "\${RED}\${BOLD}[ERROR]\${NORMAL}" "\$*"
 }
@@ -481,19 +493,48 @@ cleanup() {
     fi
 }
 
+trap cleanup EXIT
+
+# Get the currently logged-in user
+get_logged_in_user() {
+    if command -v logname >/dev/null 2>&1; then
+        logname
+    else
+        who | awk '{print \$1}' | head -n 1
+    fi
+}
+
+ICON_ARG=""
+
+if [ "\$OS_TYPE" = "Darwin" ]; then
+    # Check if the icon file exists before trying to use it
+    if [ -f "\$ICON_PATH" ]; then
+        ICON_ARG="with icon POSIX file \"\$ICON_PATH\""
+        debug_message "macOS icon path exists: \$ICON_PATH"
+    else
+        warn_message "macOS icon file not found at '\$ICON_PATH'. Sending notification without icon."
+    fi
+else
+    # Check if the icon file exists before using it for notify-send
+    if [ -f "\$ICON_PATH" ]; then
+        ICON_ARG="-i \$ICON_PATH"
+        debug_message "Linux icon path exists: \$ICON_PATH"
+    else
+        warn_message "Linux icon file not found at '\$ICON_PATH'. Sending notification without icon."
+    fi
+    # Get the logged-in user
+    USER=\$(who | awk '{print \$1}' | head -n 1)
+    USER_UID=\$(id -u "\$USER")
+    DBUS_PATH="/run/user/\$USER_UID/bus"
+fi
+
 send_notification() {
     local message="\$1"
     local title="Wazuh Update"
-    local iconPath="/usr/share/pixmaps/wazuh-logo.png"
 
-    if [ "\$(uname)" = "Darwin" ]; then
-        osascript -e "display dialog \"\$message\" buttons {\"Dismiss\"} default button \"Dismiss\" with title \"\$title\""
-    elif [ "\$(uname)" = "Linux" ]; then
-        # Get the logged-in user
-        USER=\$(who | awk '{print \$1}' | head -n 1)
-        USER_UID=\$(id -u "\$USER")
-        DBUS_PATH="/run/user/\$USER_UID/bus"
-
+    if [ "\$OS_TYPE" = "Darwin" ]; then
+        osascript -e "display dialog \"\$message\" buttons {\"Dismiss\"} default button \"Dismiss\" with title \"\$title\" \$ICON_ARG"
+    elif [ "\$OS_TYPE" = "Linux" ]; then
         if [ -f "\$iconPath" ]; then
              sudo -u "\$USER" DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=\$DBUS_PATH" \\
                 notify-send --app-name=Wazuh -u critical "\$title" "\$message" -i "\$iconPath"
@@ -507,13 +548,101 @@ send_notification() {
     info_message "Notification sent: \$message"
 }
 
-trap cleanup EXIT
+# schedule_reminder_cron adds a cron job for reminders
+schedule_reminder_cron() {
+    info_message "Scheduling Cron job to remind every 4 hours..."
+    if ! command -v crontab >/dev/null 2>&1; then
+        error_message "crontab command not available. Cannot schedule reminder."
+        return 1
+    fi
 
-# Notify user about the upcoming update and wait 5 minutes
-PREPARE_MSG="A remote update of Wazuh will begin in ~5 minutes. Please keep your device powered and connected."
-send_notification "\$PREPARE_MSG"
-info_message "Preparation notification sent. Waiting 5 minutes before starting update."
-sleep 300
+    # Use the pre-determined absolute path SCRIPT_FULL_PATH
+    local cron_entry="*/2 * * * * DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=\$DBUS_PATH" \$SCRIPT_FULL_PATH"
+    info_message "Proposed cron entry: '\$cron_entry'"
+
+    info_message "Attempting to read existing crontab for user root..."
+    local existing_crontab_output
+    if ! existing_crontab_output=\$(crontab -l 2>&1); then
+        warn_message "Failed to read existing crontab (may be empty or an error occurred): \$existing_crontab_output"
+        existing_crontab_output=""
+    fi
+    debug_message "Existing crontab content: '\$existing_crontab_output'" # Added debug log (requires LOG_LEVEL=DEBUG)
+
+    info_message "Attempting to write new crontab entry..." # Added debug log
+    local temp_cron_file=\$(mktemp)
+    printf "%s\n" "\$existing_crontab_output" | grep -vF "\$(basename -- "\$SCRIPT_FULL_PATH")" >"\$temp_cron_file" # Use basename of full path
+    printf "%s\n" "\$cron_entry" >>"\$temp_cron_file"
+
+    if cat "\$temp_cron_file" | crontab - >>"\$LOG_FILE" 2>&1; then
+        info_message "Cron job scheduled successfully: '\$cron_entry'"
+    else
+        error_message "Failed to schedule cron job. Crontab command output (if any) in \$LOG_FILE"
+    fi
+    rm -f "\$temp_cron_file"
+}
+
+# remove_existing_cron_job removes the scheduled cron job
+remove_existing_cron_job() {
+    info_message "Removing existing adorsys-update Cron job..."
+    if ! command -v crontab >/dev/null 2>&1; then
+        debug_message "crontab command not available. No cron job to remove."
+        return 0
+    fi
+    # Use basename "\$0" to match only the script name in crontab entries
+    (crontab -l 2>/dev/null | grep -vF "\$(basename "\$0")") | crontab -
+    info_message "Adorsys-update Cron job removed."
+}
+
+# === Notify User with Action Dialog ===
+PREPARE_MSG="A new version of Wazuh is available. Would you like to upgrade?"
+ACTION=""
+
+if [ "\$OS_TYPE" = "Darwin" ]; then
+    ACTION=\$(osascript <<EOF_OSASCRIPT || echo "In 5mins"
+        set userChoice to button returned of (display dialog "\$PREPARE_MSG" buttons {"Remind Later", "Upgrade Now"} default button "Upgrade Now" with title "Wazuh Update" \$ICON_ARG)
+        return userChoice
+EOF_OSASCRIPT
+    )
+else
+    user=\$(get_logged_in_user)
+    uid=\$(id -u "\$user")
+    bus_path="/run/user/\$uid/bus"
+
+    if notify-send --help 2>&1 | grep -q -- '--action'; then
+        sudo -u "\$user" DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=\$bus_path" \
+            notify-send --app-name=Wazuh -u critical \$ICON_ARG \
+            --action="Remind Later" --action="Upgrade Now" \
+            "Wazuh Update" "\$PREPARE_MSG"
+        ACTION="Remind Later"
+    else
+        sudo -u "\$user" DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=\$bus_path" \
+            notify-send --app-name=Wazuh -u critical "\$ICON_ARG" "Wazuh Update" "\$PREPARE_MSG"
+        info_message "notify-send does not support actions"
+        ACTION="Remind Later"
+    fi
+fi
+
+# --- Main Logic ---
+
+info_message "Wazuh agent upgrade script started."
+
+# Prompt the user for an action (Remind Later, Upgrade Now)
+USER_ACTION=\$ACTION
+info_message "User selected action: '\$USER_ACTION'"
+
+case "\$USER_ACTION" in
+"Remind Later")
+    schedule_reminder_cron
+    info_message "Update postponed. Exiting."
+    exit 0
+    ;;
+"Upgrade Now")
+    info_message "User chose to update now."
+    remove_existing_cron_job
+    ;;
+esac
+
+# --- Begin Upgrade Process ---
 
 # Log environment info
 info_message "Starting Wazuh agent upgrade..."
@@ -527,8 +656,6 @@ info_message "Starting setup. Using temporary directory: \$TMP_FOLDER"
 
 # Download scripts
 info_message "Downloading setup script..."
-SCRIPT_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh"
-
 if ! curl -SL -s "\$SCRIPT_URL" -o "\$TMP_FOLDER/setup-agent.sh" >> "\${LOG_FILE}"; then
     error_message "Failed to download setup-agent.sh"
     send_notification "Update failed: For more details go to file \${LOG_FILE}"
@@ -581,7 +708,7 @@ validate_installation() {
         warn_message "Logo file has not been downloaded."
     fi
 
-  success_message "Installation and configuration validated successfully."
+    success_message "Installation and configuration validated successfully."
 }
 
 # Main execution
@@ -604,6 +731,6 @@ fi
 # Always update config/scripts
 config
 create_upgrade_script
-start_agent 
+start_agent
 validate_installation
 # End of script
