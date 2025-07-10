@@ -70,15 +70,6 @@ maybe_sudo() {
     fi
 }
 
-create_file() {
-    local filepath="$1"
-    local content="$2"
-    maybe_sudo bash -c "cat > \"$filepath\" <<EOF
-$content
-EOF"
-    info_message "Created file: $filepath"
-}
-
 sed_alternative() {
     if command_exists gsed; then
         gsed "$@"
@@ -352,7 +343,6 @@ config() {
             else
                 info_message "The active response already exists in $OSSEC_CONF_PATH"
             fi
-            info_message "Wazuh agent certificate configuration completed successfully."
             ;;
         Darwin*)
             if ! maybe_sudo grep -q "<location>/Library/Ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
@@ -369,7 +359,6 @@ config() {
             else
                 info_message "The active response already exists in $OSSEC_CONF_PATH"
             fi
-            info_message "Wazuh agent certificate configuration completed successfully."
             ;;
         esac
 
@@ -382,7 +371,7 @@ config() {
         info_message "$LOCAL_PATH directory already exists."
     fi
     info_message "Downloading logo..."
-    maybe_sudo curl "$REPO_URL/assets/wazuh-logo.png" -o "$LOCAL_PATH/wazuh-logo.png"
+    maybe_sudo curl -SL --progress-bar "$REPO_URL/assets/wazuh-logo.png" -o "$LOCAL_PATH/wazuh-logo.png"
     maybe_sudo chmod +r "$LOCAL_PATH/wazuh-logo.png"
     info_message "Logo downloaded successfully."
 
@@ -411,139 +400,6 @@ start_agent() {
       /Library/Ossec/bin/wazuh-control start
   fi
   info_message "Wazuh agent started successfully."
-}
-
-create_upgrade_script() {
-    maybe_sudo cat << EOF > "$UPGRADE_SCRIPT_PATH"
-#!/bin/sh
-# Upgrade script from ADORSYS.
-# Copyright (C) 2024, ADORSYS GmbH & CO KG.
-
-# Check if we're running in bash; if not, adjust behavior
-if [ -n "\$BASH_VERSION" ]; then
-    set -euo pipefail
-else
-    set -eu
-fi
-
-# Default log level and application details
-LOG_LEVEL=\${LOG_LEVEL:-'INFO'}
-WAZUH_MANAGER="$WAZUH_MANAGER"
-
-# Define the log file path
-if [ "\$(uname)" = "Darwin" ]; then
-    LOG_FILE='/Library/Ossec/logs/active-responses.log'
-    ARCH=\$(uname -m)
-    if [ "\$ARCH" = "x86_64" ]; then
-        BIN_FOLDER='/usr/local/bin'
-    else
-        BIN_FOLDER='/opt/homebrew/bin'
-    fi
-else
-    LOG_FILE='/var/ossec/logs/active-responses.log'
-    BIN_FOLDER='/usr/bin'
-fi
-
-# Create a temporary directory
-TMP_FOLDER="\$(mktemp -d)"
-
-# Define text formatting
-RED='\\033[0;31m'
-GREEN='\\033[0;32m'
-YELLOW='\\033[1;33m'
-BLUE='\\033[1;34m'
-BOLD='\\033[1m'
-NORMAL='\\033[0m'
-
-# Function for logging with timestamp
-log() {
-    local LEVEL="\$1"
-    shift
-    local MESSAGE="\$*"
-    local TIMESTAMP
-    TIMESTAMP=\$(date +"%Y-%m-%d %H:%M:%S")
-    echo -e "\${TIMESTAMP} \${LEVEL} \${MESSAGE}" >> "\$LOG_FILE"
-}
-
-# Logging helpers
-info_message() {
-    log "\${BLUE}\${BOLD}[INFO]\${NORMAL}" "\$*"
-}
-
-error_message() {
-    log "\${RED}\${BOLD}[ERROR]\${NORMAL}" "\$*"
-}
-
-cleanup() {
-    # Remove temporary folder
-    if [ -d "\$TMP_FOLDER" ]; then
-        rm -rf "\$TMP_FOLDER"
-    fi
-}
-
-send_notification() {
-    local message="\$1"
-    local title="Wazuh Update"
-    local iconPath="/usr/share/pixmaps/wazuh-logo.png"
-
-    if [ "\$(uname)" = "Darwin" ]; then
-        osascript -e "display dialog \"\$message\" buttons {\"Dismiss\"} default button \"Dismiss\" with title \"\$title\""
-    elif [ "\$(uname)" = "Linux" ]; then
-        # Get the logged-in user
-        USER=\$(who | awk '{print \$1}' | head -n 1)
-        USER_UID=\$(id -u "\$USER")
-        DBUS_PATH="/run/user/\$USER_UID/bus"
-
-        if [ -f "\$iconPath" ]; then
-             sudo -u "\$USER" DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=\$DBUS_PATH" \\
-                notify-send --app-name=Wazuh -u critical "\$title" "\$message" -i "\$iconPath"
-        else
-             sudo -u "\$USER" DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=\$DBUS_PATH" \\
-                notify-send --app-name=Wazuh -u critical  "\$title" "\$message"
-        fi
-    else
-        error_message "Unsupported OS for notifications: \$(uname)"
-    fi
-    info_message "Notification sent: \$message"
-}
-
-trap cleanup EXIT
-
-# Log environment info
-info_message "Starting Wazuh agent upgrade..."
-
-info_message "Adding bin directory: \$BIN_FOLDER to PATH environment"
-export PATH="\$BIN_FOLDER:\$PATH"
-
-info_message "Current PATH: \$PATH"
-
-info_message "Starting setup. Using temporary directory: \$TMP_FOLDER"
-
-# Download scripts
-info_message "Downloading setup script..."
-SCRIPT_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh"
-
-if ! curl -SL -s "\$SCRIPT_URL" -o "\$TMP_FOLDER/setup-agent.sh" >> "\${LOG_FILE}"; then
-    error_message "Failed to download setup-agent.sh"
-    send_notification "Update failed: For more details go to file \${LOG_FILE}"
-    exit 1
-fi
-
-chmod +x "\$TMP_FOLDER/setup-agent.sh"
-
-if ! sudo WAZUH_MANAGER="\$WAZUH_MANAGER" bash "\$TMP_FOLDER/setup-agent.sh" >> "\${LOG_FILE}"; then
-    error_message "Failed to setup wazuh agent"
-    send_notification "Update failed: For more details go to file \${LOG_FILE}"
-    exit 1
-fi
-
-send_notification "Update completed successfully!"
-EOF
-    # Make the new script executable
-    maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"
-    maybe_sudo chmod 750 "$UPGRADE_SCRIPT_PATH"
-    # Confirm creation
-    info_message "Script created at $UPGRADE_SCRIPT_PATH"
 }
 
 # Validate agent installation
@@ -597,7 +453,6 @@ else
 fi
 # Always update config/scripts
 config
-create_upgrade_script
 start_agent 
 validate_installation
 # End of script
