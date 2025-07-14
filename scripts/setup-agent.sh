@@ -228,7 +228,7 @@ fi
 
 # Step 3: Download and install wazuh-agent-status
 info_message "Installing wazuh-agent-status"
-if ! (maybe_sudo bash "$TMP_FOLDER/install-wazuh-agent-status.sh") 2>&1; then
+if ! (maybe_sudo env WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/install-wazuh-agent-status.sh") 2>&1; then
     error_message "Failed to install 'wazuh-agent-status'"
     exit 1
 fi
