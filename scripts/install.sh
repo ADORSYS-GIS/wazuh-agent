@@ -90,6 +90,7 @@ if [ "$(uname)" = "Darwin" ]; then
     UPGRADE_SCRIPT_PATH="/Library/Ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
     OSSEC_PATH="/Library/Ossec/etc"
+    OSSEC_LOG_PATH="/Library/Ossec/logs"
     LOCAL_PATH="/Library/Application Support/Ossec"
 elif [ -f /etc/debian_version ]; then
     OS="Linux"
@@ -100,6 +101,7 @@ elif [ -f /etc/debian_version ]; then
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
     OSSEC_PATH="/var/ossec/etc"
+    OSSEC_LOG_PATH="/var/ossec/logs"
     LOCAL_PATH="/usr/share/pixmaps"
 elif [ -f /etc/redhat-release ]; then
     OS="Linux"
@@ -108,6 +110,7 @@ elif [ -f /etc/redhat-release ]; then
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
     OSSEC_PATH="/var/ossec/etc"
+    OSSEC_LOG_PATH="/var/ossec/logs"
     LOCAL_PATH="/usr/share/pixmaps"
 elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     OS="Linux"
@@ -116,6 +119,7 @@ elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
     OSSEC_PATH="/var/ossec/etc"
+    OSSEC_LOG_PATH="/var/ossec/logs"
     LOCAL_PATH="/usr/share/pixmaps"
 else
     error_message "Unsupported OS"
@@ -304,6 +308,7 @@ config() {
 
     # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for unix systems
     if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
+        info_message "Configuring Wazuh agent with manager address $WAZUH_MANAGER in $OSSEC_CONF_PATH"
         # First remove <address till address>
         maybe_sudo sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
             error_message "Error occurred during old manager address removal."
@@ -318,8 +323,9 @@ config() {
     fi
   
     # Delete REGISTRATION_SERVER_ADDRESS if it exists
-    if ! maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
-        # First remove <address till address>
+    if maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
+        info_message "Removing manager_address block from $OSSEC_CONF_PATH"
+        # Remove <manager_address> till </manager_address>
         maybe_sudo sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
             error_message "Error occurred during old manager address removal."
             exit 1
@@ -330,7 +336,7 @@ config() {
         Linux*)
             # Check if the specific <location> tag exists in the configuration file
             if ! maybe_sudo grep -q "<location>/var/ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
-                
+                info_message "Configuring active-response logs in $OSSEC_CONF_PATH"
                 sed_alternative -i '/<\/ossec_config>/i\
                     <!-- active response logs -->\
                     <localfile>\
@@ -341,12 +347,12 @@ config() {
         
                 info_message "active-response logs are now being monitored"
             else
-                info_message "The active response already exists in $OSSEC_CONF_PATH"
+                info_message "active-response logs already being monitored in $OSSEC_CONF_PATH"
             fi
             ;;
         Darwin*)
             if ! maybe_sudo grep -q "<location>/Library/Ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
-        
+                info_message "Configuring active-response logs in $OSSEC_CONF_PATH"
                 sed_alternative -i -e "/<\/ossec_config>/i\\
                     <!-- active response logs -->\\
                     <localfile>\\
@@ -357,7 +363,7 @@ config() {
         
                 info_message "active-response logs are now being monitored"
             else
-                info_message "The active response already exists in $OSSEC_CONF_PATH"
+                info_message "active-response logs already being monitored in $OSSEC_CONF_PATH"
             fi
             ;;
         esac
@@ -408,16 +414,16 @@ validate_installation() {
 
     # Check if the Wazuh agent service is running
     if [ "$OS" = "Linux" ]; then
-        if maybe_sudo /var/ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
-            success_message "Wazuh agent service is running."
+        if maybe_sudo /var/ossec/bin/wazuh-control status | grep -i -q "wazuh-agentd is running"; then
+            info_message "Wazuh agent service is running."
         else
-            error_message "Wazuh agent service is not running."
+            warn_message "Wazuh agent service is not running."
         fi
     elif [ "$OS" = "macOS" ]; then
-        if maybe_sudo /Library/Ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
-            success_message "Wazuh agent service is running."
+        if maybe_sudo /Library/Ossec/bin/wazuh-control status | grep -i -q "wazuh-agentd is running"; then
+            info_message "Wazuh agent service is running."
         else
-            error_message "Wazuh agent service is not running."
+            warn_message "Wazuh agent service is not running."
         fi
     fi
 
@@ -425,11 +431,18 @@ validate_installation() {
     if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
         warn_message "Wazuh manager address is not configured correctly in $OSSEC_CONF_PATH."
     fi
+    info_message "Wazuh manager address $WAZUH_MANAGER is configured correctly in $OSSEC_CONF_PATH."
+
+    if ! maybe_sudo grep -q "<location>$OSSEC_LOG_PATH/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
+        warn_message "Active response logs are not configured correctly in $OSSEC_CONF_PATH."
+    fi
+    info_message "active-response logs are configured to be monitored."
 
     # Check if the logo file exists
     if maybe_sudo [ ! -f "$LOCAL_PATH/wazuh-logo.png" ]; then
         warn_message "Logo file has not been downloaded."
     fi
+    info_message "Logo file exists at $LOCAL_PATH/wazuh-logo.png."
 
   success_message "Installation and configuration validated successfully."
 }
@@ -455,4 +468,3 @@ fi
 config
 start_agent 
 validate_installation
-# End of script
