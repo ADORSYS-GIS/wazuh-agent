@@ -18,7 +18,7 @@ $RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
 $VERSION_FILE_URL = "$RepoUrl/version.txt"
 $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
-$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.6" }
+$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.7" }
 $WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4" }
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.3.3" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.2.18" }
@@ -131,19 +131,19 @@ function Install-OAuth2Client {
 }
 
 # Step 3: Download and install YARA with error handling
-function Install-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.ps1"
-    $YaraScript = "$env:TEMP\install_yara.ps1"
-    $global:InstallerFiles += $YaraScript
+function Integrate-Windows-Defender {
+    $DefenderUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/win-defender-integration.ps1"
+    $DefenderScript = "$env:TEMP\win-defender-integration.ps1"
+    $global:InstallerFiles += $DefenderScript
 
     try {
-        InfoMessage "Downloading and executing YARA installation script..."
-        Invoke-WebRequest -Uri $YaraUrl -OutFile $YaraScript -ErrorAction Stop
-        InfoMessage "YARA installation script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
+        InfoMessage "Downloading and executing Windows Defender integration script..."
+        Invoke-WebRequest -Uri $DefenderUrl -OutFile $DefenderScript -ErrorAction Stop
+        InfoMessage "Windows Defender integration script downloaded successfully."
+        & powershell.exe -ExecutionPolicy Bypass -File $DefenderScript -ErrorAction Stop
     }
     catch {
-        ErrorMessage "Error during YARA installation: $($_.Exception.Message)"
+        ErrorMessage "Error during Windows Defender integration: $($_.Exception.Message)"
     }
 }
 
@@ -313,8 +313,8 @@ try {
     Install-OAuth2Client
     SectionSeparator "Installing Agent Status"
     Install-AgentStatus
-    SectionSeparator "Installing Yara"
-    Install-Yara
+    SectionSeparator "Integrating Windows Defender"
+    Integrate-Windows-Defender
 
     # Install Snort or Suricata based on user choice
     if ($InstallSnort) {
