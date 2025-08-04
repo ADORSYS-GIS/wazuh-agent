@@ -108,8 +108,8 @@ uninstall_agent() {
         info_message "Uninstalling Wazuh agent..."
         if [ "$OS" = "Linux" ]; then
             if [ "$PACKAGE_MANAGER" = "apt" ]; then
-                maybe_sudo apt remove -y wazuh-agent
-                maybe_sudo apt autoremove -y
+                maybe_sudo apt-get purge -y wazuh-agent
+                maybe_sudo apt-get autoremove -y
             elif [ "$PACKAGE_MANAGER" = "yum" ]; then
                 maybe_sudo yum remove -y wazuh-agent
             elif [ "$PACKAGE_MANAGER" = "zypper" ]; then
