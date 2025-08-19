@@ -32,44 +32,15 @@ success_message() {
     log INFO "$*"
 }
 
-install_gnu_sed() {
-    info_message "GNU sed not found. Downloading and installing..."
-    SED_URL="https://ftp.gnu.org/gnu/sed/sed-4.9.tar.gz" 
-    TMP_DIR=$(mktemp -d)
-    cd "$TMP_DIR" || exit
-    curl -LO "$SED_URL"
-    tar -xzf sed-*.tar.gz
-    cd sed-* || exit
-    ./configure --prefix=/usr/local
-    make
-    maybe_sudo make install
-    success_message "GNU sed installed successfully."
-}
+LOGGED_IN_USER=""
 
-install_jq() {
-    info_message "jq not found. Downloading and installing..."
-    JQ_URL="https://github.com/stedolan/jq/releases/download/jq-1.6/jq-osx-amd64" # Example version, update as needed
-    TMP_DIR=$(mktemp -d)
-    cd "$TMP_DIR" || exit
-    curl -LO "$JQ_URL"
-    chmod +x jq-osx-amd64
-    maybe_sudo mv jq-osx-amd64 /usr/local/bin/jq
-    success_message "jq installed successfully."
-}
+if [ "$(uname -s)" = "Darwin" ]; then
+    LOGGED_IN_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/ && ! /loginwindow/ {print $3}')
+fi
 
-# Function to download and install curl
-install_curl() {
-    info_message "curl not found. Downloading and installing..."
-    CURL_URL="https://curl.se/download/curl-7.88.1.tar.gz" # Example version, update as needed
-    TMP_DIR=$(mktemp -d)
-    cd "$TMP_DIR" || exit
-    curl -LO "$CURL_URL"
-    tar -xzf curl-*.tar.gz
-    cd curl-* || exit
-    ./configure --prefix=/usr/local
-    make
-    maybe_sudo make install
-    success_message "curl installed successfully."
+#Get the logged-in user on macOS
+brew_command() {
+    sudo -u "$LOGGED_IN_USER" -i brew "$@"
 }
 
 # Ensure root privileges, either directly or through sudo
@@ -93,10 +64,6 @@ command_exists() {
 
 # Detect OS and install packages
 OS_NAME=$(uname -s)
-ARCH=$(uname -m)
-
-info_message "Detecting operating system..."
-
 case "$OS_NAME" in
     "Linux")
         if command_exists apt-get; then
@@ -116,25 +83,7 @@ case "$OS_NAME" in
         ;;
     "Darwin")
         info_message "Detected macOS"
-        
-        # Check if curl, jq or gsed are available
-        # Check for individual commands and install if missing
-        # Define indexed arrays for commands and their installation functions
-        commands=(curl jq gsed)
-        install_functions=(install_curl install_jq install_gnu_sed)
-
-        # Iterate through the arrays
-        for i in "${!commands[@]}"; do
-            cmd="${commands[$i]}"
-            install_func="${install_functions[$i]}"
-
-            if command_exists "$cmd"; then
-                success_message "$cmd is already installed and available for use."
-            else
-                info_message "$cmd is missing. Installing now..."
-                "$install_func"
-            fi
-        done
+        brew_command install jq gsed bash
         ;;
     *)
         error_message "Unsupported operating system: $OS_NAME"
@@ -142,4 +91,4 @@ case "$OS_NAME" in
         ;;
 esac
 
-success_message "curl,jq and gsed installed successfully!"
+success_message "Dependencies installed successfully!"
