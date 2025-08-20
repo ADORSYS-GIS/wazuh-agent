@@ -210,7 +210,7 @@ info_message "Downloading core component scripts..."
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent-status.sh"
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/heads/fix/macos-brew-owner-detection/scripts/install.sh" > "$TMP_FOLDER/install-yara.sh"
+curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/develop/scripts/install.sh" > "$TMP_FOLDER/install-yara.sh"
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
@@ -244,7 +244,7 @@ fi
 if [ "$IDS_ENGINE" = "suricata" ]; then
     uninstall_snort
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
-    curl -sL --progress-bar "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/heads/fix/macos-brew-owner-detection/scripts/install.sh" > "$TMP_FOLDER/install-suricata.sh"
+    curl -sL --progress-bar "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/heads/develop/scripts/install.sh" > "$TMP_FOLDER/install-suricata.sh"
     # Pass the selected mode to the suricata install script
     if ! (bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE") 2>&1; then
         error_message "Failed to install 'suricata'"
