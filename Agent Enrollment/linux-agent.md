@@ -10,7 +10,7 @@ This guide walks you through the process of enrolling a Linux system with the Wa
 - **Dependencies**: Have **curl, jq and sed** installed. You can install them with this command
 
   ```
-  sudo apt-get install -y curl jq sed
+  sudo apt install -y curl jq sed
   ```
 
 ## Step by step process

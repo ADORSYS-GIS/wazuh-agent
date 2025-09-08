@@ -13,9 +13,9 @@ fi
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
 WOPS_VERSION=${WOPS_VERSION:-"0.2.18"}
-WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.5"}
-WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.3"}
-WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.0"}
+WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.11"}
+WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.4"}
+WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.4"}
 
 # Define the OSSEC configuration path
 if [ "$(uname)" = "Darwin" ]; then
@@ -30,7 +30,7 @@ GROUP=${GROUP:-"wazuh"}
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.12.0-1'}
-WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.3.2'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.3.3'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 
 # Installation choice variables
@@ -207,10 +207,18 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
 # Step -1: Download all core scripts
 info_message "Downloading core component scripts..."
+curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/deps.sh" > "$TMP_FOLDER/install-deps.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent-status.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-yara.sh"
+
+# Step 0: Install dependencies
+info_message "Installing dependencies"
+if ! (bash "$TMP_FOLDER/install-deps.sh") 2>&1; then
+    error_message "Failed to install dependencies"
+    exit 1
+fi
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
@@ -228,7 +236,7 @@ fi
 
 # Step 3: Download and install wazuh-agent-status
 info_message "Installing wazuh-agent-status"
-if ! (maybe_sudo bash "$TMP_FOLDER/install-wazuh-agent-status.sh") 2>&1; then
+if ! (maybe_sudo env WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/install-wazuh-agent-status.sh") 2>&1; then
     error_message "Failed to install 'wazuh-agent-status'"
     exit 1
 fi

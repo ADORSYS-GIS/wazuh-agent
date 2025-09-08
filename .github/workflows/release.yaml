@@ -7,12 +7,68 @@ on:
       - develop
     tags:
       - 'v*'
+  pull_request:
+    branches:
+      - main
+      - develop
 
-jobs:    
+jobs:
+  test-install-script:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          sudo apt update
+          sudo apt install -y bats curl jq sed
+        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+          brew install bats coreutils curl jq gnu-sed docker
+        fi
+
+    - name: Make script executable
+      run: chmod +x ./scripts/install.sh
+      
+    - name: Install wazuh-agent
+      run: |
+        sudo ./scripts/install.sh
+  test-setup-agent-script:
+    runs-on: ${{ matrix.os }}
+    needs: test-install-script
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          sudo apt update
+          sudo apt install -y bats curl jq sed
+        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+          brew install bats coreutils curl jq gnu-sed docker
+        fi
+
+    - name: Make script executable
+      run: chmod +x ./scripts/setup-agent.sh
+      
+    - name: Launch setup-agent script
+      run: |
+        sudo ./scripts/setup-agent.sh
   release:
     name: Release
     permissions: write-all
     runs-on: ubuntu-latest
+    needs: test-setup-agent-script
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

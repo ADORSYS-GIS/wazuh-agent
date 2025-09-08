@@ -70,15 +70,6 @@ maybe_sudo() {
     fi
 }
 
-create_file() {
-    local filepath="$1"
-    local content="$2"
-    maybe_sudo bash -c "cat > \"$filepath\" <<EOF
-$content
-EOF"
-    info_message "Created file: $filepath"
-}
-
 sed_alternative() {
     if command_exists gsed; then
         gsed "$@"
@@ -99,6 +90,7 @@ if [ "$(uname)" = "Darwin" ]; then
     UPGRADE_SCRIPT_PATH="/Library/Ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
     OSSEC_PATH="/Library/Ossec/etc"
+    OSSEC_LOG_PATH="/Library/Ossec/logs"
     LOCAL_PATH="/Library/Application Support/Ossec"
 elif [ -f /etc/debian_version ]; then
     OS="Linux"
@@ -109,6 +101,7 @@ elif [ -f /etc/debian_version ]; then
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
     OSSEC_PATH="/var/ossec/etc"
+    OSSEC_LOG_PATH="/var/ossec/logs"
     LOCAL_PATH="/usr/share/pixmaps"
 elif [ -f /etc/redhat-release ]; then
     OS="Linux"
@@ -117,6 +110,7 @@ elif [ -f /etc/redhat-release ]; then
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
     OSSEC_PATH="/var/ossec/etc"
+    OSSEC_LOG_PATH="/var/ossec/logs"
     LOCAL_PATH="/usr/share/pixmaps"
 elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     OS="Linux"
@@ -125,6 +119,7 @@ elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     UPGRADE_SCRIPT_PATH="/var/ossec/active-response/bin/adorsys-update.sh"
     OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
     OSSEC_PATH="/var/ossec/etc"
+    OSSEC_LOG_PATH="/var/ossec/logs"
     LOCAL_PATH="/usr/share/pixmaps"
 else
     error_message "Unsupported OS"
@@ -313,6 +308,7 @@ config() {
 
     # Replace MANAGER_IP placeholder with the actual manager IP in ossec.conf for unix systems
     if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
+        info_message "Configuring Wazuh agent with manager address $WAZUH_MANAGER in $OSSEC_CONF_PATH"
         # First remove <address till address>
         maybe_sudo sed_alternative -i '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
             error_message "Error occurred during old manager address removal."
@@ -327,8 +323,9 @@ config() {
     fi
   
     # Delete REGISTRATION_SERVER_ADDRESS if it exists
-    if ! maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
-        # First remove <address till address>
+    if maybe_sudo grep -q "<manager_address>.*</manager_address>" "$OSSEC_CONF_PATH"; then
+        info_message "Removing manager_address block from $OSSEC_CONF_PATH"
+        # Remove <manager_address> till </manager_address>
         maybe_sudo sed_alternative -i '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
             error_message "Error occurred during old manager address removal."
             exit 1
@@ -339,7 +336,7 @@ config() {
         Linux*)
             # Check if the specific <location> tag exists in the configuration file
             if ! maybe_sudo grep -q "<location>/var/ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
-                
+                info_message "Configuring active-response logs in $OSSEC_CONF_PATH"
                 sed_alternative -i '/<\/ossec_config>/i\
                     <!-- active response logs -->\
                     <localfile>\
@@ -350,13 +347,12 @@ config() {
         
                 info_message "active-response logs are now being monitored"
             else
-                info_message "The active response already exists in $OSSEC_CONF_PATH"
+                info_message "active-response logs already being monitored in $OSSEC_CONF_PATH"
             fi
-            info_message "Wazuh agent certificate configuration completed successfully."
             ;;
         Darwin*)
             if ! maybe_sudo grep -q "<location>/Library/Ossec/logs/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
-        
+                info_message "Configuring active-response logs in $OSSEC_CONF_PATH"
                 sed_alternative -i -e "/<\/ossec_config>/i\\
                     <!-- active response logs -->\\
                     <localfile>\\
@@ -367,9 +363,8 @@ config() {
         
                 info_message "active-response logs are now being monitored"
             else
-                info_message "The active response already exists in $OSSEC_CONF_PATH"
+                info_message "active-response logs already being monitored in $OSSEC_CONF_PATH"
             fi
-            info_message "Wazuh agent certificate configuration completed successfully."
             ;;
         esac
 
@@ -382,7 +377,7 @@ config() {
         info_message "$LOCAL_PATH directory already exists."
     fi
     info_message "Downloading logo..."
-    maybe_sudo curl "$REPO_URL/assets/wazuh-logo.png" -o "$LOCAL_PATH/wazuh-logo.png"
+    maybe_sudo curl -SL --progress-bar "$REPO_URL/assets/wazuh-logo.png" -o "$LOCAL_PATH/wazuh-logo.png"
     maybe_sudo chmod +r "$LOCAL_PATH/wazuh-logo.png"
     info_message "Logo downloaded successfully."
 
@@ -413,155 +408,22 @@ start_agent() {
   info_message "Wazuh agent started successfully."
 }
 
-create_upgrade_script() {
-    maybe_sudo cat << EOF > "$UPGRADE_SCRIPT_PATH"
-#!/bin/sh
-# Upgrade script from ADORSYS.
-# Copyright (C) 2024, ADORSYS GmbH & CO KG.
-
-# Check if we're running in bash; if not, adjust behavior
-if [ -n "\$BASH_VERSION" ]; then
-    set -euo pipefail
-else
-    set -eu
-fi
-
-# Default log level and application details
-LOG_LEVEL=\${LOG_LEVEL:-'INFO'}
-WAZUH_MANAGER="$WAZUH_MANAGER"
-
-# Define the log file path
-if [ "\$(uname)" = "Darwin" ]; then
-    LOG_FILE='/Library/Ossec/logs/active-responses.log'
-    ARCH=\$(uname -m)
-    if [ "\$ARCH" = "x86_64" ]; then
-        BIN_FOLDER='/usr/local/bin'
-    else
-        BIN_FOLDER='/opt/homebrew/bin'
-    fi
-else
-    LOG_FILE='/var/ossec/logs/active-responses.log'
-    BIN_FOLDER='/usr/bin'
-fi
-
-# Create a temporary directory
-TMP_FOLDER="\$(mktemp -d)"
-
-# Define text formatting
-RED='\\033[0;31m'
-GREEN='\\033[0;32m'
-YELLOW='\\033[1;33m'
-BLUE='\\033[1;34m'
-BOLD='\\033[1m'
-NORMAL='\\033[0m'
-
-# Function for logging with timestamp
-log() {
-    local LEVEL="\$1"
-    shift
-    local MESSAGE="\$*"
-    local TIMESTAMP
-    TIMESTAMP=\$(date +"%Y-%m-%d %H:%M:%S")
-    echo -e "\${TIMESTAMP} \${LEVEL} \${MESSAGE}" >> "\$LOG_FILE"
-}
-
-# Logging helpers
-info_message() {
-    log "\${BLUE}\${BOLD}[INFO]\${NORMAL}" "\$*"
-}
-
-error_message() {
-    log "\${RED}\${BOLD}[ERROR]\${NORMAL}" "\$*"
-}
-
-cleanup() {
-    # Remove temporary folder
-    if [ -d "\$TMP_FOLDER" ]; then
-        rm -rf "\$TMP_FOLDER"
-    fi
-}
-
-send_notification() {
-    local message="\$1"
-    local title="Wazuh Update"
-    local iconPath="/usr/share/pixmaps/wazuh-logo.png"
-
-    if [ "\$(uname)" = "Darwin" ]; then
-        osascript -e "display dialog \"\$message\" buttons {\"Dismiss\"} default button \"Dismiss\" with title \"\$title\""
-    elif [ "\$(uname)" = "Linux" ]; then
-        # Get the logged-in user
-        USER=\$(who | awk '{print \$1}' | head -n 1)
-        USER_UID=\$(id -u "\$USER")
-        DBUS_PATH="/run/user/\$USER_UID/bus"
-
-        if [ -f "\$iconPath" ]; then
-             sudo -u "\$USER" DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=\$DBUS_PATH" \\
-                notify-send --app-name=Wazuh -u critical "\$title" "\$message" -i "\$iconPath"
-        else
-             sudo -u "\$USER" DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=\$DBUS_PATH" \\
-                notify-send --app-name=Wazuh -u critical  "\$title" "\$message"
-        fi
-    else
-        error_message "Unsupported OS for notifications: \$(uname)"
-    fi
-    info_message "Notification sent: \$message"
-}
-
-trap cleanup EXIT
-
-# Log environment info
-info_message "Starting Wazuh agent upgrade..."
-
-info_message "Adding bin directory: \$BIN_FOLDER to PATH environment"
-export PATH="\$BIN_FOLDER:\$PATH"
-
-info_message "Current PATH: \$PATH"
-
-info_message "Starting setup. Using temporary directory: \$TMP_FOLDER"
-
-# Download scripts
-info_message "Downloading setup script..."
-SCRIPT_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh"
-
-if ! curl -SL -s "\$SCRIPT_URL" -o "\$TMP_FOLDER/setup-agent.sh" >> "\${LOG_FILE}"; then
-    error_message "Failed to download setup-agent.sh"
-    send_notification "Update failed: For more details go to file \${LOG_FILE}"
-    exit 1
-fi
-
-chmod +x "\$TMP_FOLDER/setup-agent.sh"
-
-if ! sudo WAZUH_MANAGER="\$WAZUH_MANAGER" bash "\$TMP_FOLDER/setup-agent.sh" >> "\${LOG_FILE}"; then
-    error_message "Failed to setup wazuh agent"
-    send_notification "Update failed: For more details go to file \${LOG_FILE}"
-    exit 1
-fi
-
-send_notification "Update completed successfully!"
-EOF
-    # Make the new script executable
-    maybe_sudo chown root:wazuh "$UPGRADE_SCRIPT_PATH"
-    maybe_sudo chmod 750 "$UPGRADE_SCRIPT_PATH"
-    # Confirm creation
-    info_message "Script created at $UPGRADE_SCRIPT_PATH"
-}
-
 # Validate agent installation
 validate_installation() {
     info_message "Validating installation and configuration..."
 
     # Check if the Wazuh agent service is running
     if [ "$OS" = "Linux" ]; then
-        if maybe_sudo /var/ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
-            success_message "Wazuh agent service is running."
+        if maybe_sudo /var/ossec/bin/wazuh-control status | grep -i -q "wazuh-agentd is running"; then
+            info_message "Wazuh agent service is running."
         else
-            error_message "Wazuh agent service is not running."
+            warn_message "Wazuh agent service is not running."
         fi
     elif [ "$OS" = "macOS" ]; then
-        if maybe_sudo /Library/Ossec/bin/wazuh-control status | grep -i "wazuh-agentd is running"; then
-            success_message "Wazuh agent service is running."
+        if maybe_sudo /Library/Ossec/bin/wazuh-control status | grep -i -q "wazuh-agentd is running"; then
+            info_message "Wazuh agent service is running."
         else
-            error_message "Wazuh agent service is not running."
+            warn_message "Wazuh agent service is not running."
         fi
     fi
 
@@ -569,11 +431,18 @@ validate_installation() {
     if ! maybe_sudo grep -q "<address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH"; then
         warn_message "Wazuh manager address is not configured correctly in $OSSEC_CONF_PATH."
     fi
+    info_message "Wazuh manager address $WAZUH_MANAGER is configured correctly in $OSSEC_CONF_PATH."
+
+    if ! maybe_sudo grep -q "<location>$OSSEC_LOG_PATH/active-responses.log</location>" "$OSSEC_CONF_PATH"; then
+        warn_message "Active response logs are not configured correctly in $OSSEC_CONF_PATH."
+    fi
+    info_message "active-response logs are configured to be monitored."
 
     # Check if the logo file exists
     if maybe_sudo [ ! -f "$LOCAL_PATH/wazuh-logo.png" ]; then
         warn_message "Logo file has not been downloaded."
     fi
+    info_message "Logo file exists at $LOCAL_PATH/wazuh-logo.png."
 
   success_message "Installation and configuration validated successfully."
 }
@@ -597,7 +466,5 @@ else
 fi
 # Always update config/scripts
 config
-create_upgrade_script
 start_agent 
 validate_installation
-# End of script
