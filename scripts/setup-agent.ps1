@@ -115,7 +115,7 @@ function Install-WazuhAgent {
 
 # Step 2: Download and install wazuh-cert-oauth2-client with error handling
 function Install-OAuth2Client {
-    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.ps1"
+    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/fix-windows-executable-issue/scripts/install.ps1"
     $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
     $global:InstallerFiles += $OAuth2Script
 
