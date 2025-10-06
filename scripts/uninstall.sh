@@ -104,16 +104,35 @@ stop_service() {
 
 # Uninstall Wazuh agent
 uninstall_agent() {
-    # Check if Wazuh is installed (directory exists OR receipt file exists on macOS)
+    # Check if Wazuh is installed (comprehensive detection for partial installs)
     local wazuh_installed=false
+    local cleanup_reason=""
+    
+    # Check main installation directory
     if maybe_sudo [ -d "$OSSEC_PATH" ]; then
         wazuh_installed=true
-    elif [ "$OS" = "macOS" ] && [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" ]; then
-        wazuh_installed=true
-        warn_message "Wazuh directory not found but receipt file exists - cleaning up installation remnants"
+        cleanup_reason="Main Wazuh directory found"
+    fi
+    
+    # macOS specific checks for partial installations
+    if [ "$OS" = "macOS" ]; then
+        if [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" ]; then
+            wazuh_installed=true
+            cleanup_reason="Package receipt file found"
+        elif [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.bom" ]; then
+            wazuh_installed=true
+            cleanup_reason="Package BOM file found"
+        elif [ -f "/Library/LaunchDaemons/com.wazuh.agent.plist" ]; then
+            wazuh_installed=true
+            cleanup_reason="LaunchDaemon file found"
+        elif [ -d "/Library/StartupItems/WAZUH" ]; then
+            wazuh_installed=true
+            cleanup_reason="StartupItems directory found"
+        fi
     fi
     
     if [ "$wazuh_installed" = true ]; then
+        info_message "Wazuh components detected: $cleanup_reason"
         info_message "Uninstalling Wazuh agent..."
         if [ "$OS" = "Linux" ]; then
             if [ "$PACKAGE_MANAGER" = "apt" ]; then
