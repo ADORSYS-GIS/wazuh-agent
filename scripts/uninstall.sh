@@ -131,6 +131,9 @@ uninstall_agent() {
             maybe_sudo rm -f /Library/LaunchDaemons/com.wazuh.agent.plist
             maybe_sudo rm -rf /Library/StartupItems/WAZUH
     
+            # Remove from the pkgutil first (before removing receipt files)
+            maybe_sudo pkgutil --forget com.wazuh.pkg.wazuh-agent 2>/dev/null || warn_message "Package not found in pkgutil database"
+    
             # Remove package receipt file (critical for reinstallation)
             if [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" ]; then
                 info_message "Removing package receipt file..."
@@ -142,9 +145,6 @@ uninstall_agent() {
                 info_message "Removing package BOM file..."
                 maybe_sudo rm -f /var/db/receipts/com.wazuh.pkg.wazuh-agent.bom
             fi
-    
-            # Remove from the pkgutil (ignore errors if package not found)
-            maybe_sudo pkgutil --forget com.wazuh.pkg.wazuh-agent 2>/dev/null || warn_message "Package not found in pkgutil database"
         fi
         info_message "Wazuh agent uninstalled successfully."
     else
