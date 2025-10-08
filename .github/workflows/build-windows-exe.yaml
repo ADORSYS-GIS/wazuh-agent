@@ -1,0 +1,106 @@
+name: Build Windows Installer Executable
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+jobs:
+  build-windows-installer:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install PS2EXE
+      shell: powershell
+      run: |
+        Install-Module -Name ps2exe -Force -Scope CurrentUser
+        Import-Module ps2exe
+
+    - name: Convert PNG to ICO
+      shell: powershell
+      run: |
+        Add-Type -AssemblyName System.Drawing
+        $png = [System.Drawing.Image]::FromFile("$PWD/assets/wazuh-logo.png")
+        $ico = New-Object System.IO.FileStream("$PWD/scripts/wazuh-logo.ico", [System.IO.FileMode]::Create)
+
+        # Create icon with multiple sizes
+        $bitmap = New-Object System.Drawing.Bitmap $png
+        $sizes = @(16, 32, 48, 64, 128, 256)
+
+        # Simple conversion (note: for production, consider using a more robust converter)
+        $bitmap.Save($ico, [System.Drawing.Imaging.ImageFormat]::Icon)
+
+        $ico.Close()
+        $png.Dispose()
+        $bitmap.Dispose()
+
+    - name: Get version from tag or commit
+      id: get_version
+      shell: bash
+      run: |
+        if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/v}
+        else
+          VERSION="0.1.0-dev+${GITHUB_SHA::7}"
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version: $VERSION"
+
+    - name: Build executable with PS2EXE
+      shell: powershell
+      run: |
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+
+        Invoke-PS2EXE -inputFile ".\scripts\setup-agent.ps1" `
+                      -outputFile ".\scripts\setup-agent.exe" `
+                      -title "Wazuh Agent Installer" `
+                      -company "adorsys" `
+                      -version $version `
+                      -copyright "Copyright 2025" `
+                      -requireAdmin `
+                      -noConsole `
+                      -iconFile ".\scripts\wazuh-logo.ico"
+
+    - name: Verify executable
+      shell: powershell
+      run: |
+        if (Test-Path ".\scripts\setup-agent.exe") {
+          Write-Host "✓ Executable created successfully"
+          $fileInfo = Get-Item ".\scripts\setup-agent.exe"
+          Write-Host "File size: $($fileInfo.Length) bytes"
+          Write-Host "Created: $($fileInfo.CreationTime)"
+        } else {
+          Write-Error "Failed to create executable"
+          exit 1
+        }
+
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: wazuh-agent-installer-windows-${{ steps.get_version.outputs.VERSION }}
+        path: scripts/setup-agent.exe
+        retention-days: 90
+
+    - name: Create Release with Tag
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ steps.get_version.outputs.VERSION }}
+        files: scripts/setup-agent.exe
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
