@@ -32,23 +32,31 @@ jobs:
       shell: bash
       run: |
         if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-          VERSION=${GITHUB_REF#refs/tags/v}
+          FULL_VERSION=${GITHUB_REF#refs/tags/v}
+          # Strip pre-release tags and build metadata for PS2EXE (only accepts n.n.n.n format)
+          EXE_VERSION=$(echo "$FULL_VERSION" | sed -E 's/(-rc\.[0-9]+|-alpha\.[0-9]+|-beta\.[0-9]+|\+.*)$//')
         else
-          VERSION="0.1.0-dev+${GITHUB_SHA::7}"
+          FULL_VERSION="0.1.0-dev+${GITHUB_SHA::7}"
+          EXE_VERSION="0.1.0"
         fi
-        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-        echo "Building version: $VERSION"
+        echo "VERSION=$FULL_VERSION" >> $GITHUB_OUTPUT
+        echo "EXE_VERSION=$EXE_VERSION" >> $GITHUB_OUTPUT
+        echo "Full version: $FULL_VERSION"
+        echo "Executable version: $EXE_VERSION"
 
     - name: Build executable with PS2EXE
       shell: powershell
       run: |
-        $version = "${{ steps.get_version.outputs.VERSION }}"
+        $exeVersion = "${{ steps.get_version.outputs.EXE_VERSION }}"
+        $fullVersion = "${{ steps.get_version.outputs.VERSION }}"
+
+        Write-Host "Building executable with version: $exeVersion (Full: $fullVersion)"
 
         Invoke-PS2EXE -inputFile ".\scripts\setup-agent.ps1" `
                       -outputFile ".\scripts\setup-agent.exe" `
                       -title "Wazuh Agent Installer" `
                       -company "adorsys" `
-                      -version $version `
+                      -version $exeVersion `
                       -copyright "Copyright 2025" `
                       -requireAdmin `
                       -noConsole
