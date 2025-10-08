@@ -27,24 +27,6 @@ jobs:
         Install-Module -Name ps2exe -Force -Scope CurrentUser
         Import-Module ps2exe
 
-    - name: Convert PNG to ICO
-      shell: powershell
-      run: |
-        Add-Type -AssemblyName System.Drawing
-        $png = [System.Drawing.Image]::FromFile("$PWD/assets/wazuh-logo.png")
-        $ico = New-Object System.IO.FileStream("$PWD/scripts/wazuh-logo.ico", [System.IO.FileMode]::Create)
-
-        # Create icon with multiple sizes
-        $bitmap = New-Object System.Drawing.Bitmap $png
-        $sizes = @(16, 32, 48, 64, 128, 256)
-
-        # Simple conversion (note: for production, consider using a more robust converter)
-        $bitmap.Save($ico, [System.Drawing.Imaging.ImageFormat]::Icon)
-
-        $ico.Close()
-        $png.Dispose()
-        $bitmap.Dispose()
-
     - name: Get version from tag or commit
       id: get_version
       shell: bash
@@ -69,8 +51,7 @@ jobs:
                       -version $version `
                       -copyright "Copyright 2025" `
                       -requireAdmin `
-                      -noConsole `
-                      -iconFile ".\scripts\wazuh-logo.ico"
+                      -noConsole
 
     - name: Verify executable
       shell: powershell
