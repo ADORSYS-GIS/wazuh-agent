@@ -1,13 +1,28 @@
-param(
-    [switch]$InstallSnort,
-    [switch]$InstallSuricata,
-    [switch]$Help
-)
+#requires -version 5.1
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
 
-# Set strict mode for script execution (after param declaration)
+# ---- Elevate ----
+$IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
+).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if (-not $IsAdmin) {
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName  = (Get-Process -Id $PID).Path
+    $psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$($MyInvocation.MyCommand.Path)`""
+    $psi.Verb      = "runas"
+    try {
+        [System.Diagnostics.Process]::Start($psi) | Out-Null
+        exit
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Administrator approval is required. Exiting.","Wazuh Agent Installer",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+        exit 1
+    }
+}
+
 Set-StrictMode -Version Latest
 
-# Variables (default log level, app details, paths)
+# ---- Configuration Variables ----
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-client" }
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
@@ -17,59 +32,80 @@ $OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
 $RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
 $VERSION_FILE_URL = "$RepoUrl/version.txt"
 $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
-$TEMP_DIR = [System.IO.Path]::GetTempPath()
 $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.11" }
 $WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4" }
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.3.3" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.2.18" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.1.4" }
 
-# Global array to track installer files
+# ---- Globals ----
+$AppName = "Wazuh Agent"
+$LogDir  = Join-Path $env:ProgramData "WazuhAgentInstaller"
+New-Item -ItemType Directory -Force -Path $LogDir -ErrorAction SilentlyContinue | Out-Null
+$LogPath = Join-Path $LogDir "installer.log"
 $global:InstallerFiles = @()
 
-# Function to log messages with a timestamp
-function Log {
-    param (
-        [string]$Level,
+# ---- Logging ----
+function Append-Log {
+    param(
         [string]$Message,
-        [string]$Color = "White"  # Default color
+        [string]$Level = "INFO"
     )
-    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
+    $ts = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    $line = "[$ts] [$Level] $Message"
+    $LogBox.AppendText($line + [Environment]::NewLine)
+    $LogBox.ScrollToCaret()
+    try { Add-Content -Path $LogPath -Value $line -Encoding UTF8 } catch {}
+    [System.Windows.Forms.Application]::DoEvents()
 }
 
 function InfoMessage {
     param ([string]$Message)
-    Log "[INFO]" $Message "Cyan"
+    Append-Log $Message "INFO"
 }
 
 function WarningMessage {
     param ([string]$Message)
-    Log "[WARNING]" $Message "Yellow"
+    Append-Log $Message "WARNING"
 }
 
 function SuccessMessage {
     param ([string]$Message)
-    Log "[SUCCESS]" $Message "Green"
+    Append-Log $Message "SUCCESS"
 }
 
 function ErrorMessage {
     param ([string]$Message)
-    Log "[ERROR]" $Message "Red"
+    Append-Log $Message "ERROR"
 }
 
 function SectionSeparator {
-    param (
-        [string]$SectionName
-    )
-    Write-Host ""
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host "  $SectionName" -ForegroundColor Magenta
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host ""
+    param ([string]$SectionName)
+    Append-Log "=================================================="
+    Append-Log "  $SectionName"
+    Append-Log "=================================================="
 }
 
-# Cleanup function to remove installer files at the end
+function Invoke-Step {
+    param(
+        [Parameter(Mandatory=$true)][string]$Name,
+        [Parameter(Mandatory=$true)][scriptblock]$Action,
+        [int]$Weight = 10
+    )
+    InfoMessage "[START] $Name"
+    $StatusLabel.Text = "Step: $Name"
+    try {
+        & $Action
+        SuccessMessage "[OK] $Name"
+    } catch {
+        ErrorMessage "[FAIL] $Name : $($_.Exception.Message)"
+        throw
+    } finally {
+        $ProgressBar.Value = [Math]::Min($ProgressBar.Value + $Weight, $ProgressBar.Maximum)
+    }
+}
+
+# ---- Cleanup ----
 function Cleanup-Installers {
     foreach ($file in $global:InstallerFiles) {
         if (Test-Path $file) {
@@ -79,92 +115,131 @@ function Cleanup-Installers {
     }
 }
 
-# Step 0: Download dependency script and execute
+# ---- Installation Functions ----
 function Install-Dependencies {
     $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/deps.ps1"
     $InstallerPath = "$env:TEMP\deps.ps1"
     $global:InstallerFiles += $InstallerPath
 
-    try {
-        InfoMessage "Downloading and executing dependency script..."
-        Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
-        InfoMessage "Dependency script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ErrorAction Stop
+    InfoMessage "Downloading dependency script..."
+    Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
+    InfoMessage "Executing dependency script..."
+    
+    # Capture all output streams
+    $output = & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath 2>&1
+    foreach ($line in $output) {
+        if ($line -is [System.Management.Automation.ErrorRecord]) {
+            ErrorMessage $line.ToString()
+        } else {
+            InfoMessage $line.ToString()
+        }
     }
-    catch {
-        ErrorMessage "Error during dependency installation: $($_.Exception.Message)"
+    
+    if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
+        throw "Dependency script failed with exit code $LASTEXITCODE"
     }
 }
 
-# Step 1: Download and execute Wazuh agent script with error handling
 function Install-WazuhAgent {
     $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.ps1"
     $InstallerPath = "$env:TEMP\install.ps1"
     $global:InstallerFiles += $InstallerPath
 
-    try {
-        InfoMessage "Downloading and executing Wazuh agent script..."
-        Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
-        InfoMessage "Wazuh agent script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ErrorAction Stop
+    InfoMessage "Downloading Wazuh agent script..."
+    Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
+    InfoMessage "Installing Wazuh agent..."
+    
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$InstallerPath`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\wazuh_output.log" -RedirectStandardError "$env:TEMP\wazuh_error.log" -Wait
+    
+    if (Test-Path "$env:TEMP\wazuh_output.log") {
+        Get-Content "$env:TEMP\wazuh_output.log" | ForEach-Object { InfoMessage $_ }
+        Remove-Item "$env:TEMP\wazuh_output.log" -Force
     }
-    catch {
-        ErrorMessage "Error during Wazuh agent installation: $($_.Exception.Message)"
+    if (Test-Path "$env:TEMP\wazuh_error.log") {
+        Get-Content "$env:TEMP\wazuh_error.log" | ForEach-Object { ErrorMessage $_ }
+        Remove-Item "$env:TEMP\wazuh_error.log" -Force
+    }
+    
+    if ($process.ExitCode -ne 0) {
+        throw "Wazuh agent installation failed with exit code $($process.ExitCode)"
     }
 }
 
-# Step 2: Download and install wazuh-cert-oauth2-client with error handling
 function Install-OAuth2Client {
     $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.ps1"
     $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
     $global:InstallerFiles += $OAuth2Script
 
-    try {
-        InfoMessage "Downloading and executing wazuh-cert-oauth2-client script..."
-        Invoke-WebRequest -Uri $OAuth2Url -OutFile $OAuth2Script -ErrorAction Stop
-        InfoMessage "wazuh-cert-oauth2-client script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $OAuth2Script -ArgumentList "-LOG_LEVEL", $LOG_LEVEL, "-OSSEC_CONF_PATH", $OSSEC_CONF_PATH, "-APP_NAME", $APP_NAME, "-WOPS_VERSION", $WOPS_VERSION -ErrorAction Stop
+    InfoMessage "Downloading OAuth2 client script..."
+    Invoke-WebRequest -Uri $OAuth2Url -OutFile $OAuth2Script -ErrorAction Stop
+    InfoMessage "Installing OAuth2 client..."
+    
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$OAuth2Script`" -LOG_LEVEL `"$LOG_LEVEL`" -OSSEC_CONF_PATH `"$OSSEC_CONF_PATH`" -APP_NAME `"$APP_NAME`" -WOPS_VERSION `"$WOPS_VERSION`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\oauth2_output.log" -RedirectStandardError "$env:TEMP\oauth2_error.log" -Wait
+    
+    if (Test-Path "$env:TEMP\oauth2_output.log") {
+        Get-Content "$env:TEMP\oauth2_output.log" | ForEach-Object { InfoMessage $_ }
+        Remove-Item "$env:TEMP\oauth2_output.log" -Force
     }
-    catch {
-        ErrorMessage "Error during wazuh-cert-oauth2-client installation: $($_.Exception.Message)"
+    if (Test-Path "$env:TEMP\oauth2_error.log") {
+        Get-Content "$env:TEMP\oauth2_error.log" | ForEach-Object { ErrorMessage $_ }
+        Remove-Item "$env:TEMP\oauth2_error.log" -Force
+    }
+    
+    if ($process.ExitCode -ne 0) {
+        throw "OAuth2 client installation failed with exit code $($process.ExitCode)"
     }
 }
 
-# Step 3: Download and install YARA with error handling
 function Install-Yara {
     $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.ps1"
     $YaraScript = "$env:TEMP\install_yara.ps1"
     $global:InstallerFiles += $YaraScript
 
-    try {
-        InfoMessage "Downloading and executing YARA installation script..."
-        Invoke-WebRequest -Uri $YaraUrl -OutFile $YaraScript -ErrorAction Stop
-        InfoMessage "YARA installation script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
+    InfoMessage "Downloading YARA script..."
+    Invoke-WebRequest -Uri $YaraUrl -OutFile $YaraScript -ErrorAction Stop
+    InfoMessage "Installing YARA..."
+    
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$YaraScript`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\yara_output.log" -RedirectStandardError "$env:TEMP\yara_error.log" -Wait
+    
+    if (Test-Path "$env:TEMP\yara_output.log") {
+        Get-Content "$env:TEMP\yara_output.log" | ForEach-Object { InfoMessage $_ }
+        Remove-Item "$env:TEMP\yara_output.log" -Force
     }
-    catch {
-        ErrorMessage "Error during YARA installation: $($_.Exception.Message)"
+    if (Test-Path "$env:TEMP\yara_error.log") {
+        Get-Content "$env:TEMP\yara_error.log" | ForEach-Object { ErrorMessage $_ }
+        Remove-Item "$env:TEMP\yara_error.log" -Force
+    }
+    
+    if ($process.ExitCode -ne 0) {
+        throw "YARA installation failed with exit code $($process.ExitCode)"
     }
 }
 
-# Step 4: Download and install Snort with error handling
 function Install-Snort {
     $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/windows/snort.ps1"
     $SnortScript = "$env:TEMP\snort.ps1"
     $global:InstallerFiles += $SnortScript
 
-    try {
-        InfoMessage "Downloading and executing Snort installation script..."
-        Invoke-WebRequest -Uri $SnortUrl -OutFile $SnortScript -ErrorAction Stop
-        InfoMessage "Snort installation script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $SnortScript -ErrorAction Stop
+    InfoMessage "Downloading Snort script..."
+    Invoke-WebRequest -Uri $SnortUrl -OutFile $SnortScript -ErrorAction Stop
+    InfoMessage "Installing Snort..."
+    
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$SnortScript`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\snort_output.log" -RedirectStandardError "$env:TEMP\snort_error.log" -Wait
+    
+    if (Test-Path "$env:TEMP\snort_output.log") {
+        Get-Content "$env:TEMP\snort_output.log" | ForEach-Object { InfoMessage $_ }
+        Remove-Item "$env:TEMP\snort_output.log" -Force
     }
-    catch {
-        ErrorMessage "Error during Snort installation: $($_.Exception.Message)"
+    if (Test-Path "$env:TEMP\snort_error.log") {
+        Get-Content "$env:TEMP\snort_error.log" | ForEach-Object { ErrorMessage $_ }
+        Remove-Item "$env:TEMP\snort_error.log" -Force
+    }
+    
+    if ($process.ExitCode -ne 0) {
+        throw "Snort installation failed with exit code $($process.ExitCode)"
     }
 }
 
-# Helper functions to uninstall Snort and Suricata
 function Uninstall-Snort {
     $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/uninstall.ps1"
     $UninstallSnortScript = "$env:TEMP\uninstall_snort.ps1"
@@ -173,32 +248,48 @@ function Uninstall-Snort {
 
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     if ($task) {
-        try {
-            InfoMessage "Downloading and executing Snort uninstallation script..."
-            Invoke-WebRequest -Uri $SnortUrl -OutFile $UninstallSnortScript -ErrorAction Stop
-            InfoMessage "Snort uninstallation script downloaded successfully."
-            & powershell.exe -ExecutionPolicy Bypass -File $UninstallSnortScript -ErrorAction Stop
+        InfoMessage "Removing existing Snort installation..."
+        Invoke-WebRequest -Uri $SnortUrl -OutFile $UninstallSnortScript -ErrorAction Stop
+        
+        $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$UninstallSnortScript`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\uninstall_snort_output.log" -RedirectStandardError "$env:TEMP\uninstall_snort_error.log" -Wait
+        
+        if (Test-Path "$env:TEMP\uninstall_snort_output.log") {
+            Get-Content "$env:TEMP\uninstall_snort_output.log" | ForEach-Object { InfoMessage $_ }
+            Remove-Item "$env:TEMP\uninstall_snort_output.log" -Force
         }
-        catch {
-            ErrorMessage "Error during Snort uninstallation: $($_.Exception.Message)"
+        if (Test-Path "$env:TEMP\uninstall_snort_error.log") {
+            Get-Content "$env:TEMP\uninstall_snort_error.log" | ForEach-Object { ErrorMessage $_ }
+            Remove-Item "$env:TEMP\uninstall_snort_error.log" -Force
+        }
+        
+        if ($process.ExitCode -ne 0) {
+            WarningMessage "Snort uninstall completed with exit code $($process.ExitCode)"
         }
     }
 }
 
-# Step 5: Download and install Suricata with error handling
 function Install-Suricata {
     $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/tags/v$WAZUH_SURICATA_VERSION/scripts/install.ps1"
     $SuricataScript = "$env:TEMP\suricata.ps1"
     $global:InstallerFiles += $SuricataScript
 
-    try {
-        InfoMessage "Snort is installed. Downloading and executing Suricata installation script..."
-        Invoke-WebRequest -Uri $SuricataUrl -OutFile $SuricataScript -ErrorAction Stop
-        InfoMessage "Suricata installation script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $SuricataScript -ErrorAction Stop
+    InfoMessage "Downloading Suricata script..."
+    Invoke-WebRequest -Uri $SuricataUrl -OutFile $SuricataScript -ErrorAction Stop
+    InfoMessage "Installing Suricata..."
+    
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$SuricataScript`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\suricata_output.log" -RedirectStandardError "$env:TEMP\suricata_error.log" -Wait
+    
+    if (Test-Path "$env:TEMP\suricata_output.log") {
+        Get-Content "$env:TEMP\suricata_output.log" | ForEach-Object { InfoMessage $_ }
+        Remove-Item "$env:TEMP\suricata_output.log" -Force
     }
-    catch {
-        ErrorMessage "Error during Suricata installation: $($_.Exception.Message)"
+    if (Test-Path "$env:TEMP\suricata_error.log") {
+        Get-Content "$env:TEMP\suricata_error.log" | ForEach-Object { ErrorMessage $_ }
+        Remove-Item "$env:TEMP\suricata_error.log" -Force
+    }
+    
+    if ($process.ExitCode -ne 0) {
+        throw "Suricata installation failed with exit code $($process.ExitCode)"
     }
 }
 
@@ -210,132 +301,195 @@ function Uninstall-Suricata {
 
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     if ($task) {
-        try {
-            InfoMessage "Suricata is installed. Downloading and executing Suricata uninstallation script..."
-            Invoke-WebRequest -Uri $SuricataUrl -OutFile $UninstallSuricataScript -ErrorAction Stop
-            InfoMessage "Suricata uninstallation script downloaded successfully."
-            & powershell.exe -ExecutionPolicy Bypass -File $UninstallSuricataScript -ErrorAction Stop
+        InfoMessage "Removing existing Suricata installation..."
+        Invoke-WebRequest -Uri $SuricataUrl -OutFile $UninstallSuricataScript -ErrorAction Stop
+        
+        $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$UninstallSuricataScript`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\uninstall_suricata_output.log" -RedirectStandardError "$env:TEMP\uninstall_suricata_error.log" -Wait
+        
+        if (Test-Path "$env:TEMP\uninstall_suricata_output.log") {
+            Get-Content "$env:TEMP\uninstall_suricata_output.log" | ForEach-Object { InfoMessage $_ }
+            Remove-Item "$env:TEMP\uninstall_suricata_output.log" -Force
         }
-        catch {
-            ErrorMessage "Error during Suricata uninstallation: $($_.Exception.Message)"
+        if (Test-Path "$env:TEMP\uninstall_suricata_error.log") {
+            Get-Content "$env:TEMP\uninstall_suricata_error.log" | ForEach-Object { ErrorMessage $_ }
+            Remove-Item "$env:TEMP\uninstall_suricata_error.log" -Force
+        }
+        
+        if ($process.ExitCode -ne 0) {
+            WarningMessage "Suricata uninstall completed with exit code $($process.ExitCode)"
         }
     }
 }
 
-# Step 6: Download and install Wazuh Agent Status with error handling
 function Install-AgentStatus {
-    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.ps1"
+    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/fix/agent-status-update-launcher/scripts/install.ps1"
     $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
     $global:InstallerFiles += $AgentStatusScript
 
-    try {
-        InfoMessage "Downloading and executing Wazuh Agent Status installation script..."
-        Invoke-WebRequest -Uri $AgentStatusUrl -OutFile $AgentStatusScript -ErrorAction Stop
-        InfoMessage "Agent Status installation script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $AgentStatusScript -ErrorAction Stop
+    InfoMessage "Downloading Agent Status script..."
+    Invoke-WebRequest -Uri $AgentStatusUrl -OutFile $AgentStatusScript -ErrorAction Stop
+    InfoMessage "Installing Agent Status..."
+    
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$AgentStatusScript`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\agentstatus_output.log" -RedirectStandardError "$env:TEMP\agentstatus_error.log" -Wait
+    
+    if (Test-Path "$env:TEMP\agentstatus_output.log") {
+        Get-Content "$env:TEMP\agentstatus_output.log" | ForEach-Object { InfoMessage $_ }
+        Remove-Item "$env:TEMP\agentstatus_output.log" -Force
     }
-    catch {
-        ErrorMessage "Error during Agent Status installation: $($_.Exception.Message)"
+    if (Test-Path "$env:TEMP\agentstatus_error.log") {
+        Get-Content "$env:TEMP\agentstatus_error.log" | ForEach-Object { ErrorMessage $_ }
+        Remove-Item "$env:TEMP\agentstatus_error.log" -Force
+    }
+    
+    if ($process.ExitCode -ne 0) {
+        throw "Agent Status installation failed with exit code $($process.ExitCode)"
     }
 }
 
 function DownloadVersionFile {
-    InfoMessage "Downloading version file..."
     if (!(Test-Path -Path $OSSEC_PATH)) {
-        WarningMessage "ossec-agent folder does not exist. Skipping."
+        WarningMessage "ossec-agent folder does not exist. Skipping version file."
+    } else {
+        InfoMessage "Downloading version file..."
+        Invoke-WebRequest -Uri $VERSION_FILE_URL -OutFile $VERSION_FILE_PATH -ErrorAction Stop
+        InfoMessage "Version file downloaded successfully"
     }
-    else {
-        try {
-            Invoke-WebRequest -Uri $VERSION_FILE_URL -OutFile $VERSION_FILE_PATH -ErrorAction Stop
-        } catch {
-            ErrorMessage "Failed to download version file: $($_.Exception.Message)"
-        } finally {
-            InfoMessage "Version file downloaded successfully"
+}
+
+# ---- Main Installation Process ----
+function Do-Install {
+    $InstallBtn.Enabled = $false
+    $CloseBtn.Enabled = $false
+    $SnortRadio.Enabled = $false
+    $SuricataRadio.Enabled = $false
+    $ProgressBar.Value = 0
+    $ProgressBar.Maximum = 100
+    
+    SectionSeparator "INSTALLATION START"
+    
+    try {
+        Invoke-Step -Name "Installing Dependencies" -Weight 12 -Action { Install-Dependencies }
+        Invoke-Step -Name "Installing Wazuh Agent" -Weight 15 -Action { Install-WazuhAgent }
+        Invoke-Step -Name "Installing OAuth2 Client" -Weight 13 -Action { Install-OAuth2Client }
+        Invoke-Step -Name "Installing Agent Status" -Weight 12 -Action { Install-AgentStatus }
+        Invoke-Step -Name "Installing YARA" -Weight 13 -Action { Install-Yara }
+        
+        # Install selected NIDS
+        if ($SnortRadio.Checked) {
+            Invoke-Step -Name "Removing Suricata (if present)" -Weight 10 -Action { Uninstall-Suricata }
+            Invoke-Step -Name "Installing Snort" -Weight 15 -Action { Install-Snort }
+        } elseif ($SuricataRadio.Checked) {
+            Invoke-Step -Name "Removing Snort (if present)" -Weight 10 -Action { Uninstall-Snort }
+            Invoke-Step -Name "Installing Suricata" -Weight 15 -Action { Install-Suricata }
         }
+        
+        Invoke-Step -Name "Downloading Version File" -Weight 10 -Action { DownloadVersionFile }
+        
+        [System.Windows.Forms.MessageBox]::Show("Wazuh Agent installation completed successfully!","Installation Complete",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+        
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Installation failed: $($_.Exception.Message)","Installation Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+    } finally {
+        InfoMessage "Cleaning up installer files..."
+        Cleanup-Installers
+        SectionSeparator "INSTALLATION END"
+        $InstallBtn.Enabled = $true
+        $CloseBtn.Enabled = $true
+        $SnortRadio.Enabled = $true
+        $SuricataRadio.Enabled = $true
+        $StatusLabel.Text = "Ready"
     }
 }
 
-function Show-Help {
-    Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-Help]" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "This script automates the installation of various Wazuh components and related tools." -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "Parameters:" -ForegroundColor Cyan
-    Write-Host "  -InstallSnort      : Installs Snort. Cannot be used with -InstallSuricata." -ForegroundColor Cyan
-    Write-Host "  -InstallSuricata   : Installs Suricata. Cannot be used with -InstallSnort." -ForegroundColor Cyan
-    Write-Host "  -Help              : Displays this help message." -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "Environment Variables (optional):" -ForegroundColor Cyan
-    Write-Host "  LOG_LEVEL          : Sets the logging level (e.g., INFO, DEBUG). Default: INFO" -ForegroundColor Cyan
-    Write-Host "  APP_NAME           : Sets the application name. Default: wazuh-cert-oauth2-client" -ForegroundColor Cyan
-    Write-Host "  WAZUH_MANAGER      : Sets the Wazuh Manager address. Default: wazuh.example.com" -ForegroundColor Cyan
-    Write-Host "  WAZUH_AGENT_VERSION: Sets the Wazuh Agent version. Default: 4.12.0-1" -ForegroundColor Cyan
-    Write-Host "  WAZUH_YARA_VERSION : Sets the Wazuh YARA module version. Default: 0.3.4" -ForegroundColor Cyan
-    Write-Host "  WAZUH_SNORT_VERSION: Sets the Wazuh Snort module version. Default: 0.2.2" -ForegroundColor Cyan
-    Write-Host "  WAZUH_SURICATA_VERSION: Sets the Wazuh Suricata module version. Default: 0.1.0" -ForegroundColor Cyan
-    Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: 0.3.2" -ForegroundColor Cyan
-    Write-Host "  WOPS_VERSION       : Sets the WOPS client version. Default: 0.2.18" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "Examples:" -ForegroundColor Cyan
-    Write-Host "  .\setup-agent.ps1 -InstallSnort" -ForegroundColor Cyan
-    Write-Host "  .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
-    Write-Host "  .\setup-agent.ps1 -Help" -ForegroundColor Cyan
-    Write-Host "  $env:LOG_LEVEL='DEBUG'; .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
-    Write-Host ""
-}
+# ---- UI Creation ----
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "$AppName Installer"
+$form.Size = New-Object System.Drawing.Size(750,550)
+$form.StartPosition = "CenterScreen"
+$form.FormBorderStyle = "FixedDialog"
+$form.MaximizeBox = $false
 
-# Show help if -Help is specified
-if ($Help) {
-    Show-Help
-    Exit 0
-}
+$Title = New-Object System.Windows.Forms.Label
+$Title.Text = "$AppName Installer"
+$Title.Font = New-Object System.Drawing.Font("Segoe UI",16,[System.Drawing.FontStyle]::Bold)
+$Title.AutoSize = $true
+$Title.Location = New-Object System.Drawing.Point(15,15)
+$form.Controls.Add($Title)
 
-# Provide a non-interactive default for NIDS selection (default: Suricata)
-if (-not $InstallSnort -and -not $InstallSuricata) {
-    InfoMessage "No NIDS selected, defaulting to: Suricata. Use -InstallSuricata or -InstallSnort to override."
-    $InstallSuricata = $true
-}
+$StatusLabel = New-Object System.Windows.Forms.Label
+$StatusLabel.Text = "Ready"
+$StatusLabel.AutoSize = $true
+$StatusLabel.Location = New-Object System.Drawing.Point(18,50)
+$form.Controls.Add($StatusLabel)
 
-# Validate Snort and Suricata choice
-if ($InstallSnort -and $InstallSuricata) {
-    ErrorMessage "Cannot install both Snort and Suricata. Please choose one."
-    Show-Help
-    Exit 1
-}
+# NIDS Selection Group
+$NidsGroup = New-Object System.Windows.Forms.GroupBox
+$NidsGroup.Text = "Network IDS Selection"
+$NidsGroup.Size = New-Object System.Drawing.Size(200,80)
+$NidsGroup.Location = New-Object System.Drawing.Point(500,15)
+$form.Controls.Add($NidsGroup)
 
-# Main Execution wrapped in a try-finally to ensure cleanup runs even if errors occur.
-try {
-    SectionSeparator "Installing Dependencies"
-    Install-Dependencies
-    SectionSeparator "Installing Wazuh Agent"
-    Install-WazuhAgent
-    SectionSeparator "Installing OAuth2Client"
-    Install-OAuth2Client
-    SectionSeparator "Installing Agent Status"
-    Install-AgentStatus
-    SectionSeparator "Installing Yara"
-    Install-Yara
+$SnortRadio = New-Object System.Windows.Forms.RadioButton
+$SnortRadio.Text = "Install Snort"
+$SnortRadio.Location = New-Object System.Drawing.Point(10,25)
+$SnortRadio.AutoSize = $true
+$NidsGroup.Controls.Add($SnortRadio)
 
-    # Install Snort or Suricata based on user choice
-    if ($InstallSnort) {
-        Uninstall-Suricata
-        SectionSeparator "Installing Snort"
-        Install-Snort
-    }
-    elseif ($InstallSuricata) {
-        Uninstall-Snort
-        SectionSeparator "Installing Suricata"
-        Install-Suricata
-    }
-    else {
-        WarningMessage "Neither Snort nor Suricata selected for installation. Skipping."
-    }
+$SuricataRadio = New-Object System.Windows.Forms.RadioButton
+$SuricataRadio.Text = "Install Suricata"
+$SuricataRadio.Location = New-Object System.Drawing.Point(10,50)
+$SuricataRadio.AutoSize = $true
+$SuricataRadio.Checked = $true
+$NidsGroup.Controls.Add($SuricataRadio)
 
-    SectionSeparator "Downloading Version File"
-    DownloadVersionFile
-}
-finally {
-    InfoMessage "Cleaning up installer files..."
-    Cleanup-Installers
-    SuccessMessage "Wazuh Agent Setup Completed Successfully"
-}
+$LogBox = New-Object System.Windows.Forms.TextBox
+$LogBox.Multiline = $true
+$LogBox.ReadOnly = $true
+$LogBox.ScrollBars = "Vertical"
+$LogBox.Font = New-Object System.Drawing.Font("Consolas",9)
+$LogBox.Size = New-Object System.Drawing.Size(700,330)
+$LogBox.Location = New-Object System.Drawing.Point(18,105)
+$form.Controls.Add($LogBox)
+
+$ProgressBar = New-Object System.Windows.Forms.ProgressBar
+$ProgressBar.Size = New-Object System.Drawing.Size(700,22)
+$ProgressBar.Location = New-Object System.Drawing.Point(18,445)
+$form.Controls.Add($ProgressBar)
+
+$OpenLogBtn = New-Object System.Windows.Forms.Button
+$OpenLogBtn.Text = "Open Log"
+$OpenLogBtn.Size = New-Object System.Drawing.Size(100,30)
+$OpenLogBtn.Location = New-Object System.Drawing.Point(18,475)
+$OpenLogBtn.Add_Click({ 
+    if (Test-Path $LogPath) { 
+        Start-Process notepad.exe $LogPath 
+    } else { 
+        InfoMessage "No log file found at $LogPath" 
+    } 
+})
+$form.Controls.Add($OpenLogBtn)
+
+$InstallBtn = New-Object System.Windows.Forms.Button
+$InstallBtn.Text = "Install"
+$InstallBtn.Size = New-Object System.Drawing.Size(100,30)
+$InstallBtn.Location = New-Object System.Drawing.Point(608,475)
+$InstallBtn.Add_Click({ Do-Install })
+$form.Controls.Add($InstallBtn)
+
+$CloseBtn = New-Object System.Windows.Forms.Button
+$CloseBtn.Text = "Close"
+$CloseBtn.Size = New-Object System.Drawing.Size(100,30)
+$CloseBtn.Location = New-Object System.Drawing.Point(618,15)
+$CloseBtn.Add_Click({ $form.Close() })
+$form.Controls.Add($CloseBtn)
+
+# ---- Startup Log ----
+InfoMessage "Wazuh Agent Installer v1.0"
+InfoMessage "Running as Administrator: $IsAdmin"
+InfoMessage "Log file: $LogPath"
+InfoMessage "Wazuh Manager: $WAZUH_MANAGER"
+InfoMessage "Agent Version: $WAZUH_AGENT_VERSION"
+InfoMessage "Default NIDS: Suricata (use radio buttons to change)"
+InfoMessage "Ready to install. Click 'Install' to begin."
+
+[void]$form.ShowDialog()
