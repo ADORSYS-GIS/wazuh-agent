@@ -27,7 +27,7 @@ $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-client" }
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.12.0-1" }
-$OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\" 
+$OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
 $OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
 $RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
 $VERSION_FILE_URL = "$RepoUrl/version.txt"
@@ -43,6 +43,8 @@ $AppName = "Wazuh Agent"
 $LogDir  = Join-Path $env:ProgramData "WazuhAgentInstaller"
 New-Item -ItemType Directory -Force -Path $LogDir -ErrorAction SilentlyContinue | Out-Null
 $LogPath = Join-Path $LogDir "installer.log"
+$ActiveResponsesLogDir = Join-Path $OSSEC_PATH "active-response"
+$ActiveResponsesLogPath = Join-Path $ActiveResponsesLogDir "active-responses.log"
 $global:InstallerFiles = @()
 
 # ---- Logging ----
@@ -55,7 +57,39 @@ function Append-Log {
     $line = "[$ts] [$Level] $Message"
     $LogBox.AppendText($line + [Environment]::NewLine)
     $LogBox.ScrollToCaret()
+
+    # Write to installer log
     try { Add-Content -Path $LogPath -Value $line -Encoding UTF8 } catch {}
+
+    # Always write to active-responses.log (create directory if needed)
+    try {
+        # Create active-response directory if it doesn't exist
+        if (-not (Test-Path $ActiveResponsesLogDir)) {
+            New-Item -ItemType Directory -Force -Path $ActiveResponsesLogDir -ErrorAction Stop | Out-Null
+        }
+
+        # Use FileStream with shared access to write to the log file
+        $fileStream = $null
+        $streamWriter = $null
+        try {
+            # Open file with shared read/write access so Wazuh agent can still access it
+            $fileStream = [System.IO.FileStream]::new(
+                $ActiveResponsesLogPath,
+                [System.IO.FileMode]::Append,
+                [System.IO.FileAccess]::Write,
+                [System.IO.FileShare]::ReadWrite
+            )
+            $streamWriter = [System.IO.StreamWriter]::new($fileStream, [System.Text.Encoding]::UTF8)
+            $streamWriter.WriteLine($line)
+            $streamWriter.Flush()
+        } finally {
+            if ($streamWriter) { $streamWriter.Dispose() }
+            if ($fileStream) { $fileStream.Dispose() }
+        }
+    } catch {
+        # Silently ignore errors if still locked
+    }
+
     [System.Windows.Forms.Application]::DoEvents()
 }
 
