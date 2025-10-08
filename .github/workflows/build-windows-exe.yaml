@@ -65,12 +65,12 @@ jobs:
       shell: powershell
       run: |
         if (Test-Path ".\scripts\setup-agent.exe") {
-          Write-Host "✓ Executable created successfully"
+          Write-Host "Executable created successfully"
           $fileInfo = Get-Item ".\scripts\setup-agent.exe"
           Write-Host "File size: $($fileInfo.Length) bytes"
           Write-Host "Created: $($fileInfo.CreationTime)"
         } else {
-          Write-Error "Failed to create executable"
+          Write-Error 'Failed to create executable'
           exit 1
         }
 
