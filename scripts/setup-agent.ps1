@@ -18,7 +18,6 @@ $RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
 $VERSION_FILE_URL = "$RepoUrl/version.txt"
 $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
-$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.11" }
 $WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4" }
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.3.3" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.2.18" }
@@ -130,24 +129,8 @@ function Install-OAuth2Client {
     }
 }
 
-# Step 3: Download and install YARA with error handling
-function Install-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.ps1"
-    $YaraScript = "$env:TEMP\install_yara.ps1"
-    $global:InstallerFiles += $YaraScript
 
-    try {
-        InfoMessage "Downloading and executing YARA installation script..."
-        Invoke-WebRequest -Uri $YaraUrl -OutFile $YaraScript -ErrorAction Stop
-        InfoMessage "YARA installation script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
-    }
-    catch {
-        ErrorMessage "Error during YARA installation: $($_.Exception.Message)"
-    }
-}
-
-# Step 4: Download and install Snort with error handling
+# Step 3: Download and install Snort with error handling
 function Install-Snort {
     $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/windows/snort.ps1"
     $SnortScript = "$env:TEMP\snort.ps1"
@@ -185,7 +168,7 @@ function Uninstall-Snort {
     }
 }
 
-# Step 5: Download and install Suricata with error handling
+# Step 4: Download and install Suricata with error handling
 function Install-Suricata {
     $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/tags/v$WAZUH_SURICATA_VERSION/scripts/install.ps1"
     $SuricataScript = "$env:TEMP\suricata.ps1"
@@ -222,7 +205,7 @@ function Uninstall-Suricata {
     }
 }
 
-# Step 6: Download and install Wazuh Agent Status with error handling
+# Step 5: Download and install Wazuh Agent Status with error handling
 function Install-AgentStatus {
     $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION-user/scripts/install.ps1"
     $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
@@ -270,7 +253,6 @@ function Show-Help {
     Write-Host "  APP_NAME           : Sets the application name. Default: wazuh-cert-oauth2-client" -ForegroundColor Cyan
     Write-Host "  WAZUH_MANAGER      : Sets the Wazuh Manager address. Default: wazuh.example.com" -ForegroundColor Cyan
     Write-Host "  WAZUH_AGENT_VERSION: Sets the Wazuh Agent version. Default: 4.12.0-1" -ForegroundColor Cyan
-    Write-Host "  WAZUH_YARA_VERSION : Sets the Wazuh YARA module version. Default: 0.3.4" -ForegroundColor Cyan
     Write-Host "  WAZUH_SNORT_VERSION: Sets the Wazuh Snort module version. Default: 0.2.2" -ForegroundColor Cyan
     Write-Host "  WAZUH_SURICATA_VERSION: Sets the Wazuh Suricata module version. Default: 0.1.0" -ForegroundColor Cyan
     Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: 0.3.2" -ForegroundColor Cyan
@@ -313,8 +295,6 @@ try {
     Install-OAuth2Client
     SectionSeparator "Installing Agent Status"
     Install-AgentStatus
-    SectionSeparator "Installing Yara"
-    Install-Yara
 
     # Install Snort or Suricata based on user choice
     if ($InstallSnort) {

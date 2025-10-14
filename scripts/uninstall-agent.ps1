@@ -10,7 +10,6 @@ Set-StrictMode -Version Latest
 
 # Variables (default log level, app details, paths)
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
-$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.11" }
 $WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.1.4" }
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.3.3" }
@@ -65,7 +64,6 @@ function Show-Help {
     Write-Host ""
     Write-Host "Environment Variables (optional):" -ForegroundColor Cyan
     Write-Host "  LOG_LEVEL                : Sets the logging level (e.g., INFO, DEBUG). Default: INFO" -ForegroundColor Cyan
-    Write-Host "  WAZUH_YARA_VERSION       : Sets the Wazuh YARA module version. Default: 0.3.4" -ForegroundColor Cyan
     Write-Host "  WAZUH_SNORT_VERSION      : Sets the Wazuh Snort module version. Default: 0.2.2" -ForegroundColor Cyan
     Write-Host "  WAZUH_SURICATA_VERSION   : Sets the Wazuh Suricata module version. Default: 0.1.0" -ForegroundColor Cyan
     Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: 0.3.2" -ForegroundColor Cyan
@@ -118,23 +116,8 @@ function Uninstall-AgentStatus {
     }
 }
 
-# Step 3: Download and Uninstall YARA with error handling
-function Uninstall-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/uninstall.ps1"
-    $YaraScript = "$env:TEMP\uninstall-yara.ps1"
-    $global:UninstallerFiles += $YaraScript
-    try {
-        InfoMessage "Downloading and executing YARA uninstall script..."
-        Invoke-WebRequest -Uri $YaraUrl -OutFile $YaraScript -ErrorAction Stop
-        InfoMessage "YARA Uninstallation script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
-    }
-    catch {
-        ErrorMessage "Error during YARA Uninstallation: $($_.Exception.Message)"
-    }
-}
 
-# Step 4: Download and Uninstall Snort with error handling
+# Step 3: Download and Uninstall Snort with error handling
 function Uninstall-Snort {
     $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/windows/uninstall.ps1"
     $SnortScript = "$env:TEMP\uninstall-snort.ps1"
@@ -150,7 +133,7 @@ function Uninstall-Snort {
     }
 }
 
-# Step 5: Download and Uninstall Suricata with error handling
+# Step 4: Download and Uninstall Suricata with error handling
 function Uninstall-Suricata {
     $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/tags/v$WAZUH_SURICATA_VERSION/scripts/uninstall.ps1"
     $SuricataScript = "$env:TEMP\uninstall-suricata.ps1"
@@ -182,8 +165,6 @@ try {
     Uninstall-WazuhAgent
     SectionSeparator "Uninstalling Agent Status"
     Uninstall-AgentStatus
-    SectionSeparator "Uninstalling Yara"
-    Uninstall-Yara
     if (Is-SnortInstalled) {
         SectionSeparator "Uninstalling Snort"
         Uninstall-Snort
