@@ -40,12 +40,12 @@ $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA
 
 # ---- Globals ----
 $AppName = "Wazuh Agent"
-$LogDir  = Join-Path $env:ProgramData "WazuhAgentInstaller"
+$LogDir  = "C:\ProgramData\wazuh\logs"
 New-Item -ItemType Directory -Force -Path $LogDir -ErrorAction SilentlyContinue | Out-Null
-$LogPath = Join-Path $LogDir "installer.log"
-$ActiveResponsesLogDir = Join-Path $OSSEC_PATH "active-response"
-$ActiveResponsesLogPath = Join-Path $ActiveResponsesLogDir "active-responses.log"
+$LogPath = Join-Path $LogDir "setup-agent.log"
 $global:InstallerFiles = @()
+$global:CurrentStep = 1
+$global:InstallationComplete = $false
 
 # ---- Logging ----
 function Append-Log {
@@ -58,37 +58,8 @@ function Append-Log {
     $LogBox.AppendText($line + [Environment]::NewLine)
     $LogBox.ScrollToCaret()
 
-    # Write to installer log
+    # Write to setup-agent.log
     try { Add-Content -Path $LogPath -Value $line -Encoding UTF8 } catch {}
-
-    # Always write to active-responses.log (create directory if needed)
-    try {
-        # Create active-response directory if it doesn't exist
-        if (-not (Test-Path $ActiveResponsesLogDir)) {
-            New-Item -ItemType Directory -Force -Path $ActiveResponsesLogDir -ErrorAction Stop | Out-Null
-        }
-
-        # Use FileStream with shared access to write to the log file
-        $fileStream = $null
-        $streamWriter = $null
-        try {
-            # Open file with shared read/write access so Wazuh agent can still access it
-            $fileStream = [System.IO.FileStream]::new(
-                $ActiveResponsesLogPath,
-                [System.IO.FileMode]::Append,
-                [System.IO.FileAccess]::Write,
-                [System.IO.FileShare]::ReadWrite
-            )
-            $streamWriter = [System.IO.StreamWriter]::new($fileStream, [System.Text.Encoding]::UTF8)
-            $streamWriter.WriteLine($line)
-            $streamWriter.Flush()
-        } finally {
-            if ($streamWriter) { $streamWriter.Dispose() }
-            if ($fileStream) { $fileStream.Dispose() }
-        }
-    } catch {
-        # Silently ignore errors if still locked
-    }
 
     [System.Windows.Forms.Application]::DoEvents()
 }
@@ -393,21 +364,21 @@ function DownloadVersionFile {
 # ---- Main Installation Process ----
 function Do-Install {
     $InstallBtn.Enabled = $false
-    $CloseBtn.Enabled = $false
+    $NextBtn.Enabled = $false
     $SnortRadio.Enabled = $false
     $SuricataRadio.Enabled = $false
     $ProgressBar.Value = 0
     $ProgressBar.Maximum = 100
-    
+
     SectionSeparator "INSTALLATION START"
-    
+
     try {
         Invoke-Step -Name "Installing Dependencies" -Weight 12 -Action { Install-Dependencies }
         Invoke-Step -Name "Installing Wazuh Agent" -Weight 15 -Action { Install-WazuhAgent }
         Invoke-Step -Name "Installing OAuth2 Client" -Weight 13 -Action { Install-OAuth2Client }
         Invoke-Step -Name "Installing Agent Status" -Weight 12 -Action { Install-AgentStatus }
         Invoke-Step -Name "Installing YARA" -Weight 13 -Action { Install-Yara }
-        
+
         # Install selected NIDS
         if ($SnortRadio.Checked) {
             Invoke-Step -Name "Removing Suricata (if present)" -Weight 10 -Action { Uninstall-Suricata }
@@ -416,35 +387,155 @@ function Do-Install {
             Invoke-Step -Name "Removing Snort (if present)" -Weight 10 -Action { Uninstall-Snort }
             Invoke-Step -Name "Installing Suricata" -Weight 15 -Action { Install-Suricata }
         }
-        
+
         Invoke-Step -Name "Downloading Version File" -Weight 10 -Action { DownloadVersionFile }
-        
-        [System.Windows.Forms.MessageBox]::Show("Wazuh Agent installation completed successfully!","Installation Complete",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
-        
-    } catch {
-        [System.Windows.Forms.MessageBox]::Show("Installation failed: $($_.Exception.Message)","Installation Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
-    } finally {
+
         InfoMessage "Cleaning up installer files..."
         Cleanup-Installers
         SectionSeparator "INSTALLATION END"
+
+        $global:InstallationComplete = $true
+        SuccessMessage "Installation completed successfully! Click 'Next' to configure OAuth2."
+
+        # Enable Next button and update UI
+        $NextBtn.Enabled = $true
+        $NextBtn.Visible = $true
+        $InstallBtn.Enabled = $false
+
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Installation failed: $($_.Exception.Message)","Installation Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
         $InstallBtn.Enabled = $true
-        $CloseBtn.Enabled = $true
+    } finally {
         $SnortRadio.Enabled = $true
         $SuricataRadio.Enabled = $true
-        $StatusLabel.Text = "Ready"
+        $StatusLabel.Text = "Installation Complete"
+    }
+}
+
+# ---- OAuth2 Configuration ----
+function Do-OAuth2Config {
+    $ConfigureBtn.Enabled = $false
+    $NextBtn.Enabled = $false
+    $BackBtn.Enabled = $false
+
+    SectionSeparator "OAUTH2 CONFIGURATION"
+
+    $OAuth2BinPath = 'C:\Program Files (x86)\ossec-agent\wazuh-cert-oauth2-client.exe'
+
+    if (-not (Test-Path $OAuth2BinPath)) {
+        ErrorMessage "OAuth2 binary not found at: $OAuth2BinPath"
+        [System.Windows.Forms.MessageBox]::Show("OAuth2 binary not found. Installation may have failed.","Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+        $ConfigureBtn.Enabled = $true
+        $BackBtn.Enabled = $true
+        return
+    }
+
+    InfoMessage "Starting OAuth2 configuration..."
+    InfoMessage "A console window will open. Please follow the instructions to complete authentication."
+    InfoMessage "The wizard will continue automatically when OAuth2 configuration is complete."
+
+    try {
+        # Launch the OAuth2 binary in a visible console window without redirection
+        $psi = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName = $OAuth2BinPath
+        $psi.Arguments = "o-auth2"
+        $psi.UseShellExecute = $true  # This allows the console window to be visible and interactive
+        $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Normal
+
+        $process = [System.Diagnostics.Process]::Start($psi)
+        
+        # Wait for process to complete while keeping UI responsive
+        while (-not $process.HasExited) {
+            [System.Windows.Forms.Application]::DoEvents()
+            Start-Sleep -Milliseconds 100
+        }
+
+        if ($process.ExitCode -eq 0) {
+            SuccessMessage "OAuth2 configuration completed successfully!"
+            SectionSeparator "OAUTH2 CONFIGURATION END"
+            $NextBtn.Enabled = $true
+        } else {
+            ErrorMessage "OAuth2 configuration failed with exit code: $($process.ExitCode)"
+            [System.Windows.Forms.MessageBox]::Show("OAuth2 configuration failed. Exit code: $($process.ExitCode)","Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+            $ConfigureBtn.Enabled = $true
+            $BackBtn.Enabled = $true
+        }
+    } catch {
+        ErrorMessage "Failed to run OAuth2 binary: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show("Failed to run OAuth2 binary: $($_.Exception.Message)","Error",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+        $ConfigureBtn.Enabled = $true
+        $BackBtn.Enabled = $true
+    }
+}
+
+# ---- Step Navigation ----
+function Show-Step {
+    param([int]$StepNumber)
+
+    $global:CurrentStep = $StepNumber
+
+    # Hide all step panels
+    $Step1Panel.Visible = $false
+    $Step2Panel.Visible = $false
+    $Step3Panel.Visible = $false
+
+    # Update title and show appropriate panel
+    switch ($StepNumber) {
+        1 {
+            $Title.Text = "Step 1: Installation"
+            $Step1Panel.Visible = $true
+            $BackBtn.Visible = $false
+            $NextBtn.Visible = $true
+            $NextBtn.Enabled = $global:InstallationComplete
+            $InstallBtn.Enabled = -not $global:InstallationComplete
+        }
+        2 {
+            $Title.Text = "Step 2: OAuth2 Configuration"
+            $Step2Panel.Visible = $true
+            $BackBtn.Visible = $true
+            $BackBtn.Enabled = $true
+            $NextBtn.Visible = $true
+            $NextBtn.Enabled = $false
+            $ConfigureBtn.Enabled = $true
+        }
+        3 {
+            $Title.Text = "Step 3: Setup Complete"
+            $Step3Panel.Visible = $true
+            $BackBtn.Visible = $false
+            $NextBtn.Visible = $false
+        }
+    }
+}
+
+function Next-Step {
+    if ($global:CurrentStep -eq 1) {
+        if (-not $global:InstallationComplete) {
+            [System.Windows.Forms.MessageBox]::Show("Please complete the installation first.","Not Ready",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+            return
+        }
+        Show-Step 2
+    } elseif ($global:CurrentStep -eq 2) {
+        Show-Step 3
+    }
+}
+
+function Previous-Step {
+    if ($global:CurrentStep -eq 2) {
+        Show-Step 1
     }
 }
 
 # ---- UI Creation ----
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "$AppName Installer"
-$form.Size = New-Object System.Drawing.Size(750,550)
+$form.Text = "$AppName Setup Wizard"
+$form.Size = New-Object System.Drawing.Size(750,650)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
 
+# Title Label
 $Title = New-Object System.Windows.Forms.Label
-$Title.Text = "$AppName Installer"
+$Title.Text = "Step 1: Installation"
 $Title.Font = New-Object System.Drawing.Font("Segoe UI",16,[System.Drawing.FontStyle]::Bold)
 $Title.AutoSize = $true
 $Title.Location = New-Object System.Drawing.Point(15,15)
@@ -453,77 +544,169 @@ $form.Controls.Add($Title)
 $StatusLabel = New-Object System.Windows.Forms.Label
 $StatusLabel.Text = "Ready"
 $StatusLabel.AutoSize = $true
-$StatusLabel.Location = New-Object System.Drawing.Point(18,50)
+$StatusLabel.Location = New-Object System.Drawing.Point(18,55)
 $form.Controls.Add($StatusLabel)
 
-# NIDS Selection Group
-$NidsGroup = New-Object System.Windows.Forms.GroupBox
-$NidsGroup.Text = "Network IDS Selection"
-$NidsGroup.Size = New-Object System.Drawing.Size(200,80)
-$NidsGroup.Location = New-Object System.Drawing.Point(500,15)
-$form.Controls.Add($NidsGroup)
+# Close button (top right)
+$CloseBtn = New-Object System.Windows.Forms.Button
+$CloseBtn.Text = "Close"
+$CloseBtn.Size = New-Object System.Drawing.Size(80,30)
+$CloseBtn.Location = New-Object System.Drawing.Point(640,15)
+$CloseBtn.Add_Click({ $form.Close() })
+$form.Controls.Add($CloseBtn)
 
-$SnortRadio = New-Object System.Windows.Forms.RadioButton
-$SnortRadio.Text = "Install Snort"
-$SnortRadio.Location = New-Object System.Drawing.Point(10,25)
-$SnortRadio.AutoSize = $true
-$NidsGroup.Controls.Add($SnortRadio)
-
-$SuricataRadio = New-Object System.Windows.Forms.RadioButton
-$SuricataRadio.Text = "Install Suricata"
-$SuricataRadio.Location = New-Object System.Drawing.Point(10,50)
-$SuricataRadio.AutoSize = $true
-$SuricataRadio.Checked = $true
-$NidsGroup.Controls.Add($SuricataRadio)
-
+# Shared Log Box (visible across all steps)
 $LogBox = New-Object System.Windows.Forms.TextBox
 $LogBox.Multiline = $true
 $LogBox.ReadOnly = $true
 $LogBox.ScrollBars = "Vertical"
 $LogBox.Font = New-Object System.Drawing.Font("Consolas",9)
-$LogBox.Size = New-Object System.Drawing.Size(700,330)
-$LogBox.Location = New-Object System.Drawing.Point(18,105)
+$LogBox.Size = New-Object System.Drawing.Size(700,280)
+$LogBox.Location = New-Object System.Drawing.Point(18,85)
 $form.Controls.Add($LogBox)
 
+# Progress Bar (shared)
 $ProgressBar = New-Object System.Windows.Forms.ProgressBar
 $ProgressBar.Size = New-Object System.Drawing.Size(700,22)
-$ProgressBar.Location = New-Object System.Drawing.Point(18,445)
+$ProgressBar.Location = New-Object System.Drawing.Point(18,375)
 $form.Controls.Add($ProgressBar)
+
+# ===== STEP 1 PANEL: Installation =====
+$Step1Panel = New-Object System.Windows.Forms.Panel
+$Step1Panel.Size = New-Object System.Drawing.Size(700,140)
+$Step1Panel.Location = New-Object System.Drawing.Point(18,405)
+$form.Controls.Add($Step1Panel)
+
+# NIDS Selection Group
+$NidsGroup = New-Object System.Windows.Forms.GroupBox
+$NidsGroup.Text = "Network IDS Selection"
+$NidsGroup.Size = New-Object System.Drawing.Size(220,100)
+$NidsGroup.Location = New-Object System.Drawing.Point(10,10)
+$Step1Panel.Controls.Add($NidsGroup)
+
+$SnortRadio = New-Object System.Windows.Forms.RadioButton
+$SnortRadio.Text = "Install Snort"
+$SnortRadio.Location = New-Object System.Drawing.Point(15,30)
+$SnortRadio.AutoSize = $true
+$NidsGroup.Controls.Add($SnortRadio)
+
+$SuricataRadio = New-Object System.Windows.Forms.RadioButton
+$SuricataRadio.Text = "Install Suricata"
+$SuricataRadio.Location = New-Object System.Drawing.Point(15,60)
+$SuricataRadio.AutoSize = $true
+$SuricataRadio.Checked = $true
+$NidsGroup.Controls.Add($SuricataRadio)
+
+$InstallBtn = New-Object System.Windows.Forms.Button
+$InstallBtn.Text = "Start Installation"
+$InstallBtn.Size = New-Object System.Drawing.Size(140,35)
+$InstallBtn.Location = New-Object System.Drawing.Point(250,25)
+$InstallBtn.Add_Click({ Do-Install })
+$Step1Panel.Controls.Add($InstallBtn)
 
 $OpenLogBtn = New-Object System.Windows.Forms.Button
 $OpenLogBtn.Text = "Open Log"
-$OpenLogBtn.Size = New-Object System.Drawing.Size(100,30)
-$OpenLogBtn.Location = New-Object System.Drawing.Point(18,475)
-$OpenLogBtn.Add_Click({ 
-    if (Test-Path $LogPath) { 
-        Start-Process notepad.exe $LogPath 
-    } else { 
-        InfoMessage "No log file found at $LogPath" 
-    } 
+$OpenLogBtn.Size = New-Object System.Drawing.Size(140,35)
+$OpenLogBtn.Location = New-Object System.Drawing.Point(250,70)
+$OpenLogBtn.Add_Click({
+    if (Test-Path $LogPath) {
+        Start-Process notepad.exe $LogPath
+    } else {
+        InfoMessage "No log file found at $LogPath"
+    }
 })
-$form.Controls.Add($OpenLogBtn)
+$Step1Panel.Controls.Add($OpenLogBtn)
 
-$InstallBtn = New-Object System.Windows.Forms.Button
-$InstallBtn.Text = "Install"
-$InstallBtn.Size = New-Object System.Drawing.Size(100,30)
-$InstallBtn.Location = New-Object System.Drawing.Point(608,475)
-$InstallBtn.Add_Click({ Do-Install })
-$form.Controls.Add($InstallBtn)
+# ===== STEP 2 PANEL: OAuth2 Configuration =====
+$Step2Panel = New-Object System.Windows.Forms.Panel
+$Step2Panel.Size = New-Object System.Drawing.Size(700,140)
+$Step2Panel.Location = New-Object System.Drawing.Point(18,405)
+$Step2Panel.Visible = $false
+$form.Controls.Add($Step2Panel)
 
-$CloseBtn = New-Object System.Windows.Forms.Button
-$CloseBtn.Text = "Close"
-$CloseBtn.Size = New-Object System.Drawing.Size(100,30)
-$CloseBtn.Location = New-Object System.Drawing.Point(618,15)
-$CloseBtn.Add_Click({ $form.Close() })
-$form.Controls.Add($CloseBtn)
+$OAuth2InfoLabel = New-Object System.Windows.Forms.Label
+$OAuth2InfoLabel.Text = "Click 'Configure OAuth2' to run the authentication setup.`nYou will be prompted to enter your token."
+$OAuth2InfoLabel.AutoSize = $false
+$OAuth2InfoLabel.Size = New-Object System.Drawing.Size(680,50)
+$OAuth2InfoLabel.Location = New-Object System.Drawing.Point(10,10)
+$OAuth2InfoLabel.Font = New-Object System.Drawing.Font("Segoe UI",9)
+$Step2Panel.Controls.Add($OAuth2InfoLabel)
+
+$ConfigureBtn = New-Object System.Windows.Forms.Button
+$ConfigureBtn.Text = "Configure OAuth2"
+$ConfigureBtn.Size = New-Object System.Drawing.Size(150,40)
+$ConfigureBtn.Location = New-Object System.Drawing.Point(10,70)
+$ConfigureBtn.Add_Click({ Do-OAuth2Config })
+$Step2Panel.Controls.Add($ConfigureBtn)
+
+# ===== STEP 3 PANEL: Completion =====
+$Step3Panel = New-Object System.Windows.Forms.Panel
+$Step3Panel.Size = New-Object System.Drawing.Size(700,140)
+$Step3Panel.Location = New-Object System.Drawing.Point(18,405)
+$Step3Panel.Visible = $false
+$form.Controls.Add($Step3Panel)
+
+$CompletionLabel = New-Object System.Windows.Forms.Label
+$CompletionLabel.Text = "Setup Complete!`n`nThe Wazuh Agent has been installed and configured.`nA system reboot is recommended to apply all changes."
+$CompletionLabel.AutoSize = $false
+$CompletionLabel.Size = New-Object System.Drawing.Size(680,70)
+$CompletionLabel.Location = New-Object System.Drawing.Point(10,5)
+$CompletionLabel.Font = New-Object System.Drawing.Font("Segoe UI",10)
+$Step3Panel.Controls.Add($CompletionLabel)
+
+$RebootNowBtn = New-Object System.Windows.Forms.Button
+$RebootNowBtn.Text = "Reboot Now"
+$RebootNowBtn.Size = New-Object System.Drawing.Size(130,40)
+$RebootNowBtn.Location = New-Object System.Drawing.Point(10,85)
+$RebootNowBtn.Add_Click({
+    $result = [System.Windows.Forms.MessageBox]::Show("Are you sure you want to reboot now?","Confirm Reboot",[System.Windows.Forms.MessageBoxButtons]::YesNo,[System.Windows.Forms.MessageBoxIcon]::Question)
+    if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
+        InfoMessage "Initiating system reboot..."
+        Start-Process shutdown.exe -ArgumentList "/r /t 5" -NoNewWindow
+        $form.Close()
+    }
+})
+$Step3Panel.Controls.Add($RebootNowBtn)
+
+$RebootLaterBtn = New-Object System.Windows.Forms.Button
+$RebootLaterBtn.Text = "Reboot Later"
+$RebootLaterBtn.Size = New-Object System.Drawing.Size(130,40)
+$RebootLaterBtn.Location = New-Object System.Drawing.Point(150,85)
+$RebootLaterBtn.Add_Click({
+    InfoMessage "Setup complete. Please remember to reboot your system."
+    [System.Windows.Forms.MessageBox]::Show("Setup complete. Please remember to reboot your system to apply all changes.","Setup Complete",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+    $form.Close()
+})
+$Step3Panel.Controls.Add($RebootLaterBtn)
+
+# ===== NAVIGATION BUTTONS =====
+$BackBtn = New-Object System.Windows.Forms.Button
+$BackBtn.Text = "< Back"
+$BackBtn.Size = New-Object System.Drawing.Size(100,40)
+$BackBtn.Location = New-Object System.Drawing.Point(490,560)
+$BackBtn.Visible = $false
+$BackBtn.Add_Click({ Previous-Step })
+$form.Controls.Add($BackBtn)
+
+$NextBtn = New-Object System.Windows.Forms.Button
+$NextBtn.Text = "Next >"
+$NextBtn.Size = New-Object System.Drawing.Size(100,40)
+$NextBtn.Location = New-Object System.Drawing.Point(600,560)
+$NextBtn.Enabled = $false
+$NextBtn.Visible = $true
+$NextBtn.Add_Click({ Next-Step })
+$form.Controls.Add($NextBtn)
 
 # ---- Startup Log ----
-InfoMessage "Wazuh Agent Installer v1.0"
+InfoMessage "Wazuh Agent Setup Wizard v2.0"
 InfoMessage "Running as Administrator: $IsAdmin"
 InfoMessage "Log file: $LogPath"
 InfoMessage "Wazuh Manager: $WAZUH_MANAGER"
 InfoMessage "Agent Version: $WAZUH_AGENT_VERSION"
 InfoMessage "Default NIDS: Suricata (use radio buttons to change)"
-InfoMessage "Ready to install. Click 'Install' to begin."
+InfoMessage "Ready to install. Click 'Start Installation' to begin."
+
+# Show Step 1
+Show-Step 1
 
 [void]$form.ShowDialog()
