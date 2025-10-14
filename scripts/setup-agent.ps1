@@ -25,7 +25,7 @@ Set-StrictMode -Version Latest
 # ---- Configuration Variables ----
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-client" }
-$WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
+$WAZUH_MANAGER = "" # Will be set based on user selection
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.12.0-1" }
 $OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
 $OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
@@ -363,10 +363,24 @@ function DownloadVersionFile {
 
 # ---- Main Installation Process ----
 function Do-Install {
+    # Set WAZUH_MANAGER based on selected radio button
+    if ($ProductionManagerRadio.Checked) {
+        $script:WAZUH_MANAGER = "manager.wazuh.adorsys.team"
+        InfoMessage "Selected Wazuh Manager: Production (manager.wazuh.adorsys.team)"
+    } elseif ($DevManagerRadio.Checked) {
+        $script:WAZUH_MANAGER = "single-cluster.dev.wazuh.adorsys.team"
+        InfoMessage "Selected Wazuh Manager: Development (single-cluster.dev.wazuh.adorsys.team)"
+    }
+
+    # Set environment variable for child scripts
+    $env:WAZUH_MANAGER = $script:WAZUH_MANAGER
+
     $InstallBtn.Enabled = $false
     $NextBtn.Enabled = $false
     $SnortRadio.Enabled = $false
     $SuricataRadio.Enabled = $false
+    $ProductionManagerRadio.Enabled = $false
+    $DevManagerRadio.Enabled = $false
     $ProgressBar.Value = 0
     $ProgressBar.Maximum = 100
 
@@ -408,6 +422,8 @@ function Do-Install {
     } finally {
         $SnortRadio.Enabled = $true
         $SuricataRadio.Enabled = $true
+        $ProductionManagerRadio.Enabled = $true
+        $DevManagerRadio.Enabled = $true
         $StatusLabel.Text = "Installation Complete"
     }
 }
@@ -573,15 +589,35 @@ $form.Controls.Add($ProgressBar)
 
 # ===== STEP 1 PANEL: Installation =====
 $Step1Panel = New-Object System.Windows.Forms.Panel
-$Step1Panel.Size = New-Object System.Drawing.Size(700,140)
+$Step1Panel.Size = New-Object System.Drawing.Size(700,160)
 $Step1Panel.Location = New-Object System.Drawing.Point(18,405)
 $form.Controls.Add($Step1Panel)
+
+# Wazuh Manager Selection Group
+$ManagerGroup = New-Object System.Windows.Forms.GroupBox
+$ManagerGroup.Text = "Wazuh Manager Selection"
+$ManagerGroup.Size = New-Object System.Drawing.Size(320,100)
+$ManagerGroup.Location = New-Object System.Drawing.Point(10,10)
+$Step1Panel.Controls.Add($ManagerGroup)
+
+$ProductionManagerRadio = New-Object System.Windows.Forms.RadioButton
+$ProductionManagerRadio.Text = "Production (manager.wazuh.adorsys.team)"
+$ProductionManagerRadio.Location = New-Object System.Drawing.Point(15,30)
+$ProductionManagerRadio.Size = New-Object System.Drawing.Size(295,20)
+$ProductionManagerRadio.Checked = $true
+$ManagerGroup.Controls.Add($ProductionManagerRadio)
+
+$DevManagerRadio = New-Object System.Windows.Forms.RadioButton
+$DevManagerRadio.Text = "Development (single-cluster.dev.wazuh.adorsys.team)"
+$DevManagerRadio.Location = New-Object System.Drawing.Point(15,60)
+$DevManagerRadio.Size = New-Object System.Drawing.Size(295,20)
+$ManagerGroup.Controls.Add($DevManagerRadio)
 
 # NIDS Selection Group
 $NidsGroup = New-Object System.Windows.Forms.GroupBox
 $NidsGroup.Text = "Network IDS Selection"
-$NidsGroup.Size = New-Object System.Drawing.Size(220,100)
-$NidsGroup.Location = New-Object System.Drawing.Point(10,10)
+$NidsGroup.Size = New-Object System.Drawing.Size(320,100)
+$NidsGroup.Location = New-Object System.Drawing.Point(340,10)
 $Step1Panel.Controls.Add($NidsGroup)
 
 $SnortRadio = New-Object System.Windows.Forms.RadioButton
@@ -599,15 +635,15 @@ $NidsGroup.Controls.Add($SuricataRadio)
 
 $InstallBtn = New-Object System.Windows.Forms.Button
 $InstallBtn.Text = "Start Installation"
-$InstallBtn.Size = New-Object System.Drawing.Size(140,35)
-$InstallBtn.Location = New-Object System.Drawing.Point(250,25)
+$InstallBtn.Size = New-Object System.Drawing.Size(150,35)
+$InstallBtn.Location = New-Object System.Drawing.Point(170,115)
 $InstallBtn.Add_Click({ Do-Install })
 $Step1Panel.Controls.Add($InstallBtn)
 
 $OpenLogBtn = New-Object System.Windows.Forms.Button
 $OpenLogBtn.Text = "Open Log"
-$OpenLogBtn.Size = New-Object System.Drawing.Size(140,35)
-$OpenLogBtn.Location = New-Object System.Drawing.Point(250,70)
+$OpenLogBtn.Size = New-Object System.Drawing.Size(150,35)
+$OpenLogBtn.Location = New-Object System.Drawing.Point(330,115)
 $OpenLogBtn.Add_Click({
     if (Test-Path $LogPath) {
         Start-Process notepad.exe $LogPath
@@ -701,8 +737,9 @@ $form.Controls.Add($NextBtn)
 InfoMessage "Wazuh Agent Setup Wizard v2.0"
 InfoMessage "Running as Administrator: $IsAdmin"
 InfoMessage "Log file: $LogPath"
-InfoMessage "Wazuh Manager: $WAZUH_MANAGER"
 InfoMessage "Agent Version: $WAZUH_AGENT_VERSION"
+InfoMessage "Please select your Wazuh Manager (Production or Development)"
+InfoMessage "Default Manager: Production (manager.wazuh.adorsys.team)"
 InfoMessage "Default NIDS: Suricata (use radio buttons to change)"
 InfoMessage "Ready to install. Click 'Start Installation' to begin."
 
