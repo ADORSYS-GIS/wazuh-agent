@@ -107,7 +107,7 @@ jobs:
         Write-Host "Building executable with version: $exeVersion (Full: $fullVersion)"
 
         Invoke-PS2EXE -inputFile ".\scripts\setup-agent.ps1" `
-                      -outputFile ".\scripts\setup-agent.exe" `
+                      -outputFile ".\scripts\wazuh-setup-agent-windows-x64.exe" `
                       -title "Wazuh Agent Installer" `
                       -company "adorsys" `
                       -version $exeVersion `
@@ -118,9 +118,9 @@ jobs:
     - name: Verify executable
       shell: powershell
       run: |
-        if (Test-Path ".\scripts\setup-agent.exe") {
+        if (Test-Path ".\scripts\wazuh-setup-agent-windows-x64.exe") {
           Write-Host "Executable created successfully"
-          $fileInfo = Get-Item ".\scripts\setup-agent.exe"
+          $fileInfo = Get-Item ".\scripts\wazuh-setup-agent-windows-x64.exe"
           Write-Host "File size: $($fileInfo.Length) bytes"
           Write-Host "Created: $($fileInfo.CreationTime)"
         } else {
@@ -131,8 +131,8 @@ jobs:
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: wazuh-agent-installer-windows-${{ steps.get_version.outputs.VERSION }}
-        path: scripts/setup-agent.exe
+        name: wazuh-setup-agent-windows-x64-${{ steps.get_version.outputs.VERSION }}
+        path: scripts/wazuh-setup-agent-windows-x64.exe
         retention-days: 90
 
     - name: Create Release with Windows Installer
@@ -141,7 +141,7 @@ jobs:
       with:
         tag_name: ${{ github.ref_name }}
         name: Release ${{ steps.get_version.outputs.VERSION }}
-        files: scripts/setup-agent.exe
+        files: scripts/wazuh-setup-agent-windows-x64.exe
         draft: false
         prerelease: false
         generate_release_notes: true
