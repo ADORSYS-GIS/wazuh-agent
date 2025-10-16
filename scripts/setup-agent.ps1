@@ -363,14 +363,16 @@ function DownloadVersionFile {
 
 # ---- Main Installation Process ----
 function Do-Install {
-    # Set WAZUH_MANAGER based on selected radio button
-    if ($ProductionManagerRadio.Checked) {
-        $script:WAZUH_MANAGER = "manager.wazuh.adorsys.team"
-        InfoMessage "Selected Wazuh Manager: Production (manager.wazuh.adorsys.team)"
-    } elseif ($DevManagerRadio.Checked) {
-        $script:WAZUH_MANAGER = "single-cluster.dev.wazuh.adorsys.team"
-        InfoMessage "Selected Wazuh Manager: Development (single-cluster.dev.wazuh.adorsys.team)"
+    # Validate that manager address is not empty
+    $managerAddress = $ManagerTextBox.Text.Trim()
+    if ([string]::IsNullOrWhiteSpace($managerAddress)) {
+        [System.Windows.Forms.MessageBox]::Show("Please enter a Wazuh Manager address.","Manager Address Required",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+        return
     }
+
+    # Set WAZUH_MANAGER from text box input
+    $script:WAZUH_MANAGER = $managerAddress
+    InfoMessage "Using Wazuh Manager: $script:WAZUH_MANAGER"
 
     # Set environment variable for child scripts
     $env:WAZUH_MANAGER = $script:WAZUH_MANAGER
@@ -379,8 +381,7 @@ function Do-Install {
     $NextBtn.Enabled = $false
     $SnortRadio.Enabled = $false
     $SuricataRadio.Enabled = $false
-    $ProductionManagerRadio.Enabled = $false
-    $DevManagerRadio.Enabled = $false
+    $ManagerTextBox.Enabled = $false
     $ProgressBar.Value = 0
     $ProgressBar.Maximum = 100
 
@@ -422,8 +423,7 @@ function Do-Install {
     } finally {
         $SnortRadio.Enabled = $true
         $SuricataRadio.Enabled = $true
-        $ProductionManagerRadio.Enabled = $true
-        $DevManagerRadio.Enabled = $true
+        $ManagerTextBox.Enabled = $true
         $StatusLabel.Text = "Installation Complete"
     }
 }
@@ -595,23 +595,23 @@ $form.Controls.Add($Step1Panel)
 
 # Wazuh Manager Selection Group
 $ManagerGroup = New-Object System.Windows.Forms.GroupBox
-$ManagerGroup.Text = "Wazuh Manager Selection"
+$ManagerGroup.Text = "Wazuh Manager Address"
 $ManagerGroup.Size = New-Object System.Drawing.Size(320,100)
 $ManagerGroup.Location = New-Object System.Drawing.Point(10,10)
 $Step1Panel.Controls.Add($ManagerGroup)
 
-$ProductionManagerRadio = New-Object System.Windows.Forms.RadioButton
-$ProductionManagerRadio.Text = "Production (manager.wazuh.adorsys.team)"
-$ProductionManagerRadio.Location = New-Object System.Drawing.Point(15,30)
-$ProductionManagerRadio.Size = New-Object System.Drawing.Size(295,20)
-$ProductionManagerRadio.Checked = $true
-$ManagerGroup.Controls.Add($ProductionManagerRadio)
+$ManagerLabel = New-Object System.Windows.Forms.Label
+$ManagerLabel.Text = "Enter Manager Address:"
+$ManagerLabel.Location = New-Object System.Drawing.Point(15,25)
+$ManagerLabel.AutoSize = $true
+$ManagerGroup.Controls.Add($ManagerLabel)
 
-$DevManagerRadio = New-Object System.Windows.Forms.RadioButton
-$DevManagerRadio.Text = "Development (single-cluster.dev.wazuh.adorsys.team)"
-$DevManagerRadio.Location = New-Object System.Drawing.Point(15,60)
-$DevManagerRadio.Size = New-Object System.Drawing.Size(295,20)
-$ManagerGroup.Controls.Add($DevManagerRadio)
+$ManagerTextBox = New-Object System.Windows.Forms.TextBox
+$ManagerTextBox.Location = New-Object System.Drawing.Point(15,50)
+$ManagerTextBox.Size = New-Object System.Drawing.Size(290,25)
+$ManagerTextBox.Font = New-Object System.Drawing.Font("Segoe UI",9)
+$ManagerTextBox.Text = ""
+$ManagerGroup.Controls.Add($ManagerTextBox)
 
 # NIDS Selection Group
 $NidsGroup = New-Object System.Windows.Forms.GroupBox
@@ -738,8 +738,7 @@ InfoMessage "Wazuh Agent Setup Wizard v2.0"
 InfoMessage "Running as Administrator: $IsAdmin"
 InfoMessage "Log file: $LogPath"
 InfoMessage "Agent Version: $WAZUH_AGENT_VERSION"
-InfoMessage "Please select your Wazuh Manager (Production or Development)"
-InfoMessage "Default Manager: Production (manager.wazuh.adorsys.team)"
+InfoMessage "Please enter your Wazuh Manager address in the text box"
 InfoMessage "Default NIDS: Suricata (use radio buttons to change)"
 InfoMessage "Ready to install. Click 'Start Installation' to begin."
 
