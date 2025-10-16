@@ -159,15 +159,16 @@ function Install-GnuSed {
 
         # Add sed to the system PATH if it's not already included
         InfoMessage "Checking if sed is in the PATH..."
-        $currentPath = [Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
-        if ($currentPath -notlike "*$DefaultInstallPath*") {
-            WarnMessage "Adding GNU sed to the system PATH..." 
-            
-            $env:Path += ";C:\Program Files (x86)\GnuWin32\bin"
-            [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
-            SuccessMessage "GNU sed added to the system PATH. Restart your terminal to apply changes." 
+        $machinePath = [Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
+        if ($machinePath -notlike "*$DefaultInstallPath*") {
+            WarnMessage "Adding GNU sed to the system PATH..."
+
+            # Append to Machine PATH only (not the current process PATH which includes User+Machine)
+            $newMachinePath = $machinePath + ";$DefaultInstallPath"
+            [System.Environment]::SetEnvironmentVariable("Path", $newMachinePath, [System.EnvironmentVariableTarget]::Machine)
+            SuccessMessage "GNU sed added to the system PATH."
         } else {
-            SuccessMessage "GNU sed is already in the PATH." 
+            SuccessMessage "GNU sed is already in the PATH."
         }
     } catch {
         # Catch and display any errors

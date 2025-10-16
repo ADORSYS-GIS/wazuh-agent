@@ -120,16 +120,49 @@ function Cleanup-Installers {
     }
 }
 
+# ---- Environment PATH Refresh ----
+function Refresh-EnvironmentPath {
+    <#
+    .SYNOPSIS
+    Refreshes the current session's PATH from the registry to pick up newly installed tools.
+
+    .DESCRIPTION
+    When dependencies like gsed are installed and added to the Machine PATH,
+    the current PowerShell session doesn't automatically pick up these changes.
+    This function reloads the PATH from both Machine and User registry locations,
+    ensuring all child processes inherit the updated PATH.
+    #>
+    try {
+        InfoMessage "Refreshing environment PATH from registry..."
+
+        # Get Machine PATH from registry
+        $machinePath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
+
+        # Get User PATH from registry
+        $userPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+
+        # Combine them (User paths take precedence over Machine paths)
+        $combinedPath = $userPath + ";" + $machinePath
+
+        # Update the current process environment
+        $env:Path = $combinedPath
+
+        SuccessMessage "Environment PATH refreshed successfully. All child processes will inherit updated PATH."
+    } catch {
+        WarnMessage "Failed to refresh environment PATH: $($_.Exception.Message)"
+    }
+}
+
 # ---- Installation Functions ----
 function Install-Dependencies {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/deps.ps1"
+    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/feat/windows-setup-agent-binary/scripts/deps.ps1"
     $InstallerPath = "$env:TEMP\deps.ps1"
     $global:InstallerFiles += $InstallerPath
 
     InfoMessage "Downloading dependency script..."
     Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
     InfoMessage "Executing dependency script..."
-    
+
     # Capture all output streams
     $output = & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath 2>&1
     foreach ($line in $output) {
@@ -139,10 +172,14 @@ function Install-Dependencies {
             InfoMessage $line.ToString()
         }
     }
-    
+
     if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
         throw "Dependency script failed with exit code $LASTEXITCODE"
     }
+
+    # Refresh PATH to ensure gsed and other dependencies are available
+    # This is critical for cert-oauth2 to properly replace agent name in ossec.conf
+    Refresh-EnvironmentPath
 }
 
 function Install-WazuhAgent {
