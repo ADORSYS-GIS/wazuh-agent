@@ -370,6 +370,30 @@ function Do-Install {
         return
     }
 
+    # Validate manager address format to prevent XML injection and malicious input
+    # Allow only: alphanumeric, dots, hyphens, and underscores (valid hostname/FQDN/IP characters)
+    if ($managerAddress -notmatch '^[a-zA-Z0-9.-]+$') {
+        [System.Windows.Forms.MessageBox]::Show("Invalid manager address format. Only alphanumeric characters, dots, hyphens, and underscores are allowed.","Invalid Input",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+        ErrorMessage "Invalid manager address attempted: $managerAddress"
+        return
+    }
+
+    # Additional check: Prevent XML special characters that could be used for injection
+    $xmlSpecialChars = @('<', '>', '&', '"', "'", '`')
+    foreach ($char in $xmlSpecialChars) {
+        if ($managerAddress.Contains($char)) {
+            [System.Windows.Forms.MessageBox]::Show("Invalid characters detected in manager address. XML special characters are not allowed.","Security Validation Failed",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+            ErrorMessage "XML injection attempt detected in manager address"
+            return
+        }
+    }
+
+    # Validate length to prevent buffer overflow attacks
+    if ($managerAddress.Length -gt 253) {  # Max FQDN length per RFC 1035
+        [System.Windows.Forms.MessageBox]::Show("Manager address is too long. Maximum length is 253 characters.","Invalid Input",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+        return
+    }
+
     # Set WAZUH_MANAGER from text box input
     $script:WAZUH_MANAGER = $managerAddress
     InfoMessage "Using Wazuh Manager: $script:WAZUH_MANAGER"
