@@ -508,19 +508,22 @@ function Do-OAuth2Config {
     }
 
     InfoMessage "Starting OAuth2 configuration..."
-    InfoMessage "A console window will open. Please follow the instructions to complete authentication."
+    InfoMessage "A NEW PowerShell window will open. Please follow the instructions to complete authentication."
     InfoMessage "The wizard will continue automatically when OAuth2 configuration is complete."
 
     try {
-        # Launch the OAuth2 binary in a visible console window without redirection
+        # Launch cert-oauth2 in a COMPLETELY NEW PowerShell instance (not a child process)
+        # This ensures it reads the PATH directly from the registry, picking up gsed
         $psi = New-Object System.Diagnostics.ProcessStartInfo
-        $psi.FileName = $OAuth2BinPath
-        $psi.Arguments = "o-auth2"
-        $psi.UseShellExecute = $true  # This allows the console window to be visible and interactive
+        $psi.FileName = "powershell.exe"
+        $psi.Arguments = "-NoProfile -Command `"& '$OAuth2BinPath' o-auth2; exit `$LASTEXITCODE`""
+        $psi.UseShellExecute = $true  # Launch as separate process, not child
+        $psi.Verb = "runas"  # Run elevated to ensure proper permissions
         $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Normal
 
+        InfoMessage "Launching OAuth2 in new PowerShell instance with fresh environment..."
         $process = [System.Diagnostics.Process]::Start($psi)
-        
+
         # Wait for process to complete while keeping UI responsive
         while (-not $process.HasExited) {
             [System.Windows.Forms.Application]::DoEvents()
