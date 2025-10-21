@@ -22,7 +22,7 @@ When prompted, respond with A [Yes to All], to enable the execution policy.
    Download the setup script from the repository and run it to configure the Wazuh agent with the necessary parameters for secure communication with the Wazuh Manager.
    
 ```powershell
-$env:WAZUH_MANAGER = "manager.wazuh.adorsys.team"
+$env:WAZUH_MANAGER = "master.wazuh.adorsys.team"
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.ps1' `
   -UseBasicParsing -OutFile "$env:TEMP\setup-agent.ps1"; `
 & "$env:TEMP\setup-agent.ps1" 
