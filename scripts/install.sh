@@ -71,8 +71,10 @@ maybe_sudo() {
 }
 
 sed_alternative() {
-    if command_exists gsed; then
-        gsed "$@"
+    local gsed_path
+    gsed_path=$(which gsed 2>/dev/null)
+    if [ -n "$gsed_path" ]; then
+        "$gsed_path" "$@"
     else
         sed "$@"
     fi
