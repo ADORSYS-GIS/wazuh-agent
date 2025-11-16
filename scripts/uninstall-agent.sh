@@ -11,7 +11,7 @@ fi
 # Default Configuration
 # ==============================================================================
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
-WOPS_VERSION=${WOPS_VERSION:-"0.2.18"}
+WOPS_VERSION=${WOPS_VERSION:-"0.3.0"}
 WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.11"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.4"}
 WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.4"}
