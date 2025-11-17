@@ -104,7 +104,35 @@ stop_service() {
 
 # Uninstall Wazuh agent
 uninstall_agent() {
+    # Check if Wazuh is installed (comprehensive detection for partial installs)
+    local wazuh_installed=false
+    local cleanup_reason=""
+    
+    # Check main installation directory
     if maybe_sudo [ -d "$OSSEC_PATH" ]; then
+        wazuh_installed=true
+        cleanup_reason="Main Wazuh directory found"
+    fi
+    
+    # macOS specific checks for partial installations
+    if [ "$OS" = "macOS" ]; then
+        if [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" ]; then
+            wazuh_installed=true
+            cleanup_reason="Package receipt file found"
+        elif [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.bom" ]; then
+            wazuh_installed=true
+            cleanup_reason="Package BOM file found"
+        elif [ -f "/Library/LaunchDaemons/com.wazuh.agent.plist" ]; then
+            wazuh_installed=true
+            cleanup_reason="LaunchDaemon file found"
+        elif [ -d "/Library/StartupItems/WAZUH" ]; then
+            wazuh_installed=true
+            cleanup_reason="StartupItems directory found"
+        fi
+    fi
+    
+    if [ "$wazuh_installed" = true ]; then
+        info_message "Wazuh components detected: $cleanup_reason"
         info_message "Uninstalling Wazuh agent..."
         if [ "$OS" = "Linux" ]; then
             if [ "$PACKAGE_MANAGER" = "apt" ]; then
@@ -122,8 +150,20 @@ uninstall_agent() {
             maybe_sudo rm -f /Library/LaunchDaemons/com.wazuh.agent.plist
             maybe_sudo rm -rf /Library/StartupItems/WAZUH
     
-            # Remove from the pkgutil
-            maybe_sudo pkgutil --forget com.wazuh.pkg.wazuh-agent
+            # Remove from the pkgutil first (before removing receipt files)
+            maybe_sudo pkgutil --forget com.wazuh.pkg.wazuh-agent 2>/dev/null || warn_message "Package not found in pkgutil database"
+    
+            # Remove package receipt file (critical for reinstallation)
+            if [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" ]; then
+                info_message "Removing package receipt file..."
+                maybe_sudo rm -f /var/db/receipts/com.wazuh.pkg.wazuh-agent.plist
+            fi
+            
+            # Remove package BOM file if it exists
+            if [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.bom" ]; then
+                info_message "Removing package BOM file..."
+                maybe_sudo rm -f /var/db/receipts/com.wazuh.pkg.wazuh-agent.bom
+            fi
         fi
         info_message "Wazuh agent uninstalled successfully."
     else
@@ -186,6 +226,44 @@ remove_user_group() {
     info_message "User and group cleanup completed."
 }
 
+# Verify uninstallation was successful
+verify_uninstallation() {
+    info_message "Verifying uninstallation..."
+    local verification_failed=false
+    
+    # Check if main directory still exists
+    if [ -d "$OSSEC_PATH" ]; then
+        error_message "Wazuh directory still exists: $OSSEC_PATH"
+        verification_failed=true
+    fi
+    
+    # macOS specific checks
+    if [ "$OS" = "macOS" ]; then
+        if [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.plist" ]; then
+            error_message "Package receipt file still exists: /var/db/receipts/com.wazuh.pkg.wazuh-agent.plist"
+            verification_failed=true
+        fi
+        
+        if [ -f "/var/db/receipts/com.wazuh.pkg.wazuh-agent.bom" ]; then
+            error_message "Package BOM file still exists: /var/db/receipts/com.wazuh.pkg.wazuh-agent.bom"
+            verification_failed=true
+        fi
+        
+        if [ -f "/Library/LaunchDaemons/com.wazuh.agent.plist" ]; then
+            error_message "LaunchDaemon file still exists: /Library/LaunchDaemons/com.wazuh.agent.plist"
+            verification_failed=true
+        fi
+    fi
+    
+    if [ "$verification_failed" = true ]; then
+        error_message "Uninstallation verification failed - some components were not removed"
+        return 1
+    else
+        success_message "Uninstallation verification passed - all components removed successfully"
+        return 0
+    fi
+}
+
 # Main execution
 stop_service
 uninstall_agent
@@ -193,6 +271,13 @@ cleanup_repo
 cleanup_files
 remove_user_group
 
-success_message "Wazuh agent uninstallation completed successfully."
+# Verify the uninstallation
+if verify_uninstallation; then
+    success_message "Wazuh agent uninstallation completed successfully."
+    info_message "You can now reinstall Wazuh agent without conflicts."
+else
+    error_message "Uninstallation completed with issues. Manual cleanup may be required."
+    exit 1
+fi
 
 # End of script
