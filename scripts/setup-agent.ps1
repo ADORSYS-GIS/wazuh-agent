@@ -69,7 +69,7 @@ function InfoMessage {
     Append-Log $Message "INFO"
 }
 
-function WarningMessage {
+function WarnMessage {
     param ([string]$Message)
     Append-Log $Message "WARNING"
 }
@@ -283,7 +283,7 @@ function Install-Snort {
 }
 
 function Uninstall-Snort {
-    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/uninstall.ps1"
+    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/windows/uninstall.ps1"
     $UninstallSnortScript = "$env:TEMP\uninstall_snort.ps1"
     $global:InstallerFiles += $UninstallSnortScript
     $TaskName = "SnortStartup"
