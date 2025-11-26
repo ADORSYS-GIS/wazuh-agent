@@ -442,6 +442,7 @@ function Do-Install {
     $NextBtn.Enabled = $false
     $SnortRadio.Enabled = $false
     $SuricataRadio.Enabled = $false
+    $YaraCheckbox.Enabled = $false
     $ManagerTextBox.Enabled = $false
     $ProgressBar.Value = 0
     $ProgressBar.Maximum = 100
@@ -453,7 +454,11 @@ function Do-Install {
         Invoke-Step -Name "Installing Wazuh Agent" -Weight 15 -Action { Install-WazuhAgent }
         Invoke-Step -Name "Installing OAuth2 Client" -Weight 13 -Action { Install-OAuth2Client }
         Invoke-Step -Name "Installing Agent Status" -Weight 12 -Action { Install-AgentStatus }
-        Invoke-Step -Name "Installing YARA" -Weight 13 -Action { Install-Yara }
+        if ($YaraCheckbox.Checked) {
+            Invoke-Step -Name "Installing YARA" -Weight 13 -Action { Install-Yara }
+        } else {
+            InfoMessage "YARA installation step skipped by user selection."
+        }
 
         # Install selected NIDS
         if ($SnortRadio.Checked) {
@@ -484,6 +489,7 @@ function Do-Install {
     } finally {
         $SnortRadio.Enabled = $true
         $SuricataRadio.Enabled = $true
+        $YaraCheckbox.Enabled = $true
         $ManagerTextBox.Enabled = $true
         $StatusLabel.Text = "Installation Complete"
     }
@@ -608,7 +614,7 @@ function Previous-Step {
 # ---- UI Creation ----
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "$AppName Setup Wizard"
-$form.Size = New-Object System.Drawing.Size(750,650)
+$form.Size = New-Object System.Drawing.Size(750,750)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
@@ -653,7 +659,7 @@ $form.Controls.Add($ProgressBar)
 
 # ===== STEP 1 PANEL: Installation =====
 $Step1Panel = New-Object System.Windows.Forms.Panel
-$Step1Panel.Size = New-Object System.Drawing.Size(700,160)
+$Step1Panel.Size = New-Object System.Drawing.Size(700,230)
 $Step1Panel.Location = New-Object System.Drawing.Point(18,405)
 $form.Controls.Add($Step1Panel)
 
@@ -680,7 +686,7 @@ $ManagerGroup.Controls.Add($ManagerTextBox)
 # NIDS Selection Group
 $NidsGroup = New-Object System.Windows.Forms.GroupBox
 $NidsGroup.Text = "Network IDS Selection"
-$NidsGroup.Size = New-Object System.Drawing.Size(320,100)
+$NidsGroup.Size = New-Object System.Drawing.Size(320,90)
 $NidsGroup.Location = New-Object System.Drawing.Point(340,10)
 $Step1Panel.Controls.Add($NidsGroup)
 
@@ -697,17 +703,31 @@ $SuricataRadio.AutoSize = $true
 $SuricataRadio.Checked = $true
 $NidsGroup.Controls.Add($SuricataRadio)
 
+# Optional Components Group
+$OptionalGroup = New-Object System.Windows.Forms.GroupBox
+$OptionalGroup.Text = "Optional Components"
+$OptionalGroup.Size = New-Object System.Drawing.Size(320,55)
+$OptionalGroup.Location = New-Object System.Drawing.Point(340,110)
+$Step1Panel.Controls.Add($OptionalGroup)
+
+$YaraCheckbox = New-Object System.Windows.Forms.CheckBox
+$YaraCheckbox.Text = "Install YARA"
+$YaraCheckbox.Location = New-Object System.Drawing.Point(15,15)
+$YaraCheckbox.AutoSize = $true
+$YaraCheckbox.Checked = $true
+$OptionalGroup.Controls.Add($YaraCheckbox)
+
 $InstallBtn = New-Object System.Windows.Forms.Button
 $InstallBtn.Text = "Start Installation"
 $InstallBtn.Size = New-Object System.Drawing.Size(150,35)
-$InstallBtn.Location = New-Object System.Drawing.Point(170,115)
+$InstallBtn.Location = New-Object System.Drawing.Point(170,175)
 $InstallBtn.Add_Click({ Do-Install })
 $Step1Panel.Controls.Add($InstallBtn)
 
 $OpenLogBtn = New-Object System.Windows.Forms.Button
 $OpenLogBtn.Text = "Open Log"
 $OpenLogBtn.Size = New-Object System.Drawing.Size(150,35)
-$OpenLogBtn.Location = New-Object System.Drawing.Point(330,115)
+$OpenLogBtn.Location = New-Object System.Drawing.Point(330,175)
 $OpenLogBtn.Add_Click({
     if (Test-Path $LogPath) {
         Start-Process notepad.exe $LogPath
@@ -783,7 +803,7 @@ $Step3Panel.Controls.Add($RebootLaterBtn)
 $BackBtn = New-Object System.Windows.Forms.Button
 $BackBtn.Text = "< Back"
 $BackBtn.Size = New-Object System.Drawing.Size(100,40)
-$BackBtn.Location = New-Object System.Drawing.Point(490,560)
+$BackBtn.Location = New-Object System.Drawing.Point(410,650)
 $BackBtn.Visible = $false
 $BackBtn.Add_Click({ Previous-Step })
 $form.Controls.Add($BackBtn)
@@ -791,7 +811,7 @@ $form.Controls.Add($BackBtn)
 $NextBtn = New-Object System.Windows.Forms.Button
 $NextBtn.Text = "Next >"
 $NextBtn.Size = New-Object System.Drawing.Size(100,40)
-$NextBtn.Location = New-Object System.Drawing.Point(600,560)
+$NextBtn.Location = New-Object System.Drawing.Point(560,650)
 $NextBtn.Enabled = $false
 $NextBtn.Visible = $true
 $NextBtn.Add_Click({ Next-Step })
