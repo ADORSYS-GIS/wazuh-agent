@@ -170,7 +170,15 @@ installation() {
   # Update and install Wazuh agent for Linux or download and install for macOS
   if [ "$OS" = "Linux" ]; then
       maybe_sudo $PACKAGE_MANAGER update
-      $PACKAGE_MANAGER install wazuh-agent="$WAZUH_AGENT_VERSION"
+      
+      # Check if there's an installed version different from the one being installed
+      CURRENT_INSTALLED=$(get_installed_version)
+      if [ -n "$CURRENT_INSTALLED" ] && [ "$CURRENT_INSTALLED" != "$WAZUH_AGENT_VERSION" ]; then
+          info_message "Upgrading from $CURRENT_INSTALLED to $WAZUH_AGENT_VERSION with automatic configuration handling"
+          maybe_sudo $PACKAGE_MANAGER install -o Dpkg::Options::="--force-confnew" -y wazuh-agent="$WAZUH_AGENT_VERSION"
+      else
+          maybe_sudo $PACKAGE_MANAGER install -y wazuh-agent="$WAZUH_AGENT_VERSION"
+      fi
   elif [ "$OS" = "macOS" ]; then
       # Detect architecture (Intel or Apple Silicon)
       ARCH=$(uname -m)
