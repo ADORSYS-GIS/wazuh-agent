@@ -191,7 +191,7 @@ function Install-WazuhAgent {
     Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
     InfoMessage "Installing Wazuh agent..."
     
-    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$InstallerPath`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\wazuh_output.log" -RedirectStandardError "$env:TEMP\wazuh_error.log" -Wait
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$InstallerPath`" -WAZUH_AGENT_VERSION `"$WAZUH_AGENT_VERSION`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\wazuh_output.log" -RedirectStandardError "$env:TEMP\wazuh_error.log" -Wait
     
     if (Test-Path "$env:TEMP\wazuh_output.log") {
         Get-Content "$env:TEMP\wazuh_output.log" | ForEach-Object { InfoMessage $_ }
