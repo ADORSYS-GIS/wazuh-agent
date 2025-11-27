@@ -714,7 +714,7 @@ $YaraCheckbox = New-Object System.Windows.Forms.CheckBox
 $YaraCheckbox.Text = "Install YARA"
 $YaraCheckbox.Location = New-Object System.Drawing.Point(15,15)
 $YaraCheckbox.AutoSize = $true
-$YaraCheckbox.Checked = $true
+$YaraCheckbox.Checked = $false
 $OptionalGroup.Controls.Add($YaraCheckbox)
 
 $InstallBtn = New-Object System.Windows.Forms.Button
