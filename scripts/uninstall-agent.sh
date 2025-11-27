@@ -11,11 +11,12 @@ fi
 # Default Configuration
 # ==============================================================================
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
-WOPS_VERSION=${WOPS_VERSION:-"0.2.18"}
+WOPS_VERSION=${WOPS_VERSION:-"0.3.0"}
 WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.11"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.4"}
 WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.4"}
 WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-"0.3.3"}
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.7.0'}
 
 # Uninstall choice variables
 UNINSTALL_TRIVY="FALSE"
@@ -124,7 +125,7 @@ info_message "Starting uninstallation. Using temporary directory: \"$TMP_FOLDER\
 
 # Step 0: Download all uninstall scripts
 info_message "Downloading all uninstall scripts..."
-curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-wazuh-agent.sh"
+curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-wazuh-agent.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-wazuh-agent-status.sh"
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-yara.sh"
 
