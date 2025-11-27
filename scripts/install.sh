@@ -171,14 +171,8 @@ installation() {
   if [ "$OS" = "Linux" ]; then
       maybe_sudo $PACKAGE_MANAGER update
       
-      # Check if there's an installed version different from the one being installed
-      CURRENT_INSTALLED=$(get_installed_version)
-      if [ -n "$CURRENT_INSTALLED" ] && [ "$CURRENT_INSTALLED" != "$WAZUH_AGENT_VERSION" ]; then
-          info_message "Upgrading from $CURRENT_INSTALLED to $WAZUH_AGENT_VERSION with automatic configuration handling"
-          maybe_sudo $PACKAGE_MANAGER install -o Dpkg::Options::="--force-confnew" -y wazuh-agent="$WAZUH_AGENT_VERSION"
-      else
-          maybe_sudo $PACKAGE_MANAGER install -y wazuh-agent="$WAZUH_AGENT_VERSION"
-      fi
+      # Use --force-confold to handle configuration file conflicts without prompting
+      $PACKAGE_MANAGER install -o Dpkg::Options::="--force-confold" -y wazuh-agent="$WAZUH_AGENT_VERSION"
   elif [ "$OS" = "macOS" ]; then
       # Detect architecture (Intel or Apple Silicon)
       ARCH=$(uname -m)
