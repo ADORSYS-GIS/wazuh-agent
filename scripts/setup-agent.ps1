@@ -183,7 +183,7 @@ function Install-Dependencies {
 }
 
 function Install-WazuhAgent {
-    $InstallerURL = "https://github.com/ADORSYS-GIS/wazuh-agent/blob/feat/validate-windows-installation/scripts/install.ps1"
+    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/feat/validate-windows-installation/scripts/install.ps1"
     $InstallerPath = "$env:TEMP\install.ps1"
     $global:InstallerFiles += $InstallerPath
 
@@ -208,7 +208,7 @@ function Install-WazuhAgent {
 }
 
 function Install-OAuth2Client {
-    $OAuth2Url = "https://github.com/ADORSYS-GIS/wazuh-cert-oauth2/blob/feat/validate-windows-installation/scripts/install.ps1"
+    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/heads/feat/validate-windows-installation/scripts/install.ps1"
     $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
     $global:InstallerFiles += $OAuth2Script
 
@@ -233,7 +233,7 @@ function Install-OAuth2Client {
 }
 
 function Install-Yara {
-    $YaraUrl = "https://github.com/ADORSYS-GIS/wazuh-yara/blob/feat/validate-windows-installation/scripts/install.ps1"
+    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/heads/feat/validate-windows-installation/scripts/install.ps1"
     $YaraScript = "$env:TEMP\install_yara.ps1"
     $global:InstallerFiles += $YaraScript
 
@@ -364,7 +364,7 @@ function Uninstall-Suricata {
 }
 
 function Install-AgentStatus {
-    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/fix/agent-status-update-launcher/scripts/install.ps1"
+    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/heads/feat/validate-windows-installation/scripts/install.ps1"
     $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
     $global:InstallerFiles += $AgentStatusScript
 
