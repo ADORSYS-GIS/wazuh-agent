@@ -183,7 +183,7 @@ function Install-Dependencies {
 }
 
 function Install-WazuhAgent {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.ps1"
+    $InstallerURL = "https://github.com/ADORSYS-GIS/wazuh-agent/blob/feat/validate-windows-installation/scripts/install.ps1"
     $InstallerPath = "$env:TEMP\install.ps1"
     $global:InstallerFiles += $InstallerPath
 
@@ -208,7 +208,7 @@ function Install-WazuhAgent {
 }
 
 function Install-OAuth2Client {
-    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.ps1"
+    $OAuth2Url = "https://github.com/ADORSYS-GIS/wazuh-cert-oauth2/blob/feat/validate-windows-installation/scripts/install.ps1"
     $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
     $global:InstallerFiles += $OAuth2Script
 
@@ -233,7 +233,7 @@ function Install-OAuth2Client {
 }
 
 function Install-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.ps1"
+    $YaraUrl = "https://github.com/ADORSYS-GIS/wazuh-yara/blob/feat/validate-windows-installation/scripts/install.ps1"
     $YaraScript = "$env:TEMP\install_yara.ps1"
     $global:InstallerFiles += $YaraScript
 
@@ -258,7 +258,7 @@ function Install-Yara {
 }
 
 function Install-Snort {
-    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/windows/snort.ps1"
+    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/heads/feat/validate-windows-installation/scripts/windows/snort.ps1"
     $SnortScript = "$env:TEMP\snort.ps1"
     $global:InstallerFiles += $SnortScript
 
@@ -311,7 +311,7 @@ function Uninstall-Snort {
 }
 
 function Install-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/tags/v$WAZUH_SURICATA_VERSION/scripts/install.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/heads/feat/validate-windows-installation/scripts/install.ps1"
     $SuricataScript = "$env:TEMP\suricata.ps1"
     $global:InstallerFiles += $SuricataScript
 
