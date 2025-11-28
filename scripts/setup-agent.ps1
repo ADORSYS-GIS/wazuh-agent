@@ -257,6 +257,58 @@ function Install-Yara {
     }
 }
 
+function Test-YaraInstalled {
+    $activeResponseBinDir = "C:\Program Files (x86)\ossec-agent\active-response\bin"
+    $yaraExePath = Join-Path -Path $activeResponseBinDir -ChildPath "yara\yara64.exe"
+    $yaraBatPath = Join-Path -Path $activeResponseBinDir -ChildPath "yara.bat"
+
+    foreach ($path in @($yaraExePath, $yaraBatPath)) {
+        if (Test-Path $path) {
+            InfoMessage "Detected existing YARA installation at: $path"
+            return $true
+        }
+    }
+
+    try {
+        $yaraCmd = Get-Command yara64 -ErrorAction SilentlyContinue
+        if ($yaraCmd) {
+            InfoMessage "Detected YARA in system PATH: $($yaraCmd.Source)"
+            return $true
+        }
+    } catch {}
+
+    return $false
+}
+
+function Uninstall-Yara {
+    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/uninstall.ps1"
+    $UninstallYaraScript = "$env:TEMP\uninstall_yara.ps1"
+    $global:InstallerFiles += $UninstallYaraScript
+
+    # Check if YARA is installed before attempting uninstall
+    if (Test-YaraInstalled) {
+        InfoMessage "Removing existing YARA installation..."
+        Invoke-WebRequest -Uri $YaraUrl -OutFile $UninstallYaraScript -ErrorAction Stop
+
+        $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$UninstallYaraScript`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\uninstall_yara_output.log" -RedirectStandardError "$env:TEMP\uninstall_yara_error.log" -Wait
+
+        if (Test-Path "$env:TEMP\uninstall_yara_output.log") {
+            Get-Content "$env:TEMP\uninstall_yara_output.log" | ForEach-Object { InfoMessage $_ }
+            Remove-Item "$env:TEMP\uninstall_yara_output.log" -Force
+        }
+        if (Test-Path "$env:TEMP\uninstall_yara_error.log") {
+            Get-Content "$env:TEMP\uninstall_yara_error.log" | ForEach-Object { ErrorMessage $_ }
+            Remove-Item "$env:TEMP\uninstall_yara_error.log" -Force
+        }
+
+        if ($process.ExitCode -ne 0) {
+            WarningMessage "YARA uninstall completed with exit code $($process.ExitCode)"
+        }
+    } else {
+        InfoMessage "YARA is not installed. Skipping uninstall."
+    }
+}
+
 function Install-Snort {
     $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/windows/snort.ps1"
     $SnortScript = "$env:TEMP\snort.ps1"
@@ -478,14 +530,7 @@ function Do-Install {
         if ($YaraCheckbox.Checked) {
             Invoke-Step -Name "Installing YARA" -Weight $yaraWeight -Action { Install-Yara }
         } else {
-            InfoMessage "YARA installation step skipped by user selection."
-            # Distribute YARA weight to other steps to ensure progress reaches 100%
-            $additionalWeight = [math]::Round($yaraWeight / 4, 0)
-            $depsWeight += $additionalWeight
-            $agentWeight += $additionalWeight
-            $oauthWeight += $additionalWeight
-            $statusWeight += $additionalWeight
-            $versionWeight += ($yaraWeight - ($additionalWeight * 4))
+            Invoke-Step -Name "Removing YARA (if present)" -Weight $yaraWeight -Action { Uninstall-Yara }
         }
 
         # Install selected NIDS
