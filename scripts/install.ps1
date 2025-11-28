@@ -1,14 +1,16 @@
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
-$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.12.0-1" }
+$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.13.1-1" }
 
 
 # Global variables
-$OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
+$OSSEC_PATH = "C:\Program Files (x86)\ossec-agent"
 $OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
-$APP_DATA = "C:\ProgramData\ossec-agent\"
+$ACTIVE_RESPONSE_LOG_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "active-response\logs"
+$APP_DATA = "C:\ProgramData\ossec-agent"
 
 # Variables
 $AgentFileName = "wazuh-agent-$WAZUH_AGENT_VERSION.msi"
+$WazuhServiceName = "WazuhSvc"
 $TempDir = $env:TEMP
 $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.msi"
 $MsiPath = Join-Path -Path $TempDir -ChildPath $AgentFileName
@@ -101,31 +103,6 @@ function Install-Agent {
         return
     }
 
-    # Update the manager address in the configuration file
-    try {
-        [xml]$configXml = Get-Content -Path $OSSEC_CONF_PATH
-        $configXml.ossec_config.client.server.address = $WAZUH_MANAGER
-        $configXml.Save($OSSEC_CONF_PATH)
-        InfoMessage "Manager address updated successfully in ossec.conf."
-    } catch {
-        ErrorMessage "Failed to update manager address: $($_.Exception.Message)"
-        return
-    }
-    
-    # Start the Wazuh service
-    InfoMessage "Starting Wazuh service..."
-    try {
-        Start-Service -Name "WazuhSvc" -ErrorAction Stop
-        InfoMessage "Wazuh service started successfully."
-    } catch {
-        ErrorMessage "Failed to start Wazuh service: $($_.Exception.Message)"
-        return
-    }
-
-    InfoMessage "Wazuh agent installed successfully."
-}
-
-function Config {
     InfoMessage "Downloading app logo..."
 
     if (!(Test-Path -Path $APP_DATA)) {
@@ -140,21 +117,97 @@ function Config {
     } finally {
         InfoMessage "App logo downloaded successfully"
     }
+    
+    # Start the Wazuh service
+    InfoMessage "Starting Wazuh service..."
+    try {
+        Start-Service -Name $WazuhServiceName -ErrorAction Stop
+        InfoMessage "Wazuh service started successfully."
+    } catch {
+        ErrorMessage "Failed to start Wazuh service: $($_.Exception.Message)"
+        return
+    }
+
+    InfoMessage "Wazuh agent installed successfully."
+}
+
+function Config {
+    # Update the manager address in the configuration file
+    InfoMessage "Updating manager address in ossec.conf..."
+    try {
+        [xml]$configXml = Get-Content -Path $OSSEC_CONF_PATH
+        $configXml.ossec_config.client.server.address = $WAZUH_MANAGER
+        $configXml.Save($OSSEC_CONF_PATH)
+        InfoMessage "Manager address updated successfully in ossec.conf."
+    } catch {
+        ErrorMessage "Failed to update manager address: $($_.Exception.Message)"
+        return
+    }
 }
 
 function Cleanup {
-    InfoMessage "Removing msi executable $AgentVersion..."
+    InfoMessage "Removing msi executable $MsiPath..."
     try {
         Remove-Item -Path $MsiPath -Recurse -Force
-        InfoMessage "Msi Executable $AgentVersion Removed"
+        InfoMessage "Msi Executable $AgentFileName Removed"
         SuccessMessage "Wazuh Installed Successfully"
     }
     catch {
-        ErrorMessage "Failed to remove msi executable $AgentVersion : $($_.Exception.Message)"
+        ErrorMessage "Failed to remove msi executable $AgentFileName : $($_.Exception.Message)"
     }
+}
+
+function Validate-Installation {
+    InfoMessage "Validating installation and configuration..."
+
+    try {
+        $service = Get-Service -Name $WazuhServiceName -ErrorAction Stop
+        if ($service.Status -eq 'Running') {
+            InfoMessage "Wazuh service is running."
+        }
+        else {
+            WarnMessage "Wazuh service is not running. Current status: $($service.Status)."
+        }
+    }
+    catch {
+        WarnMessage "Unable to determine Wazuh service status: $($_.Exception.Message)"
+    }
+
+    if (Test-Path -Path $OSSEC_CONF_PATH) {
+        $configContent = $null
+        try {
+            $configContent = Get-Content -Path $OSSEC_CONF_PATH -Raw
+        }
+        catch {
+            WarnMessage "Failed to read ${OSSEC_CONF_PATH}: $($_.Exception.Message)"
+        }
+
+        if ($configContent) {
+            $escapedManager = [regex]::Escape($WAZUH_MANAGER)
+            if ($configContent -match "<address>\s*$escapedManager\s*</address>") {
+                InfoMessage "Wazuh manager address $WAZUH_MANAGER is configured correctly in ossec.conf."
+            }
+            else {
+                WarnMessage "Wazuh manager address is not configured correctly in ossec.conf."
+            }
+        }
+    }
+    else {
+        WarnMessage "Configuration file not found at $OSSEC_CONF_PATH."
+    }
+
+    if (Test-Path -Path $APP_LOGO_PATH) {
+        InfoMessage "Logo file exists at $APP_LOGO_PATH."
+    }
+    else {
+        WarnMessage "Logo file has not been downloaded."
+    }
+
+    SuccessMessage "Installation and configuration validated successfully."
 }
 
 # Call the Install-Agent function to execute the installation
 Install-Agent
 Config
 Cleanup
+Validate-Installation
