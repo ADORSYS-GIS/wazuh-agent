@@ -450,26 +450,54 @@ function Do-Install {
     SectionSeparator "INSTALLATION START"
 
     try {
-        Invoke-Step -Name "Installing Dependencies" -Weight 12 -Action { Install-Dependencies }
-        Invoke-Step -Name "Installing Wazuh Agent" -Weight 15 -Action { Install-WazuhAgent }
-        Invoke-Step -Name "Installing OAuth2 Client" -Weight 13 -Action { Install-OAuth2Client }
-        Invoke-Step -Name "Installing Agent Status" -Weight 12 -Action { Install-AgentStatus }
+        # Calculate weights based on selected components
+        $yaraWeight = if ($YaraCheckbox.Checked) { 13 } else { 0 }
+        $nidsRemoveWeight = 10
+        $nidsInstallWeight = 15
+        
+        # Calculate total weight and adjustment factor to reach 100%
+        $totalWeight = 12 + 15 + 13 + 12 + $yaraWeight + $nidsRemoveWeight + $nidsInstallWeight + 10
+        $weightFactor = 100 / $totalWeight
+        
+        # Adjust weights to ensure they sum to 100%
+        $depsWeight = [math]::Round(12 * $weightFactor, 0)
+        $agentWeight = [math]::Round(15 * $weightFactor, 0)
+        $oauthWeight = [math]::Round(13 * $weightFactor, 0)
+        $statusWeight = [math]::Round(12 * $weightFactor, 0)
+        $yaraWeight = [math]::Round($yaraWeight * $weightFactor, 0)
+        $nidsRemoveWeight = [math]::Round($nidsRemoveWeight * $weightFactor, 0)
+        $nidsInstallWeight = [math]::Round($nidsInstallWeight * $weightFactor, 0)
+        $versionWeight = 100 - ($depsWeight + $agentWeight + $oauthWeight + $statusWeight + $yaraWeight + $nidsRemoveWeight + $nidsInstallWeight)
+        
+        # Execute steps with adjusted weights
+        Invoke-Step -Name "Installing Dependencies" -Weight $depsWeight -Action { Install-Dependencies }
+        Invoke-Step -Name "Installing Wazuh Agent" -Weight $agentWeight -Action { Install-WazuhAgent }
+        Invoke-Step -Name "Installing OAuth2 Client" -Weight $oauthWeight -Action { Install-OAuth2Client }
+        Invoke-Step -Name "Installing Agent Status" -Weight $statusWeight -Action { Install-AgentStatus }
+        
         if ($YaraCheckbox.Checked) {
-            Invoke-Step -Name "Installing YARA" -Weight 13 -Action { Install-Yara }
+            Invoke-Step -Name "Installing YARA" -Weight $yaraWeight -Action { Install-Yara }
         } else {
             InfoMessage "YARA installation step skipped by user selection."
+            # Distribute YARA weight to other steps to ensure progress reaches 100%
+            $additionalWeight = [math]::Round($yaraWeight / 4, 0)
+            $depsWeight += $additionalWeight
+            $agentWeight += $additionalWeight
+            $oauthWeight += $additionalWeight
+            $statusWeight += $additionalWeight
+            $versionWeight += ($yaraWeight - ($additionalWeight * 4))
         }
 
         # Install selected NIDS
         if ($SnortRadio.Checked) {
-            Invoke-Step -Name "Removing Suricata (if present)" -Weight 10 -Action { Uninstall-Suricata }
-            Invoke-Step -Name "Installing Snort" -Weight 15 -Action { Install-Snort }
+            Invoke-Step -Name "Removing Suricata (if present)" -Weight $nidsRemoveWeight -Action { Uninstall-Suricata }
+            Invoke-Step -Name "Installing Snort" -Weight $nidsInstallWeight -Action { Install-Snort }
         } elseif ($SuricataRadio.Checked) {
-            Invoke-Step -Name "Removing Snort (if present)" -Weight 10 -Action { Uninstall-Snort }
-            Invoke-Step -Name "Installing Suricata" -Weight 15 -Action { Install-Suricata }
+            Invoke-Step -Name "Removing Snort (if present)" -Weight $nidsRemoveWeight -Action { Uninstall-Snort }
+            Invoke-Step -Name "Installing Suricata" -Weight $nidsInstallWeight -Action { Install-Suricata }
         }
 
-        Invoke-Step -Name "Downloading Version File" -Weight 10 -Action { DownloadVersionFile }
+        Invoke-Step -Name "Downloading Version File" -Weight $versionWeight -Action { DownloadVersionFile }
 
         InfoMessage "Cleaning up installer files..."
         Cleanup-Installers
