@@ -35,7 +35,7 @@ $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.14" }
 $WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4" }
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.4.0" }
-$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.3.0" }
+$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.0" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.1.4" }
 
 # ---- Globals ----
@@ -191,7 +191,7 @@ function Install-WazuhAgent {
     Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
     InfoMessage "Installing Wazuh agent..."
     
-    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$InstallerPath`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\wazuh_output.log" -RedirectStandardError "$env:TEMP\wazuh_error.log" -Wait
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$InstallerPath`" -WAZUH_AGENT_VERSION `"$WAZUH_AGENT_VERSION`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\wazuh_output.log" -RedirectStandardError "$env:TEMP\wazuh_error.log" -Wait
     
     if (Test-Path "$env:TEMP\wazuh_output.log") {
         Get-Content "$env:TEMP\wazuh_output.log" | ForEach-Object { InfoMessage $_ }
@@ -254,6 +254,58 @@ function Install-Yara {
     
     if ($process.ExitCode -ne 0) {
         throw "YARA installation failed with exit code $($process.ExitCode)"
+    }
+}
+
+function Test-YaraInstalled {
+    $activeResponseBinDir = "C:\Program Files (x86)\ossec-agent\active-response\bin"
+    $yaraExePath = Join-Path -Path $activeResponseBinDir -ChildPath "yara\yara64.exe"
+    $yaraBatPath = Join-Path -Path $activeResponseBinDir -ChildPath "yara.bat"
+
+    foreach ($path in @($yaraExePath, $yaraBatPath)) {
+        if (Test-Path $path) {
+            InfoMessage "Detected existing YARA installation at: $path"
+            return $true
+        }
+    }
+
+    try {
+        $yaraCmd = Get-Command yara64 -ErrorAction SilentlyContinue
+        if ($yaraCmd) {
+            InfoMessage "Detected YARA in system PATH: $($yaraCmd.Source)"
+            return $true
+        }
+    } catch {}
+
+    return $false
+}
+
+function Uninstall-Yara {
+    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/uninstall.ps1"
+    $UninstallYaraScript = "$env:TEMP\uninstall_yara.ps1"
+    $global:InstallerFiles += $UninstallYaraScript
+
+    # Check if YARA is installed before attempting uninstall
+    if (Test-YaraInstalled) {
+        InfoMessage "Removing existing YARA installation..."
+        Invoke-WebRequest -Uri $YaraUrl -OutFile $UninstallYaraScript -ErrorAction Stop
+
+        $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$UninstallYaraScript`"" -NoNewWindow -PassThru -RedirectStandardOutput "$env:TEMP\uninstall_yara_output.log" -RedirectStandardError "$env:TEMP\uninstall_yara_error.log" -Wait
+
+        if (Test-Path "$env:TEMP\uninstall_yara_output.log") {
+            Get-Content "$env:TEMP\uninstall_yara_output.log" | ForEach-Object { InfoMessage $_ }
+            Remove-Item "$env:TEMP\uninstall_yara_output.log" -Force
+        }
+        if (Test-Path "$env:TEMP\uninstall_yara_error.log") {
+            Get-Content "$env:TEMP\uninstall_yara_error.log" | ForEach-Object { ErrorMessage $_ }
+            Remove-Item "$env:TEMP\uninstall_yara_error.log" -Force
+        }
+
+        if ($process.ExitCode -ne 0) {
+            WarningMessage "YARA uninstall completed with exit code $($process.ExitCode)"
+        }
+    } else {
+        InfoMessage "YARA is not installed. Skipping uninstall."
     }
 }
 
@@ -442,6 +494,7 @@ function Do-Install {
     $NextBtn.Enabled = $false
     $SnortRadio.Enabled = $false
     $SuricataRadio.Enabled = $false
+    $YaraCheckbox.Enabled = $false
     $ManagerTextBox.Enabled = $false
     $ProgressBar.Value = 0
     $ProgressBar.Maximum = 100
@@ -449,22 +502,47 @@ function Do-Install {
     SectionSeparator "INSTALLATION START"
 
     try {
-        Invoke-Step -Name "Installing Dependencies" -Weight 12 -Action { Install-Dependencies }
-        Invoke-Step -Name "Installing Wazuh Agent" -Weight 15 -Action { Install-WazuhAgent }
-        Invoke-Step -Name "Installing OAuth2 Client" -Weight 13 -Action { Install-OAuth2Client }
-        Invoke-Step -Name "Installing Agent Status" -Weight 12 -Action { Install-AgentStatus }
-        Invoke-Step -Name "Installing YARA" -Weight 13 -Action { Install-Yara }
+        # Calculate weights based on selected components
+        $yaraWeight = if ($YaraCheckbox.Checked) { 13 } else { 0 }
+        $nidsRemoveWeight = 10
+        $nidsInstallWeight = 15
+        
+        # Calculate total weight and adjustment factor to reach 100%
+        $totalWeight = 12 + 15 + 13 + 12 + $yaraWeight + $nidsRemoveWeight + $nidsInstallWeight + 10
+        $weightFactor = 100 / $totalWeight
+        
+        # Adjust weights to ensure they sum to 100%
+        $depsWeight = [math]::Round(12 * $weightFactor, 0)
+        $agentWeight = [math]::Round(15 * $weightFactor, 0)
+        $oauthWeight = [math]::Round(13 * $weightFactor, 0)
+        $statusWeight = [math]::Round(12 * $weightFactor, 0)
+        $yaraWeight = [math]::Round($yaraWeight * $weightFactor, 0)
+        $nidsRemoveWeight = [math]::Round($nidsRemoveWeight * $weightFactor, 0)
+        $nidsInstallWeight = [math]::Round($nidsInstallWeight * $weightFactor, 0)
+        $versionWeight = 100 - ($depsWeight + $agentWeight + $oauthWeight + $statusWeight + $yaraWeight + $nidsRemoveWeight + $nidsInstallWeight)
+        
+        # Execute steps with adjusted weights
+        Invoke-Step -Name "Installing Dependencies" -Weight $depsWeight -Action { Install-Dependencies }
+        Invoke-Step -Name "Installing Wazuh Agent" -Weight $agentWeight -Action { Install-WazuhAgent }
+        Invoke-Step -Name "Installing OAuth2 Client" -Weight $oauthWeight -Action { Install-OAuth2Client }
+        Invoke-Step -Name "Installing Agent Status" -Weight $statusWeight -Action { Install-AgentStatus }
+        
+        if ($YaraCheckbox.Checked) {
+            Invoke-Step -Name "Installing YARA" -Weight $yaraWeight -Action { Install-Yara }
+        } else {
+            Invoke-Step -Name "Removing YARA (if present)" -Weight $yaraWeight -Action { Uninstall-Yara }
+        }
 
         # Install selected NIDS
         if ($SnortRadio.Checked) {
-            Invoke-Step -Name "Removing Suricata (if present)" -Weight 10 -Action { Uninstall-Suricata }
-            Invoke-Step -Name "Installing Snort" -Weight 15 -Action { Install-Snort }
+            Invoke-Step -Name "Removing Suricata (if present)" -Weight $nidsRemoveWeight -Action { Uninstall-Suricata }
+            Invoke-Step -Name "Installing Snort" -Weight $nidsInstallWeight -Action { Install-Snort }
         } elseif ($SuricataRadio.Checked) {
-            Invoke-Step -Name "Removing Snort (if present)" -Weight 10 -Action { Uninstall-Snort }
-            Invoke-Step -Name "Installing Suricata" -Weight 15 -Action { Install-Suricata }
+            Invoke-Step -Name "Removing Snort (if present)" -Weight $nidsRemoveWeight -Action { Uninstall-Snort }
+            Invoke-Step -Name "Installing Suricata" -Weight $nidsInstallWeight -Action { Install-Suricata }
         }
 
-        Invoke-Step -Name "Downloading Version File" -Weight 10 -Action { DownloadVersionFile }
+        Invoke-Step -Name "Downloading Version File" -Weight $versionWeight -Action { DownloadVersionFile }
 
         InfoMessage "Cleaning up installer files..."
         Cleanup-Installers
@@ -484,6 +562,7 @@ function Do-Install {
     } finally {
         $SnortRadio.Enabled = $true
         $SuricataRadio.Enabled = $true
+        $YaraCheckbox.Enabled = $true
         $ManagerTextBox.Enabled = $true
         $StatusLabel.Text = "Installation Complete"
     }
@@ -608,7 +687,7 @@ function Previous-Step {
 # ---- UI Creation ----
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "$AppName Setup Wizard"
-$form.Size = New-Object System.Drawing.Size(750,650)
+$form.Size = New-Object System.Drawing.Size(750,750)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
@@ -653,7 +732,7 @@ $form.Controls.Add($ProgressBar)
 
 # ===== STEP 1 PANEL: Installation =====
 $Step1Panel = New-Object System.Windows.Forms.Panel
-$Step1Panel.Size = New-Object System.Drawing.Size(700,160)
+$Step1Panel.Size = New-Object System.Drawing.Size(700,230)
 $Step1Panel.Location = New-Object System.Drawing.Point(18,405)
 $form.Controls.Add($Step1Panel)
 
@@ -680,7 +759,7 @@ $ManagerGroup.Controls.Add($ManagerTextBox)
 # NIDS Selection Group
 $NidsGroup = New-Object System.Windows.Forms.GroupBox
 $NidsGroup.Text = "Network IDS Selection"
-$NidsGroup.Size = New-Object System.Drawing.Size(320,100)
+$NidsGroup.Size = New-Object System.Drawing.Size(320,90)
 $NidsGroup.Location = New-Object System.Drawing.Point(340,10)
 $Step1Panel.Controls.Add($NidsGroup)
 
@@ -697,17 +776,31 @@ $SuricataRadio.AutoSize = $true
 $SuricataRadio.Checked = $true
 $NidsGroup.Controls.Add($SuricataRadio)
 
+# Optional Components Group
+$OptionalGroup = New-Object System.Windows.Forms.GroupBox
+$OptionalGroup.Text = "Optional Components"
+$OptionalGroup.Size = New-Object System.Drawing.Size(320,55)
+$OptionalGroup.Location = New-Object System.Drawing.Point(340,110)
+$Step1Panel.Controls.Add($OptionalGroup)
+
+$YaraCheckbox = New-Object System.Windows.Forms.CheckBox
+$YaraCheckbox.Text = "Install YARA"
+$YaraCheckbox.Location = New-Object System.Drawing.Point(15,15)
+$YaraCheckbox.AutoSize = $true
+$YaraCheckbox.Checked = $false
+$OptionalGroup.Controls.Add($YaraCheckbox)
+
 $InstallBtn = New-Object System.Windows.Forms.Button
 $InstallBtn.Text = "Start Installation"
 $InstallBtn.Size = New-Object System.Drawing.Size(150,35)
-$InstallBtn.Location = New-Object System.Drawing.Point(170,115)
+$InstallBtn.Location = New-Object System.Drawing.Point(170,175)
 $InstallBtn.Add_Click({ Do-Install })
 $Step1Panel.Controls.Add($InstallBtn)
 
 $OpenLogBtn = New-Object System.Windows.Forms.Button
 $OpenLogBtn.Text = "Open Log"
 $OpenLogBtn.Size = New-Object System.Drawing.Size(150,35)
-$OpenLogBtn.Location = New-Object System.Drawing.Point(330,115)
+$OpenLogBtn.Location = New-Object System.Drawing.Point(330,175)
 $OpenLogBtn.Add_Click({
     if (Test-Path $LogPath) {
         Start-Process notepad.exe $LogPath
@@ -783,7 +876,7 @@ $Step3Panel.Controls.Add($RebootLaterBtn)
 $BackBtn = New-Object System.Windows.Forms.Button
 $BackBtn.Text = "< Back"
 $BackBtn.Size = New-Object System.Drawing.Size(100,40)
-$BackBtn.Location = New-Object System.Drawing.Point(490,560)
+$BackBtn.Location = New-Object System.Drawing.Point(410,650)
 $BackBtn.Visible = $false
 $BackBtn.Add_Click({ Previous-Step })
 $form.Controls.Add($BackBtn)
@@ -791,7 +884,7 @@ $form.Controls.Add($BackBtn)
 $NextBtn = New-Object System.Windows.Forms.Button
 $NextBtn.Text = "Next >"
 $NextBtn.Size = New-Object System.Drawing.Size(100,40)
-$NextBtn.Location = New-Object System.Drawing.Point(600,560)
+$NextBtn.Location = New-Object System.Drawing.Point(560,650)
 $NextBtn.Enabled = $false
 $NextBtn.Visible = $true
 $NextBtn.Add_Click({ Next-Step })
