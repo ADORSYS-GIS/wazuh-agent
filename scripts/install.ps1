@@ -88,7 +88,7 @@ function Install-Agent {
     # Filling up MSI installer arguments
     $MsiArguments = @(
         "/i `"$MsiPath`""
-        "/qn"
+        "/q"
         "WAZUH_MANAGER=`"$WAZUH_MANAGER`""
     )
 
