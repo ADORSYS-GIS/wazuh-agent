@@ -65,7 +65,7 @@ function Uninstall-Agent {
     }
 
     $MsiArguments = @(
-        "/x $TempFile"
+        "/x `"$TempFile`""
         "/qn"
     )
     
