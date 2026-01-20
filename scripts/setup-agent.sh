@@ -13,7 +13,7 @@ fi
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
 WOPS_VERSION=${WOPS_VERSION:-"0.3.0"}
-WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.14"}
+WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.4.0-rc.1"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.4"}
 WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.4"}
 
@@ -244,7 +244,7 @@ fi
 
 # Step 4: Download and install yara
 info_message "Installing yara"
-if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/install-yara.sh") 2>&1; then
+if ! (INSTALLATION_TYPE="desktop" LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/install-yara.sh") 2>&1; then
     error_message "Failed to install 'yara'"
     exit 1
 fi
