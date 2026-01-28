@@ -13,9 +13,9 @@ fi
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
 WOPS_VERSION=${WOPS_VERSION:-"0.3.0"}
-WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.11"}
+WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.4.0-rc.3"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.4"}
-WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.4"}
+WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.2.0-rc.3"}
 
 # Define the OSSEC configuration path
 if [ "$(uname)" = "Darwin" ]; then
@@ -30,7 +30,7 @@ GROUP=${GROUP:-"wazuh"}
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.13.1-1'}
-WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.3.3'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.4.0-user'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.7.0'}
 
@@ -244,7 +244,7 @@ fi
 
 # Step 4: Download and install yara
 info_message "Installing yara"
-if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/install-yara.sh") 2>&1; then
+if ! (INSTALLATION_TYPE="desktop" LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/install-yara.sh") 2>&1; then
     error_message "Failed to install 'yara'"
     exit 1
 fi
