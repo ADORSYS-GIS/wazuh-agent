@@ -240,6 +240,38 @@ function Install-AgentStatus {
     }
 }
 
+# Step 7: Install USB DLP Active Response scripts
+function Install-USBDLPScripts {
+    $AR_BIN_DIR = Join-Path -Path $OSSEC_PATH -ChildPath "active-response\bin"
+    $USB_DLP_BASE_URL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/files/active-response"
+
+    try {
+        InfoMessage "Installing USB DLP Active Response scripts..."
+
+        # Create directory if it doesn't exist
+        if (!(Test-Path -Path $AR_BIN_DIR)) {
+            New-Item -ItemType Directory -Path $AR_BIN_DIR -Force | Out-Null
+        }
+
+        # Download USB storage blocking script
+        $USBStorageScript = Join-Path -Path $AR_BIN_DIR -ChildPath "disable-usb-storage.ps1"
+        InfoMessage "Downloading disable-usb-storage.ps1..."
+        Invoke-WebRequest -Uri "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -OutFile $USBStorageScript -ErrorAction Stop
+
+        # Download USB HID alerting script
+        $USBHIDScript = Join-Path -Path $AR_BIN_DIR -ChildPath "alert-usb-hid.ps1"
+        InfoMessage "Downloading alert-usb-hid.ps1..."
+        Invoke-WebRequest -Uri "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -OutFile $USBHIDScript -ErrorAction Stop
+
+        SuccessMessage "USB DLP Active Response scripts installed successfully."
+        InfoMessage "  - $USBStorageScript"
+        InfoMessage "  - $USBHIDScript"
+    }
+    catch {
+        ErrorMessage "Error during USB DLP scripts installation: $($_.Exception.Message)"
+    }
+}
+
 function DownloadVersionFile {
     InfoMessage "Downloading version file..."
     if (!(Test-Path -Path $OSSEC_PATH)) {
@@ -331,6 +363,9 @@ try {
     else {
         WarningMessage "Neither Snort nor Suricata selected for installation. Skipping."
     }
+
+    SectionSeparator "Installing USB DLP Scripts"
+    Install-USBDLPScripts
 
     SectionSeparator "Downloading Version File"
     DownloadVersionFile

@@ -279,7 +279,49 @@ if [ "$INSTALL_TRIVY" = "TRUE" ]; then
     fi
 fi
 
-# Step 7: Download version file
+# Step 7: Install USB DLP Active Response scripts
+info_message "Installing USB DLP Active Response scripts..."
+
+# Determine Active Response bin directory based on OS
+if [ "$(uname)" = "Darwin" ]; then
+    AR_BIN_DIR="/Library/Ossec/active-response/bin"
+else
+    AR_BIN_DIR="/var/ossec/active-response/bin"
+fi
+
+# Create directory if it doesn't exist
+maybe_sudo mkdir -p "$AR_BIN_DIR"
+
+# Download and install USB DLP scripts
+USB_DLP_BASE_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/files/active-response"
+
+if [ "$(uname)" = "Darwin" ]; then
+    # macOS-specific scripts
+    info_message "Installing macOS USB DLP scripts..."
+    curl -SL -s "$USB_DLP_BASE_URL/disable-usb-storage-macos.sh" -o "$TMP_FOLDER/disable-usb-storage-macos.sh"
+    curl -SL -s "$USB_DLP_BASE_URL/alert-usb-hid.sh" -o "$TMP_FOLDER/alert-usb-hid.sh"
+
+    maybe_sudo cp "$TMP_FOLDER/disable-usb-storage-macos.sh" "$AR_BIN_DIR/"
+    maybe_sudo cp "$TMP_FOLDER/alert-usb-hid.sh" "$AR_BIN_DIR/"
+
+    maybe_sudo chown root:wazuh "$AR_BIN_DIR/disable-usb-storage-macos.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
+    maybe_sudo chmod 750 "$AR_BIN_DIR/disable-usb-storage-macos.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
+else
+    # Linux-specific scripts
+    info_message "Installing Linux USB DLP scripts..."
+    curl -SL -s "$USB_DLP_BASE_URL/disable-usb-storage.sh" -o "$TMP_FOLDER/disable-usb-storage.sh"
+    curl -SL -s "$USB_DLP_BASE_URL/alert-usb-hid.sh" -o "$TMP_FOLDER/alert-usb-hid.sh"
+
+    maybe_sudo cp "$TMP_FOLDER/disable-usb-storage.sh" "$AR_BIN_DIR/"
+    maybe_sudo cp "$TMP_FOLDER/alert-usb-hid.sh" "$AR_BIN_DIR/"
+
+    maybe_sudo chown root:wazuh "$AR_BIN_DIR/disable-usb-storage.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
+    maybe_sudo chmod 750 "$AR_BIN_DIR/disable-usb-storage.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
+fi
+
+success_message "USB DLP Active Response scripts installed successfully."
+
+# Step 8: Download version file
 info_message "Downloading version file..."
 if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/version.txt" -o "$OSSEC_PATH/version.txt") 2>&1; then
     error_message "Failed to download version file"
