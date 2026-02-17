@@ -5,14 +5,32 @@ on:
     branches:
       - main
       - develop
-    tags:
-      - 'v*'
   pull_request:
     branches:
       - main
       - develop
 
 jobs:
+  # ============================================
+  # Release Please - Changelog & Version Management
+  # ============================================
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
   # ============================================
   # Code Quality - Linting
   # ============================================
@@ -246,38 +264,40 @@ jobs:
           fi
 
   # ============================================
-  # Release
+  # Release Assets
   # ============================================
-  release:
-    name: Create Release
+  release-assets:
+    name: Upload Release Assets
     permissions: write-all
     runs-on: ubuntu-latest
-    needs: [integration]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [release-please, integration]
+    if: needs.release-please.outputs.release_created == 'true'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Get the version
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
       - name: Generate checksums
         run: |
           echo "Generating SHA256 checksums..."
-          sha256sum scripts/*.sh scripts/*.ps1 lib/*.sh lib/*.psm1 > checksums.sha256
+          sha256sum install.sh Install.ps1 scripts/*.sh scripts/*.ps1 lib/*.sh lib/*.psm1 > checksums.sha256
+          echo "=== Checksums ==="
           cat checksums.sha256
 
-      - name: Create Release
-        id: create_release
+      - name: Upload checksums to release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.get_version.outputs.VERSION }}
-          name: Release ${{ steps.get_version.outputs.VERSION }}
-          draft: false
-          prerelease: false
+          tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: |
             checksums.sha256
+            versions.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update checksums in repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add checksums.sha256
+          git commit -m "chore: update checksums for ${{ needs.release-please.outputs.tag_name }}" || echo "No changes to commit"
+          git push
