@@ -10,6 +10,7 @@
   "components": {
     "wazuh-agent": {
       "version": "4.13.1-1",
+      "repository": "wazuh/wazuh",
       "min_compatible": "4.10.0",
       "max_compatible": "4.99.99",
       "documentation": "https://documentation.wazuh.com/current/release-notes/"
