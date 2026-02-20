@@ -268,22 +268,18 @@ jobs:
           fi
 
   # ============================================
-  # Release Assets (disabled until release-please is fixed)
+  # Release Assets
   # ============================================
   release-assets:
     name: Upload Release Assets
     permissions: write-all
     runs-on: ubuntu-latest
-    needs: [integration]
-    #if: needs.release-please.outputs.release_created == 'true'
+    needs: [release-please, integration]
+    if: needs.release-please.outputs.release_created == 'true'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Get version
-        id: version
-        run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
 
       - name: Generate checksums
         run: |
@@ -295,7 +291,7 @@ jobs:
       - name: Upload checksums to release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ steps.version.outputs.version }}
+          tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: |
             checksums.sha256
             versions.json
@@ -307,5 +303,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add checksums.sha256
-          git commit -m "chore: update checksums for v${{ steps.version.outputs.version }}" || echo "No changes to commit"
+          git commit -m "chore: update checksums for ${{ needs.release-please.outputs.tag_name }}" || echo "No changes to commit"
           git push
