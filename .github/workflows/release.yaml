@@ -282,17 +282,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Get version
+        id: version
+        run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
+
       - name: Generate checksums
         run: |
           echo "Generating SHA256 checksums..."
-          sha256sum install.sh install.ps1 scripts/*.sh scripts/*.ps1 lib/*.sh lib/*.psm1 > checksums.sha256
+          sha256sum install.sh Install.ps1 scripts/*.sh scripts/*.ps1 lib/*.sh lib/*.psm1 > checksums.sha256
           echo "=== Checksums ==="
           cat checksums.sha256
 
       - name: Upload checksums to release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          tag_name: v${{ steps.version.outputs.version }}
           files: |
             checksums.sha256
             versions.json
@@ -304,5 +308,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add checksums.sha256
-          git commit -m "chore: update checksums for ${{ needs.release-please.outputs.tag_name }}" || echo "No changes to commit"
+          git commit -m "chore: update checksums for v${{ steps.version.outputs.version }}" || echo "No changes to commit"
           git push
