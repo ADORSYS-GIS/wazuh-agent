@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "wazuh-agent",
+  "description": "Wazuh Agent deployment framework version compatibility matrix",
+  "framework": {
+    "version": "1.6.0",
+    "release_date": "2026-02-17",
+    "min_supported": "1.4.0"
+  },
+  "components": {
+    "wazuh-agent": {
+      "version": "4.13.1-1",
+      "repository": "wazuh/wazuh",
+      "min_compatible": "4.10.0",
+      "max_compatible": "4.99.99",
+      "documentation": "https://documentation.wazuh.com/current/release-notes/"
+    },
+    "wazuh-yara": {
+      "version": "0.3.11",
+      "repository": "ADORSYS-GIS/wazuh-yara",
+      "min_compatible": "0.3.0",
+      "max_compatible": "0.4.99"
+    },
+    "wazuh-suricata": {
+      "version": "0.1.4",
+      "repository": "ADORSYS-GIS/wazuh-suricata",
+      "min_compatible": "0.1.0",
+      "max_compatible": "0.2.99"
+    },
+    "wazuh-snort": {
+      "version": "0.2.4",
+      "repository": "ADORSYS-GIS/wazuh-snort",
+      "min_compatible": "0.2.0",
+      "max_compatible": "0.3.99"
+    },
+    "wazuh-cert-oauth2": {
+      "version": "0.2.9",
+      "repository": "ADORSYS-GIS/wazuh-cert-oauth2",
+      "min_compatible": "0.2.0",
+      "max_compatible": "0.3.99"
+    },
+    "wazuh-agent-status": {
+      "version": "0.1.12",
+      "repository": "ADORSYS-GIS/wazuh-agent-status",
+      "min_compatible": "0.1.0",
+      "max_compatible": "0.2.99"
+    },
+    "trivy": {
+      "version": "latest",
+      "optional": true,
+      "documentation": "https://aquasecurity.github.io/trivy/"
+    }
+  },
+  "platform_support": {
+    "linux": {
+      "distributions": ["ubuntu", "debian", "rhel", "centos", "alpine", "opensuse"],
+      "architectures": ["x86_64", "arm64"]
+    },
+    "macos": {
+      "min_version": "11.0",
+      "architectures": ["x86_64", "arm64"]
+    },
+    "windows": {
+      "min_version": "10",
+      "editions": ["Windows 10", "Windows 11", "Windows Server 2016+"],
+      "architectures": ["x86_64"]
+    }
+  },
+  "environment_variables": {
+    "required": {
+      "WAZUH_MANAGER": {
+        "description": "Wazuh Manager hostname or IP address",
+        "example": "wazuh.company.com"
+      }
+    },
+    "optional": {
+      "WAZUH_AGENT_VERSION": {
+        "description": "Wazuh Agent version to install",
+        "default": "4.13.1-1"
+      },
+      "WAZUH_AGENT_NAME": {
+        "description": "Agent registration name",
+        "default": "$(hostname)"
+      },
+      "WAZUH_AGENT_REPO_VERSION": {
+        "description": "Git branch/tag for this repository",
+        "default": "main"
+      }
+    }
+  }
+}

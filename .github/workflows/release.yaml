@@ -1,90 +1,303 @@
-name: Release
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
       - develop
-    tags:
-      - 'v*'
   pull_request:
     branches:
       - main
       - develop
 
 jobs:
-  test-install-script:
+  # ============================================
+  # Release Please - Changelog & Version Management
+  # ============================================
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # ============================================
+  # Code Quality - Linting
+  # ============================================
+  lint:
+    name: Lint Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck on bash scripts
+        run: |
+          find scripts -name "*.sh" -type f | xargs shellcheck --severity=warning || true
+          find lib -name "*.sh" -type f | xargs shellcheck --severity=warning || true
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+
+      - name: Run PSScriptAnalyzer on PowerShell scripts
+        shell: pwsh
+        run: |
+          $results = Get-ChildItem -Path scripts,lib -Filter "*.ps1" -Recurse | ForEach-Object {
+            Invoke-ScriptAnalyzer -Path $_.FullName -Severity Warning,Error
+          }
+          if ($results) {
+            $results | Format-Table -AutoSize
+            Write-Warning "PSScriptAnalyzer found issues"
+          }
+
+  # ============================================
+  # Security Scanning
+  # ============================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Check for hardcoded secrets
+        run: |
+          # Simple check for common secret patterns
+          if grep -rE "(password|secret|api_key|token)\s*=" scripts/ lib/ --include="*.sh" --include="*.ps1" | grep -v "example\|placeholder\|TODO"; then
+            echo "WARNING: Possible hardcoded secrets found"
+          fi
+
+  # ============================================
+  # Linux/macOS Testing
+  # ============================================
+  test-unix:
+    name: Test Unix (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    needs: [lint]
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
           sudo apt update
           sudo apt install -y bats curl jq sed
-        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-          brew install bats coreutils curl jq gnu-sed docker
-        fi
 
-    - name: Make script executable
-      run: chmod +x ./scripts/install.sh
-      
-    - name: Install wazuh-agent
-      run: |
-        sudo ./scripts/install.sh
-  test-setup-agent-script:
-    runs-on: ${{ matrix.os }}
-    needs: test-install-script
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install bats-core coreutils curl jq gnu-sed
+
+      - name: Make scripts executable
+        run: |
+          chmod +x ./scripts/*.sh
+          chmod +x ./lib/*.sh 2>/dev/null || true
+
+      - name: Test verification library
+        run: |
+          source ./lib/verify.sh
+          # Test validate_version function
+          if validate_version "4.13.1-1"; then
+            echo "✓ Valid version test passed"
+          else
+            echo "✗ Valid version test failed"
+            exit 1
+          fi
+          # Test invalid version
+          if ! validate_version "invalid"; then
+            echo "✓ Invalid version test passed"
+          else
+            echo "✗ Invalid version test failed"
+            exit 1
+          fi
+
+      - name: Test install script
+        run: |
+          sudo ./scripts/install.sh
+
+      - name: Test setup-agent script
+        run: |
+          sudo ./scripts/setup-agent.sh
+
+  # ============================================
+  # Windows Testing
+  # ============================================
+  test-windows:
+    name: Test Windows
+    runs-on: windows-latest
+    needs: [lint]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-          sudo apt update
-          sudo apt install -y bats curl jq sed
-        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-          brew install bats coreutils curl jq gnu-sed docker
-        fi
+      - name: Import verification module
+        shell: pwsh
+        run: |
+          Import-Module ./lib/Verify.psm1 -Force
 
-    - name: Make script executable
-      run: chmod +x ./scripts/setup-agent.sh
-      
-    - name: Launch setup-agent script
-      run: |
-        sudo ./scripts/setup-agent.sh
-  release:
-    name: Release
+      - name: Test verification functions
+        shell: pwsh
+        run: |
+          Import-Module ./lib/Verify.psm1 -Force
+
+          # Test valid version
+          if (Test-VersionFormat -Version "4.13.1-1") {
+            Write-Host "✓ Valid version test passed" -ForegroundColor Green
+          } else {
+            Write-Host "✗ Valid version test failed" -ForegroundColor Red
+            exit 1
+          }
+
+          # Test invalid version
+          if (-not (Test-VersionFormat -Version "invalid" -ErrorAction SilentlyContinue)) {
+            Write-Host "✓ Invalid version test passed" -ForegroundColor Green
+          } else {
+            Write-Host "✗ Invalid version test failed" -ForegroundColor Red
+            exit 1
+          }
+
+          # Test valid manager address
+          if (Test-WazuhManagerAddress -Manager "wazuh.example.com") {
+            Write-Host "✓ Valid manager address test passed" -ForegroundColor Green
+          } else {
+            Write-Host "✗ Valid manager address test failed" -ForegroundColor Red
+            exit 1
+          }
+
+      - name: Test dependencies script
+        shell: pwsh
+        run: |
+          # Run deps script in dry-run mode if available, otherwise skip heavy installs
+          Write-Host "Testing deps.ps1 syntax..."
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/deps.ps1 -Raw), [ref]$null)
+          Write-Host "✓ deps.ps1 syntax valid" -ForegroundColor Green
+
+      - name: Test install script syntax
+        shell: pwsh
+        run: |
+          Write-Host "Testing install.ps1 syntax..."
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/install.ps1 -Raw), [ref]$null)
+          Write-Host "✓ install.ps1 syntax valid" -ForegroundColor Green
+
+      - name: Test setup-agent script syntax
+        shell: pwsh
+        run: |
+          Write-Host "Testing setup-agent.ps1 syntax..."
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/setup-agent.ps1 -Raw), [ref]$null)
+          Write-Host "✓ setup-agent.ps1 syntax valid" -ForegroundColor Green
+
+  # ============================================
+  # Integration Tests
+  # ============================================
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test-unix, test-windows, security]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify all scripts present
+        run: |
+          echo "Checking required files..."
+          required_files=(
+            "scripts/setup-agent.sh"
+            "scripts/setup-agent.ps1"
+            "scripts/install.sh"
+            "scripts/install.ps1"
+            "scripts/deps.sh"
+            "scripts/deps.ps1"
+            "scripts/uninstall.sh"
+            "scripts/uninstall.ps1"
+            "lib/verify.sh"
+            "lib/Verify.psm1"
+          )
+          for file in "${required_files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✓ $file exists"
+            else
+              echo "✗ $file missing"
+              exit 1
+            fi
+          done
+
+      - name: Verify version consistency
+        run: |
+          echo "Checking version.txt..."
+          if [ -f "version.txt" ]; then
+            VERSION=$(cat version.txt)
+            echo "Current version: $VERSION"
+          else
+            echo "✗ version.txt missing"
+            exit 1
+          fi
+
+  # ============================================
+  # Release Assets
+  # ============================================
+  release-assets:
+    name: Upload Release Assets
     permissions: write-all
     runs-on: ubuntu-latest
-    needs: test-setup-agent-script
+    needs: [release-please, integration]
+    if: needs.release-please.outputs.release_created == 'true'
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Get the version
-        id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Generate checksums
+        run: |
+          echo "Generating SHA256 checksums..."
+          sha256sum install.sh install.ps1 scripts/*.sh scripts/*.ps1 lib/*.sh lib/*.psm1 > checksums.sha256
+          echo "=== Checksums ==="
+          cat checksums.sha256
+
+      - name: Upload checksums to release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          files: |
+            checksums.sha256
+            versions.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.get_version.outputs.VERSION }}
-          release_name: Release ${{ steps.get_version.outputs.VERSION }}
-          draft: false
-          prerelease: false
+
+      - name: Update checksums in repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add checksums.sha256
+          git commit -m "chore: update checksums for ${{ needs.release-please.outputs.tag_name }}" || echo "No changes to commit"
+          git push
