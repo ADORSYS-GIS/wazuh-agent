@@ -53,17 +53,36 @@
   },
   "platform_support": {
     "linux": {
-      "distributions": ["ubuntu", "debian", "rhel", "centos", "alpine", "opensuse"],
-      "architectures": ["x86_64", "arm64"]
+      "distributions": [
+        "ubuntu",
+        "debian",
+        "rhel",
+        "centos",
+        "alpine",
+        "opensuse"
+      ],
+      "architectures": [
+        "x86_64",
+        "arm64"
+      ]
     },
     "macos": {
       "min_version": "11.0",
-      "architectures": ["x86_64", "arm64"]
+      "architectures": [
+        "x86_64",
+        "arm64"
+      ]
     },
     "windows": {
       "min_version": "10",
-      "editions": ["Windows 10", "Windows 11", "Windows Server 2016+"],
-      "architectures": ["x86_64"]
+      "editions": [
+        "Windows 10",
+        "Windows 11",
+        "Windows Server 2016+"
+      ],
+      "architectures": [
+        "x86_64"
+      ]
     }
   },
   "environment_variables": {
