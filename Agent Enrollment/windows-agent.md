@@ -28,7 +28,7 @@ The installer automatically verifies script integrity using SHA256 checksums bef
 $env:WAZUH_MANAGER = "wazuh.your-company.com"
 
 # Run the verified installer
-irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/Install.ps1 | iex
+irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1 | iex
 ```
 
 **What happens:**
@@ -41,21 +41,21 @@ irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/Install.ps1 |
 
 ```powershell
 $env:WAZUH_MANAGER = "wazuh.your-company.com"
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/Install.ps1" -OutFile "$env:TEMP\Install.ps1"
-& "$env:TEMP\Install.ps1" -InstallSuricata
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1" -OutFile "$env:TEMP\install.ps1"
+& "$env:TEMP\install.ps1" -InstallSuricata
 ```
 
 **With Snort instead of Suricata:**
 ```powershell
 $env:WAZUH_MANAGER = "wazuh.your-company.com"
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/Install.ps1" -OutFile "$env:TEMP\Install.ps1"
-& "$env:TEMP\Install.ps1" -InstallSnort
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1" -OutFile "$env:TEMP\install.ps1"
+& "$env:TEMP\install.ps1" -InstallSnort
 ```
 
 **Show all options:**
 ```powershell
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/Install.ps1" -OutFile "$env:TEMP\Install.ps1"
-& "$env:TEMP\Install.ps1" -Help
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1" -OutFile "$env:TEMP\install.ps1"
+& "$env:TEMP\install.ps1" -Help
 ```
 
 ### Step 2: GNU Sed Installation

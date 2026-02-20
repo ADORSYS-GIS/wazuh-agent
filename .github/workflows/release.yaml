@@ -280,7 +280,7 @@ jobs:
       - name: Generate checksums
         run: |
           echo "Generating SHA256 checksums..."
-          sha256sum install.sh Install.ps1 scripts/*.sh scripts/*.ps1 lib/*.sh lib/*.psm1 > checksums.sha256
+          sha256sum install.sh install.ps1 scripts/*.sh scripts/*.ps1 lib/*.sh lib/*.psm1 > checksums.sha256
           echo "=== Checksums ==="
           cat checksums.sha256
 

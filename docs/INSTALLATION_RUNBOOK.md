@@ -138,22 +138,22 @@ $env:WAZUH_MANAGER = "wazuh.your-company.com"
 
 **Step 4: Run the Installer**
 ```powershell
-irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/Install.ps1 | iex
+irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1 | iex
 ```
 
 **Alternative: Download and Run with Options**
 ```powershell
 # Download the installer
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/Install.ps1" -OutFile "$env:TEMP\Install.ps1"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1" -OutFile "$env:TEMP\install.ps1"
 
 # Run with Suricata
-& "$env:TEMP\Install.ps1" -InstallSuricata
+& "$env:TEMP\install.ps1" -InstallSuricata
 
 # Or run with Snort
-& "$env:TEMP\Install.ps1" -InstallSnort
+& "$env:TEMP\install.ps1" -InstallSnort
 
 # Show help
-& "$env:TEMP\Install.ps1" -Help
+& "$env:TEMP\install.ps1" -Help
 ```
 
 **Note for Windows:** During installation, a pop-up for GNU sed will appear. Follow the on-screen prompts to complete the installation.

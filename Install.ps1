@@ -17,10 +17,10 @@
 
 .EXAMPLE
     # Run directly from GitHub:
-    irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/Install.ps1 | iex
+    irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1 | iex
 
     # Or download and run with options:
-    .\Install.ps1 -InstallSuricata
+    .\install.ps1 -InstallSuricata
 
 .NOTES
     Environment Variables:
@@ -105,10 +105,10 @@ Wazuh Agent Bootstrap Installer
 ================================
 
 Usage:
-  .\Install.ps1 [-InstallSuricata] [-InstallSnort] [-SkipVerify] [-Help]
+  .\install.ps1 [-InstallSuricata] [-InstallSnort] [-SkipVerify] [-Help]
 
   Or run directly from GitHub:
-  irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/Install.ps1 | iex
+  irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1 | iex
 
 Parameters:
   -InstallSuricata  Install Suricata as NIDS (default)
@@ -123,10 +123,10 @@ Environment Variables:
 Examples:
   # Set manager and run
   `$env:WAZUH_MANAGER = "wazuh.company.com"
-  .\Install.ps1 -InstallSuricata
+  .\install.ps1 -InstallSuricata
 
   # One-liner from web
-  `$env:WAZUH_MANAGER = "wazuh.company.com"; irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/Install.ps1 | iex
+  `$env:WAZUH_MANAGER = "wazuh.company.com"; irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1 | iex
 
 "@ -ForegroundColor Cyan
 }

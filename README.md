@@ -53,14 +53,14 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/instal
 $env:WAZUH_MANAGER = "wazuh.your-company.com"
 
 # Run the verified installer
-irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/Install.ps1 | iex
+irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1 | iex
 ```
 
 **Or download and run with options:**
 ```powershell
 $env:WAZUH_MANAGER = "wazuh.your-company.com"
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/Install.ps1" -OutFile Install.ps1
-.\Install.ps1 -InstallSuricata
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1" -OutFile install.ps1
+.\install.ps1 -InstallSuricata
 ```
 
 ---
@@ -165,7 +165,7 @@ For step-by-step instructions with screenshots:
 | Script | Platform | Description |
 |--------|----------|-------------|
 | `install.sh` | Linux/macOS | **Bootstrap installer** - downloads, verifies, executes |
-| `Install.ps1` | Windows | **Bootstrap installer** - downloads, verifies, executes |
+| `install.ps1` | Windows | **Bootstrap installer** - downloads, verifies, executes |
 | `scripts/setup-agent.sh` | Linux/macOS | Full agent setup with all components |
 | `scripts/setup-agent.ps1` | Windows | Full agent setup with all components |
 | `scripts/install.sh` | Linux/macOS | Core Wazuh agent installation only |
