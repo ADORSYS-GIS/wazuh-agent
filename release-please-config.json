@@ -12,7 +12,11 @@
       "release-type": "simple",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
-        "versions.json"
+        {
+          "type": "json",
+          "path": "versions.json",
+          "jsonpath": "$.framework.version"
+        }
       ]
     }
   },

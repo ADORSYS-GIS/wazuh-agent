@@ -3,7 +3,7 @@
   "name": "wazuh-agent",
   "description": "Wazuh Agent deployment framework version compatibility matrix",
   "framework": {
-    "version": "1.6.0",
+    "version": "1.8.0",
     "release_date": "2026-02-17",
     "min_supported": "1.4.0"
   },
