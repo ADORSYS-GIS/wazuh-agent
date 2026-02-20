@@ -17,7 +17,9 @@ jobs:
   release-please:
     name: Release Please
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # TODO: Re-enable once org allows "Allow GitHub Actions to create PRs" setting
+    # Currently blocked by organization policy overriding repository settings
+    if: false && github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
       pull-requests: write
@@ -267,13 +269,13 @@ jobs:
           fi
 
   # ============================================
-  # Release Assets
+  # Release Assets (disabled until release-please is fixed)
   # ============================================
   release-assets:
     name: Upload Release Assets
     permissions: write-all
     runs-on: ubuntu-latest
-    needs: [release-please, integration]
+    needs: [integration]
     if: needs.release-please.outputs.release_created == 'true'
 
     steps:
