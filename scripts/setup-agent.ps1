@@ -14,15 +14,16 @@ $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.ex
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.2-1" }
 $OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\" 
 $OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
-$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
-$VERSION_FILE_URL = "$RepoUrl/version.txt"
-$VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
 $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.11" }
 $WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4" }
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.4.1-rc4-user" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.0" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.1.4" }
+$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.7.0" }
+$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION"
+$VERSION_FILE_URL = "$RepoUrl/version.txt"
+$VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 
 # Global array to track installer files
 $global:InstallerFiles = @()
@@ -81,7 +82,7 @@ function Cleanup-Installers {
 
 # Step 0: Download dependency script and execute
 function Install-Dependencies {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/deps.ps1"
+    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/deps.ps1"
     $InstallerPath = "$env:TEMP\deps.ps1"
     $global:InstallerFiles += $InstallerPath
 
@@ -98,7 +99,7 @@ function Install-Dependencies {
 
 # Step 1: Download and execute Wazuh agent script with error handling
 function Install-WazuhAgent {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/install.ps1"
+    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/install.ps1"
     $InstallerPath = "$env:TEMP\install.ps1"
     $global:InstallerFiles += $InstallerPath
 
@@ -239,6 +240,38 @@ function Install-AgentStatus {
     }
 }
 
+# Step 7: Install USB DLP Active Response scripts
+function Install-USBDLPScripts {
+    $AR_BIN_DIR = Join-Path -Path $OSSEC_PATH -ChildPath "active-response\bin"
+    $USB_DLP_BASE_URL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/files/active-response"
+
+    try {
+        InfoMessage "Installing USB DLP Active Response scripts..."
+
+        # Create directory if it doesn't exist
+        if (!(Test-Path -Path $AR_BIN_DIR)) {
+            New-Item -ItemType Directory -Path $AR_BIN_DIR -Force | Out-Null
+        }
+
+        # Download USB storage blocking script
+        $USBStorageScript = Join-Path -Path $AR_BIN_DIR -ChildPath "disable-usb-storage.ps1"
+        InfoMessage "Downloading disable-usb-storage.ps1..."
+        Invoke-WebRequest -Uri "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -OutFile $USBStorageScript -ErrorAction Stop
+
+        # Download USB HID alerting script
+        $USBHIDScript = Join-Path -Path $AR_BIN_DIR -ChildPath "alert-usb-hid.ps1"
+        InfoMessage "Downloading alert-usb-hid.ps1..."
+        Invoke-WebRequest -Uri "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -OutFile $USBHIDScript -ErrorAction Stop
+
+        SuccessMessage "USB DLP Active Response scripts installed successfully."
+        InfoMessage "  - $USBStorageScript"
+        InfoMessage "  - $USBHIDScript"
+    }
+    catch {
+        ErrorMessage "Error during USB DLP scripts installation: $($_.Exception.Message)"
+    }
+}
+
 function DownloadVersionFile {
     InfoMessage "Downloading version file..."
     if (!(Test-Path -Path $OSSEC_PATH)) {
@@ -269,12 +302,12 @@ function Show-Help {
     Write-Host "  LOG_LEVEL          : Sets the logging level (e.g., INFO, DEBUG). Default: INFO" -ForegroundColor Cyan
     Write-Host "  APP_NAME           : Sets the application name. Default: wazuh-cert-oauth2-client" -ForegroundColor Cyan
     Write-Host "  WAZUH_MANAGER      : Sets the Wazuh Manager address. Default: wazuh.example.com" -ForegroundColor Cyan
-    Write-Host "  WAZUH_AGENT_VERSION: Sets the Wazuh Agent version. Default: 4.14.2-1" -ForegroundColor Cyan
-    Write-Host "  WAZUH_YARA_VERSION : Sets the Wazuh YARA module version. Default: 0.3.4" -ForegroundColor Cyan
-    Write-Host "  WAZUH_SNORT_VERSION: Sets the Wazuh Snort module version. Default: 0.2.2" -ForegroundColor Cyan
-    Write-Host "  WAZUH_SURICATA_VERSION: Sets the Wazuh Suricata module version. Default: 0.1.0" -ForegroundColor Cyan
-    Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: 0.4.1-rc4-user" -ForegroundColor Cyan
-    Write-Host "  WOPS_VERSION       : Sets the WOPS client version. Default: 0.4.0" -ForegroundColor Cyan
+    Write-Host "  WAZUH_AGENT_VERSION: Sets the Wazuh Agent version. Default: $WAZUH_AGENT_VERSION" -ForegroundColor Cyan
+    Write-Host "  WAZUH_YARA_VERSION : Sets the Wazuh YARA module version. Default: $WAZUH_YARA_VERSION" -ForegroundColor Cyan
+    Write-Host "  WAZUH_SNORT_VERSION: Sets the Wazuh Snort module version. Default: $WAZUH_SNORT_VERSION" -ForegroundColor Cyan
+    Write-Host "  WAZUH_SURICATA_VERSION: Sets the Wazuh Suricata module version. Default: $WAZUH_SURICATA_VERSION" -ForegroundColor Cyan
+    Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: $WAZUH_AGENT_STATUS_VERSION" -ForegroundColor Cyan
+    Write-Host "  WOPS_VERSION       : Sets the WOPS client version. Default: $WOPS_VERSION" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Examples:" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -InstallSnort" -ForegroundColor Cyan
@@ -330,6 +363,9 @@ try {
     else {
         WarningMessage "Neither Snort nor Suricata selected for installation. Skipping."
     }
+
+    SectionSeparator "Installing USB DLP Scripts"
+    Install-USBDLPScripts
 
     SectionSeparator "Downloading Version File"
     DownloadVersionFile
