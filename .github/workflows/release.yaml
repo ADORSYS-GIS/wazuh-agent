@@ -5,10 +5,12 @@ on:
     branches:
       - main
       - develop
+      - hotfix/**
   pull_request:
     branches:
       - main
       - develop
+      - hotfix/**
 
 jobs:
   # ============================================
@@ -17,7 +19,7 @@ jobs:
   release-please:
     name: Release Please
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/hotfix/')) && github.event_name == 'push'
     permissions:
       contents: write
       pull-requests: write
@@ -150,8 +152,10 @@ jobs:
           sudo ./scripts/install.sh
 
       - name: Test setup-agent script
+        env:
+          WAZUH_AGENT_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
         run: |
-          sudo ./scripts/setup-agent.sh
+          sudo -E ./scripts/setup-agent.sh
 
   # ============================================
   # Windows Testing
