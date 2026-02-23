@@ -13,7 +13,7 @@ This document describes all environment variables used by the Wazuh Agent instal
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `WAZUH_MANAGER` | `wazuh.example.com` | Wazuh Manager address (hostname or IP) |
-| `WAZUH_AGENT_VERSION` | `4.13.1-1` | Wazuh Agent version to install |
+| `WAZUH_AGENT_VERSION` | `4.14.2-1` | Wazuh Agent version to install |
 | `WAZUH_AGENT_NAME` | `$(hostname)` | Agent registration name |
 | `WAZUH_AGENT_GROUP` | *(none)* | Agent group for enrollment |
 
@@ -21,9 +21,9 @@ This document describes all environment variables used by the Wazuh Agent instal
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `WAZUH_AGENT_REPO_VERSION` | `1.8.0` | Version of this installer repository |
-| `WOPS_VERSION` | `0.3.0` | Wazuh Cert OAuth2 client version |
-| `WAZUH_AGENT_STATUS_VERSION` | `0.3.3` | Wazuh Agent Status tool version |
+| `WAZUH_AGENT_REPO_VERSION` | `1.8.1` | Version of this installer repository |
+| `WOPS_VERSION` | `0.4.1` | Wazuh Cert OAuth2 client version |
+| `WAZUH_AGENT_STATUS_VERSION` | `0.4.1-rc4-user` | Wazuh Agent Status tool version |
 | `WAZUH_YARA_VERSION` | `0.3.11` | Wazuh Yara integration version |
 | `WAZUH_SNORT_VERSION` | `0.2.4` | Wazuh Snort integration version |
 | `WAZUH_SURICATA_VERSION` | `0.1.4` | Wazuh Suricata integration version |
@@ -79,7 +79,7 @@ export LOG_LEVEL="DEBUG"
 
 ```powershell
 $env:WAZUH_MANAGER = "wazuh.mycompany.com"
-$env:WAZUH_AGENT_VERSION = "4.13.1-1"
+$env:WAZUH_AGENT_VERSION = "4.14.2-1"
 .\scripts\setup-agent.ps1 -InstallSuricata
 ```
 
@@ -113,7 +113,7 @@ export WAZUH_MANAGER="wazuh.mycompany.com"
 
 - **Format:** `X.Y.Z` or `X.Y.Z-N` where X, Y, Z, N are integers
 - **Examples:**
-  - Valid: `4.13.1-1`, `0.3.11`, `1.0.0`
+  - Valid: `4.14.2-1`, `0.3.11`, `1.0.0`
   - Invalid: `v4.13.1`, `4.13`, `latest`
 
 ### LOG_LEVEL
@@ -166,5 +166,5 @@ ERROR: Invalid version format: v4.13.1
 
 **Solution:** Remove 'v' prefix:
 ```bash
-export WAZUH_AGENT_VERSION="4.13.1-1"  # Correct
+export WAZUH_AGENT_VERSION="4.14.2-1"  # Correct
 ```
