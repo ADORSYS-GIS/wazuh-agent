@@ -12,7 +12,7 @@ fi
 # ==============================================================================
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
-WOPS_VERSION=${WOPS_VERSION:-"0.3.0"}
+WOPS_VERSION=${WOPS_VERSION:-"0.4.1"}
 WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.11"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.4"}
 WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.4"}
@@ -30,9 +30,9 @@ GROUP=${GROUP:-"wazuh"}
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.13.1-1'}
-WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.3.3'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.4.1-rc4-user'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.7.0'}
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.0'}
 
 # Installation choice variables
 IDS_ENGINE=""
@@ -323,7 +323,7 @@ success_message "USB DLP Active Response scripts installed successfully."
 
 # Step 8: Download version file
 info_message "Downloading version file..."
-if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/version.txt" -o "$OSSEC_PATH/version.txt") 2>&1; then
+if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/version.txt" -o "$OSSEC_PATH/version.txt") 2>&1; then
     error_message "Failed to download version file"
     exit 1
 fi
