@@ -4,11 +4,13 @@ on:
   push:
     branches:
       - main
-      - develop
+      - develop/**
+      - hotfix/**
   pull_request:
     branches:
       - main
-      - develop
+      - develop/**
+      - hotfix/**
 
 jobs:
   # ============================================
@@ -17,7 +19,7 @@ jobs:
   release-please:
     name: Release Please
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/hotfix/') || startsWith(github.ref, 'refs/heads/develop/')) && github.event_name == 'push'
     permissions:
       contents: write
       pull-requests: write
@@ -26,14 +28,38 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag_name }}
       version: ${{ steps.release.outputs.version }}
     steps:
+      - name: Select Release Please config
+        id: config
+        run: |
+          if [[ "${{ github.ref }}" == refs/heads/develop/* ]]; then
+            echo "config_file=release-please-config-rc.json" >> $GITHUB_OUTPUT
+            echo "manifest_file=.release-please-manifest-rc.json" >> $GITHUB_OUTPUT
+          else
+            echo "config_file=release-please-config.json" >> $GITHUB_OUTPUT
+            echo "manifest_file=.release-please-manifest.json" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run Release Please
         id: release
         uses: googleapis/release-please-action@v4
         with:
           # Use PAT to bypass org restrictions on GITHUB_TOKEN creating PRs
           token: ${{ secrets.RELEASE_PAT }}
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
+          config-file: ${{ steps.config.outputs.config_file }}
+          manifest-file: ${{ steps.config.outputs.manifest_file }}
+
+      - name: Mark pre-release versions
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+        run: |
+          TAG="${{ steps.release.outputs.tag_name }}"
+          if echo "$TAG" | grep -qiE '-(rc|beta|alpha|dev|pre)'; then
+            echo "Marking $TAG as prerelease"
+            gh release edit "$TAG" --prerelease
+          else
+            echo "$TAG is a stable release"
+          fi
 
   # ============================================
   # Code Quality - Linting
