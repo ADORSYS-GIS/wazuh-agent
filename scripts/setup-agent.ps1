@@ -11,17 +11,18 @@ Set-StrictMode -Version Latest
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-client" }
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
-$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.13.1-1" }
-$OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
+$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.2-1" }
+$OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\" 
 $OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
-$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.11" }
+$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.14" }
 $WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4" }
-$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.3.3" }
-$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.3.0" }
-$WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.1.4" }
-$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.7.0" }
-$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION"
+$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.4.1-rc4-user" }
+$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.2" }
+$WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.0" }
+$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.8.1" }
+$WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
+$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF"
 $VERSION_FILE_URL = "$RepoUrl/version.txt"
 $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 
@@ -82,7 +83,7 @@ function Cleanup-Installers {
 
 # Step 0: Download dependency script and execute
 function Install-Dependencies {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/deps.ps1"
+    $InstallerURL = "$RepoUrl/scripts/deps.ps1"
     $InstallerPath = "$env:TEMP\deps.ps1"
     $global:InstallerFiles += $InstallerPath
 
@@ -99,7 +100,7 @@ function Install-Dependencies {
 
 # Step 1: Download and execute Wazuh agent script with error handling
 function Install-WazuhAgent {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/install.ps1"
+    $InstallerURL = "$RepoUrl/scripts/install.ps1"
     $InstallerPath = "$env:TEMP\install.ps1"
     $global:InstallerFiles += $InstallerPath
 
@@ -107,7 +108,7 @@ function Install-WazuhAgent {
         InfoMessage "Downloading and executing Wazuh agent script..."
         Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
         InfoMessage "Wazuh agent script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ErrorAction Stop
+        & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ArgumentList "-WAZUH_AGENT_VERSION", $WAZUH_AGENT_VERSION, "-WAZUH_MANAGER", $WAZUH_MANAGER -ErrorAction Stop
     }
     catch {
         ErrorMessage "Error during Wazuh agent installation: $($_.Exception.Message)"
@@ -240,6 +241,38 @@ function Install-AgentStatus {
     }
 }
 
+# Step 7: Install USB DLP Active Response scripts
+function Install-USBDLPScripts {
+    $AR_BIN_DIR = Join-Path -Path $OSSEC_PATH -ChildPath "active-response\bin"
+    $USB_DLP_BASE_URL = "$RepoUrl/files/active-response"
+
+    try {
+        InfoMessage "Installing USB DLP Active Response scripts..."
+
+        # Create directory if it doesn't exist
+        if (!(Test-Path -Path $AR_BIN_DIR)) {
+            New-Item -ItemType Directory -Path $AR_BIN_DIR -Force | Out-Null
+        }
+
+        # Download USB storage blocking script
+        $USBStorageScript = Join-Path -Path $AR_BIN_DIR -ChildPath "disable-usb-storage.ps1"
+        InfoMessage "Downloading disable-usb-storage.ps1..."
+        Invoke-WebRequest -Uri "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -OutFile $USBStorageScript -ErrorAction Stop
+
+        # Download USB HID alerting script
+        $USBHIDScript = Join-Path -Path $AR_BIN_DIR -ChildPath "alert-usb-hid.ps1"
+        InfoMessage "Downloading alert-usb-hid.ps1..."
+        Invoke-WebRequest -Uri "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -OutFile $USBHIDScript -ErrorAction Stop
+
+        SuccessMessage "USB DLP Active Response scripts installed successfully."
+        InfoMessage "  - $USBStorageScript"
+        InfoMessage "  - $USBHIDScript"
+    }
+    catch {
+        ErrorMessage "Error during USB DLP scripts installation: $($_.Exception.Message)"
+    }
+}
+
 function DownloadVersionFile {
     InfoMessage "Downloading version file..."
     if (!(Test-Path -Path $OSSEC_PATH)) {
@@ -331,6 +364,9 @@ try {
     else {
         WarningMessage "Neither Snort nor Suricata selected for installation. Skipping."
     }
+
+    SectionSeparator "Installing USB DLP Scripts"
+    Install-USBDLPScripts
 
     SectionSeparator "Downloading Version File"
     DownloadVersionFile
