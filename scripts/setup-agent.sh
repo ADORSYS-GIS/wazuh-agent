@@ -209,8 +209,8 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
 # Step -1: Download all core scripts
 info_message "Downloading core component scripts..."
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/deps.sh" > "$TMP_FOLDER/install-deps.sh"
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent.sh"
+curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/deps.sh" > "$TMP_FOLDER/install-deps.sh"
+curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent-status.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-yara.sh"

@@ -21,7 +21,8 @@ $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.2" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.0" }
 $WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.8.1" }
-$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION"
+$WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
+$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF"
 $VERSION_FILE_URL = "$RepoUrl/version.txt"
 $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 
@@ -82,7 +83,7 @@ function Cleanup-Installers {
 
 # Step 0: Download dependency script and execute
 function Install-Dependencies {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/deps.ps1"
+    $InstallerURL = "$RepoUrl/scripts/deps.ps1"
     $InstallerPath = "$env:TEMP\deps.ps1"
     $global:InstallerFiles += $InstallerPath
 
@@ -99,7 +100,7 @@ function Install-Dependencies {
 
 # Step 1: Download and execute Wazuh agent script with error handling
 function Install-WazuhAgent {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/install.ps1"
+    $InstallerURL = "$RepoUrl/scripts/install.ps1"
     $InstallerPath = "$env:TEMP\install.ps1"
     $global:InstallerFiles += $InstallerPath
 
@@ -243,7 +244,7 @@ function Install-AgentStatus {
 # Step 7: Install USB DLP Active Response scripts
 function Install-USBDLPScripts {
     $AR_BIN_DIR = Join-Path -Path $OSSEC_PATH -ChildPath "active-response\bin"
-    $USB_DLP_BASE_URL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/files/active-response"
+    $USB_DLP_BASE_URL = "$RepoUrl/files/active-response"
 
     try {
         InfoMessage "Installing USB DLP Active Response scripts..."
