@@ -99,7 +99,7 @@ function Install-Dependencies {
 
 # Step 1: Download and execute Wazuh agent script with error handling
 function Install-WazuhAgent {
-    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/install.ps1"
+    $InstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/install.ps1"
     $InstallerPath = "$env:TEMP\install.ps1"
     $global:InstallerFiles += $InstallerPath
 
