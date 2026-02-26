@@ -45,6 +45,7 @@ jobs:
         with:
           # Use PAT to bypass org restrictions on GITHUB_TOKEN creating PRs
           token: ${{ secrets.RELEASE_PAT }}
+          target-branch: ${{ github.ref_name }}
           config-file: ${{ steps.config.outputs.config_file }}
           manifest-file: ${{ steps.config.outputs.manifest_file }}
 
