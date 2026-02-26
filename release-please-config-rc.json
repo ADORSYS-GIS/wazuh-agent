@@ -12,6 +12,8 @@
   "packages": {
     ".": {
       "release-type": "simple",
+      "prerelease": true,
+      "prerelease-type": "rc",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         {
