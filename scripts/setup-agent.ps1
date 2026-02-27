@@ -318,6 +318,23 @@ function Show-Help {
     Write-Host ""
 }
 
+# Step 9: Setup Docker monitoring (only runs if Docker is installed)
+function Install-DockerListener {
+    $DockerSetupUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/setup-docker.ps1"
+    $DockerSetupScript = "$env:TEMP\setup-docker.ps1"
+    $global:InstallerFiles += $DockerSetupScript
+
+    try {
+        InfoMessage "Downloading and executing Docker listener setup script..."
+        Invoke-WebRequest -Uri $DockerSetupUrl -OutFile $DockerSetupScript -ErrorAction Stop
+        InfoMessage "Docker listener setup script downloaded successfully."
+        & powershell.exe -ExecutionPolicy Bypass -File $DockerSetupScript -ErrorAction Stop
+    }
+    catch {
+        ErrorMessage "Error during Docker listener setup: $($_.Exception.Message)"
+    }
+}
+
 # Show help if -Help is specified
 if ($Help) {
     Show-Help
@@ -370,6 +387,9 @@ try {
 
     SectionSeparator "Downloading Version File"
     DownloadVersionFile
+
+    SectionSeparator "Setting up Docker Monitoring"
+    Install-DockerListener
 }
 finally {
     InfoMessage "Cleaning up installer files..."
