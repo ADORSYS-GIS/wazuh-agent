@@ -184,4 +184,14 @@ if [ "$UNINSTALL_TRIVY" = "TRUE" ]; then
     fi
 fi
 
+# Step 6: Remove Docker listener virtual environment
+VENV_DIR="${VENV_DIR:-/opt/wazuh-docker-env}"
+if [ -d "$VENV_DIR" ]; then
+    print_step 6 "Removing Docker listener virtual environment..."
+    maybe_sudo rm -rf "$VENV_DIR"
+    info_message "Docker listener virtual environment removed."
+else
+    info_message "No Docker listener virtual environment found. Skipping."
+fi
+
 success_message "Uninstallation completed successfully."
