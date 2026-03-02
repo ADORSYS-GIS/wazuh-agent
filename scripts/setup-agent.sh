@@ -332,7 +332,7 @@ info_message "Version file downloaded successfully."
 
 # Step 9: Setup Docker monitoring (only runs if Docker is installed)
 info_message "Setting up Docker monitoring (if Docker is present)..."
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/setup-docker.sh" > "$TMP_FOLDER/setup-docker.sh"
+curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/setup-docker.sh" > "$TMP_FOLDER/setup-docker.sh"
 if ! (maybe_sudo bash "$TMP_FOLDER/setup-docker.sh") 2>&1; then
     error_message "Failed to setup Docker monitoring"
 fi
