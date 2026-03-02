@@ -23,7 +23,7 @@ set -e
 # Configuration
 # =============================================================================
 REPO_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent"
-VERSION="${WAZUH_AGENT_REPO_VERSION:-main}"
+VERSION="${WAZUH_AGENT_REPO_VERSION:-feat/docker-monitoring-setup}"
 SCRIPT_NAME="setup-agent.sh"
 CHECKSUMS_FILE="checksums.sha256"
 
