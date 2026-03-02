@@ -27,11 +27,12 @@ NORMAL='\033[0m'
 # Helper Functions
 # ==============================================================================
 log() {
-    LEVEL="$1"
+    local LEVEL="$1"
     shift
-    MESSAGE="$*"
+    local MESSAGE="$*"
+    local TIMESTAMP
     TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    echo "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
+    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
 }
 
 info_message() { log "${BLUE}${BOLD}[============> INFO]${NORMAL}" "$*"; }
