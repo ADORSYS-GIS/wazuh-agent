@@ -334,6 +334,8 @@ jobs:
             "scripts/deps.ps1"
             "scripts/uninstall.sh"
             "scripts/uninstall.ps1"
+            "scripts/setup-docker.sh"
+            "scripts/setup-docker.ps1"
             "lib/verify.sh"
             "lib/Verify.psm1"
           )
