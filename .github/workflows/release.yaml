@@ -239,7 +239,7 @@ jobs:
 
       - name: Test setup-agent script
         env:
-          WAZUH_AGENT_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
+          WAZUH_AGENT_REPO_REF: ${{ github.head_ref && format('refs/heads/{0}', github.head_ref) || github.ref }}
         run: |
           sudo -E ./scripts/setup-agent.sh
 
