@@ -57,7 +57,7 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
           TAG="${{ steps.release.outputs.tag_name }}"
-          if echo "$TAG" | grep -qiE '-(rc|beta|alpha|dev|pre)'; then
+          if [[ "$TAG" =~ -(rc|beta|alpha|dev|pre) ]]; then
             echo "Marking $TAG as prerelease"
             gh release edit "$TAG" --prerelease
           else
@@ -88,7 +88,7 @@ jobs:
         id: check-prerelease
         run: |
           TAG="${{ steps.get-tag.outputs.tag }}"
-          if echo "$TAG" | grep -qiE '-(rc|beta|alpha|dev|pre)'; then
+          if [[ "$TAG" =~ -(rc|beta|alpha|dev|pre) ]]; then
             echo "is_prerelease=true" >> $GITHUB_OUTPUT
             echo "This is a pre-release: $TAG"
           else
