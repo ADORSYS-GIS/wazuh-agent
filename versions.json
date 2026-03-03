@@ -90,5 +90,5 @@
       }
     }
   },
-  "prerelease_test_grouops": ["SIEM", "SOC", "Prerelease-Test"]
+  "prerelease_test_groups": ["SIEM", "SOC", "Prerelease-Test"]
 }
