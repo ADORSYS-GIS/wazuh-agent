@@ -1,11 +1,8 @@
 #!/bin/sh
 
-# Check if we're running in bash; if not, adjust behavior
-if [ -n "$BASH_VERSION" ]; then
-    set -euo pipefail
-else
-    set -eu
-fi
+# Source shared utilities
+# shellcheck source=scripts/utils.sh
+. "$(dirname "$0")/utils.sh"
 
 # ==============================================================================
 # Default Configuration
@@ -15,46 +12,6 @@ VENV_DIR="${VENV_DIR:-/opt/wazuh-docker-env}"
 
 # Detect OS
 OS_TYPE="$(uname -s)"
-
-# Define text formatting
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-NORMAL='\033[0m'
-
-# ==============================================================================
-# Helper Functions
-# ==============================================================================
-log() {
-    local LEVEL="$1"
-    shift
-    local MESSAGE="$*"
-    local TIMESTAMP
-    TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
-}
-
-info_message() { log "${BLUE}${BOLD}[============> INFO]${NORMAL}" "$*"; }
-error_message() { log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"; }
-success_message() { log "${GREEN}${BOLD}[SUCCESS]${NORMAL}" "$*"; }
-
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-maybe_sudo() {
-    if [ "$(id -u)" -ne 0 ]; then
-        if command_exists sudo; then
-            sudo "$@"
-        else
-            error_message "This script requires root privileges. Please run with sudo or as root."
-            exit 1
-        fi
-    else
-        "$@"
-    fi
-}
 
 # ==============================================================================
 # Main
@@ -110,14 +67,7 @@ if [ -f "$DOCKER_LISTENER" ]; then
     CURRENT_SHEBANG=$(head -n1 "$DOCKER_LISTENER")
 
     if [ "$CURRENT_SHEBANG" != "$EXPECTED_SHEBANG" ]; then
-        case "$OS_TYPE" in
-            Darwin)
-                maybe_sudo sed -i '' "1s|.*|${EXPECTED_SHEBANG}|" "$DOCKER_LISTENER"
-                ;;
-            *)
-                maybe_sudo sed -i "1s|.*|${EXPECTED_SHEBANG}|" "$DOCKER_LISTENER"
-                ;;
-        esac
+        sed_inplace "1s|.*|${EXPECTED_SHEBANG}|" "$DOCKER_LISTENER"
         info_message "DockerListener shebang updated to use venv Python."
     else
         info_message "DockerListener shebang already correct."

@@ -2,42 +2,16 @@
 # Prepares Python environment for DockerListener safely and idempotently.
 # Does nothing if Docker is not installed.
 
+# Dot-source shared utilities
+. "$PSScriptRoot\utils.ps1"
+
 Set-StrictMode -Version Latest
 
 # ==============================================================================
 # Configuration
 # ==============================================================================
 $VENV_DIR = if ($env:VENV_DIR) { $env:VENV_DIR } else { "C:\wazuh-docker-env" }
-$OSSEC_PATH = "C:\Program Files (x86)\ossec-agent"
 $DOCKER_LISTENER = Join-Path -Path $OSSEC_PATH -ChildPath "wodles\docker\DockerListener"
-
-# ==============================================================================
-# Helper Functions
-# ==============================================================================
-function Log {
-    param (
-        [string]$Level,
-        [string]$Message,
-        [string]$Color = "White"
-    )
-    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
-}
-
-function InfoMessage {
-    param ([string]$Message)
-    Log "[INFO]" $Message "Cyan"
-}
-
-function SuccessMessage {
-    param ([string]$Message)
-    Log "[SUCCESS]" $Message "Green"
-}
-
-function ErrorMessage {
-    param ([string]$Message)
-    Log "[ERROR]" $Message "Red"
-}
 
 # ==============================================================================
 # Main

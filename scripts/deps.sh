@@ -1,7 +1,6 @@
 #!/bin/sh
 
 # Set shell options
-
 # Set shell options
 if [ -n "$BASH_VERSION" ]; then
     set -euo pipefail
@@ -9,28 +8,9 @@ else
     set -eu
 fi
 
-# Function for logging with timestamp
-log() {
-    local LEVEL="$1"
-    shift
-    local MESSAGE="$*"
-    local TIMESTAMP
-    TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    echo "$TIMESTAMP [$LEVEL] $MESSAGE"
-}
-
-# Logging helpers
-info_message() {
-    log INFO "$*"
-}
-
-error_message() {
-    log ERROR "$*"
-}
-
-success_message() {
-    log INFO "$*"
-}
+# Source shared utilities
+# shellcheck source=scripts/utils.sh
+. "$(dirname "$0")/utils.sh"
 
 LOGGED_IN_USER=""
 
@@ -41,25 +21,6 @@ fi
 #Get the logged-in user on macOS
 brew_command() {
     sudo -u "$LOGGED_IN_USER" -i brew "$@"
-}
-
-# Ensure root privileges, either directly or through sudo
-maybe_sudo() {
-    if [ "$(id -u)" -ne 0 ]; then
-        if command -v sudo >/dev/null 2>&1; then
-            sudo "$@"
-        else
-            error_message "This script requires root privileges. Please run with sudo or as root."
-            exit 1
-        fi
-    else
-        "$@"
-    fi
-}
-
-# Function to check if a command is installed
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
 }
 
 # Detect OS and install packages
