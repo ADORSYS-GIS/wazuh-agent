@@ -9,7 +9,10 @@ fi
 
 # Source shared utilities
 : "${WAZUH_AGENT_REPO_REF:=main}"
-curl -sSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o utils.sh
+if ! curl -sSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o utils.sh; then
+    echo "Error: Failed to download utils.sh" >&2
+    exit 1
+fi
 . ./utils.sh
 
 LOGGED_IN_USER=""
