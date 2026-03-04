@@ -1,0 +1,116 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":preserveSemverRanges"
+  ],
+  "description": "Renovate configuration for wazuh-agent dependency monitoring",
+  "enabled": true,
+  "timezone": "Europe/Berlin",
+  "schedule": ["before 9am on monday"],
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 10,
+  "labels": ["dependencies", "renovate"],
+  "assignees": [],
+  "reviewers": [],
+  "baseBranches": ["main"],
+  "enabledManagers": ["custom.regex"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update wazuh-agent version in versions.json",
+      "fileMatch": ["^versions\\.json$"],
+      "matchStrings": [
+        "\"wazuh-agent\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>[^\"]+)\"[^}]*\\}"
+      ],
+      "depNameTemplate": "wazuh/wazuh",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update wazuh-yara version in versions.json",
+      "fileMatch": ["^versions\\.json$"],
+      "matchStrings": [
+        "\"wazuh-yara\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>[^\"]+)\"[^}]*\\}"
+      ],
+      "depNameTemplate": "ADORSYS-GIS/wazuh-yara",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update wazuh-suricata version in versions.json",
+      "fileMatch": ["^versions\\.json$"],
+      "matchStrings": [
+        "\"wazuh-suricata\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>[^\"]+)\"[^}]*\\}"
+      ],
+      "depNameTemplate": "ADORSYS-GIS/wazuh-suricata",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update wazuh-snort version in versions.json",
+      "fileMatch": ["^versions\\.json$"],
+      "matchStrings": [
+        "\"wazuh-snort\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>[^\"]+)\"[^}]*\\}"
+      ],
+      "depNameTemplate": "ADORSYS-GIS/wazuh-snort",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update wazuh-cert-oauth2 version in versions.json",
+      "fileMatch": ["^versions\\.json$"],
+      "matchStrings": [
+        "\"wazuh-cert-oauth2\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>[^\"]+)\"[^}]*\\}"
+      ],
+      "depNameTemplate": "ADORSYS-GIS/wazuh-cert-oauth2",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update wazuh-agent-status version in versions.json",
+      "fileMatch": ["^versions\\.json$"],
+      "matchStrings": [
+        "\"wazuh-agent-status\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>[^\"]+)\"[^}]*\\}"
+      ],
+      "depNameTemplate": "ADORSYS-GIS/wazuh-agent-status",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Group all ADORSYS-GIS dependencies",
+      "matchSourceUrls": ["https://github.com/ADORSYS-GIS/**"],
+      "groupName": "ADORSYS-GIS dependencies",
+      "groupSlug": "adorsys-gis",
+      "semanticCommitType": "deps"
+    },
+    {
+      "description": "Wazuh core agent updates",
+      "matchPackageNames": ["wazuh/wazuh"],
+      "groupName": "Wazuh Agent",
+      "groupSlug": "wazuh-agent",
+      "semanticCommitType": "deps",
+      "prPriority": 10
+    },
+    {
+      "description": "Auto-merge patch updates for internal deps",
+      "matchSourceUrls": ["https://github.com/ADORSYS-GIS/**"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  }
+}

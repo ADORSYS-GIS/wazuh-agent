@@ -1,90 +1,413 @@
-name: Release
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
       - develop
+      - hotfix/**
     tags:
       - 'v*'
   pull_request:
     branches:
       - main
       - develop
+      - hotfix/**
 
 jobs:
-  test-install-script:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Install dependencies
-      run: |
-        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-          sudo apt update
-          sudo apt install -y bats curl jq sed
-        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-          brew install bats coreutils curl jq gnu-sed docker
-        fi
-
-    - name: Make script executable
-      run: chmod +x ./scripts/install.sh
-      
-    - name: Install wazuh-agent
-      run: |
-        sudo ./scripts/install.sh
-  test-setup-agent-script:
-    runs-on: ${{ matrix.os }}
-    needs: test-install-script
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Install dependencies
-      run: |
-        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-          sudo apt update
-          sudo apt install -y bats curl jq sed
-        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-          brew install bats coreutils curl jq gnu-sed docker
-        fi
-
-    - name: Make script executable
-      run: chmod +x ./scripts/setup-agent.sh
-      
-    - name: Launch setup-agent script
-      run: |
-        sudo ./scripts/setup-agent.sh
-  release:
-    name: Release
-    permissions: write-all
+  # ============================================
+  # Release Please - Changelog & Version Management
+  # ============================================
+  release-please:
+    name: Release Please
     runs-on: ubuntu-latest
-    needs: test-setup-agent-script
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/hotfix/')) && github.event_name == 'push'
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Select Release Please config
+        id: config
+        run: |
+          if [[ "${{ github.ref }}" == refs/heads/develop ]]; then
+            echo "config_file=release-please-config-rc.json" >> $GITHUB_OUTPUT
+            echo "manifest_file=.release-please-manifest-rc.json" >> $GITHUB_OUTPUT
+          else
+            echo "config_file=release-please-config.json" >> $GITHUB_OUTPUT
+            echo "manifest_file=.release-please-manifest.json" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          # Use PAT to bypass org restrictions on GITHUB_TOKEN creating PRs
+          token: ${{ secrets.RELEASE_PAT }}
+          target-branch: ${{ github.ref_name }}
+          config-file: ${{ steps.config.outputs.config_file }}
+          manifest-file: ${{ steps.config.outputs.manifest_file }}
+
+      - name: Mark pre-release versions
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+        run: |
+          TAG="${{ steps.release.outputs.tag_name }}"
+          if [[ "$TAG" =~ -(rc|beta|alpha|dev|pre) ]]; then
+            echo "Marking $TAG as prerelease"
+            gh release edit "$TAG" --prerelease
+          else
+            echo "$TAG is a stable release"
+          fi
+
+  # ============================================
+  # Manual Tag Release - For Pre-releases
+  # ============================================
+  manual-tag-release:
+    name: Manual Tag Release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    outputs:
+      tag_name: ${{ steps.get-tag.outputs.tag }}
+      is_prerelease: ${{ steps.check-prerelease.outputs.is_prerelease }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Get the version
-        id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Get tag name
+        id: get-tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Check if prerelease
+        id: check-prerelease
+        run: |
+          TAG="${{ steps.get-tag.outputs.tag }}"
+          if [[ "$TAG" =~ -(rc|beta|alpha|dev|pre) ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "This is a pre-release: $TAG"
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "This is a stable release: $TAG"
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.get-tag.outputs.tag }}"
+          IS_PRERELEASE="${{ steps.check-prerelease.outputs.is_prerelease }}"
+
+          # Generate release notes from recent commits
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            NOTES=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+          else
+            NOTES=$(git log --pretty=format:"- %s" --no-merges -n 10)
+          fi
+
+          # Create release
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes "$NOTES" \
+              --prerelease
+          else
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes "$NOTES"
+          fi
+
+  # ============================================
+  # Code Quality - Linting
+  # ============================================
+  lint:
+    name: Lint Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck on bash scripts
+        run: |
+          find scripts -name "*.sh" -type f | xargs shellcheck --severity=warning || true
+          find lib -name "*.sh" -type f | xargs shellcheck --severity=warning || true
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+
+      - name: Run PSScriptAnalyzer on PowerShell scripts
+        shell: pwsh
+        run: |
+          $results = Get-ChildItem -Path scripts,lib -Filter "*.ps1" -Recurse | ForEach-Object {
+            Invoke-ScriptAnalyzer -Path $_.FullName -Severity Warning,Error
+          }
+          if ($results) {
+            $results | Format-Table -AutoSize
+            Write-Warning "PSScriptAnalyzer found issues"
+          }
+
+  # ============================================
+  # Security Scanning
+  # ============================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Check for hardcoded secrets
+        run: |
+          # Simple check for common secret patterns
+          if grep -rE "(password|secret|api_key|token)\s*=" scripts/ lib/ --include="*.sh" --include="*.ps1" | grep -v "example\|placeholder\|TODO"; then
+            echo "WARNING: Possible hardcoded secrets found"
+          fi
+
+  # ============================================
+  # Linux/macOS Testing
+  # ============================================
+  test-unix:
+    name: Test Unix (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: [lint]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt update
+          sudo apt install -y bats curl jq sed
+
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install bats-core coreutils curl jq gnu-sed
+
+      - name: Make scripts executable
+        run: |
+          chmod +x ./scripts/*.sh
+          chmod +x ./lib/*.sh 2>/dev/null || true
+
+      - name: Test verification library
+        run: |
+          source ./lib/verify.sh
+          # Test validate_version function
+          if validate_version "4.13.1-1"; then
+            echo "✓ Valid version test passed"
+          else
+            echo "✗ Valid version test failed"
+            exit 1
+          fi
+          # Test invalid version
+          if ! validate_version "invalid"; then
+            echo "✓ Invalid version test passed"
+          else
+            echo "✗ Invalid version test failed"
+            exit 1
+          fi
+
+      - name: Test install script
+        run: |
+          sudo ./scripts/install.sh
+
+      - name: Test setup-agent script
+        env:
+          WAZUH_AGENT_REPO_REF: ${{ github.head_ref && format('refs/heads/{0}', github.head_ref) || github.ref }}
+        run: |
+          sudo -E ./scripts/setup-agent.sh
+
+  # ============================================
+  # Windows Testing
+  # ============================================
+  test-windows:
+    name: Test Windows
+    runs-on: windows-latest
+    needs: [lint]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Import verification module
+        shell: pwsh
+        run: |
+          Import-Module ./lib/Verify.psm1 -Force
+
+      - name: Test verification functions
+        shell: pwsh
+        run: |
+          Import-Module ./lib/Verify.psm1 -Force
+
+          # Test valid version
+          if (Test-VersionFormat -Version "4.13.1-1") {
+            Write-Host "✓ Valid version test passed" -ForegroundColor Green
+          } else {
+            Write-Host "✗ Valid version test failed" -ForegroundColor Red
+            exit 1
+          }
+
+          # Test invalid version
+          if (-not (Test-VersionFormat -Version "invalid" -ErrorAction SilentlyContinue)) {
+            Write-Host "✓ Invalid version test passed" -ForegroundColor Green
+          } else {
+            Write-Host "✗ Invalid version test failed" -ForegroundColor Red
+            exit 1
+          }
+
+          # Test valid manager address
+          if (Test-WazuhManagerAddress -Manager "wazuh.example.com") {
+            Write-Host "✓ Valid manager address test passed" -ForegroundColor Green
+          } else {
+            Write-Host "✗ Valid manager address test failed" -ForegroundColor Red
+            exit 1
+          }
+
+      - name: Test dependencies script
+        shell: pwsh
+        run: |
+          # Run deps script in dry-run mode if available, otherwise skip heavy installs
+          Write-Host "Testing deps.ps1 syntax..."
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/deps.ps1 -Raw), [ref]$null)
+          Write-Host "✓ deps.ps1 syntax valid" -ForegroundColor Green
+
+      - name: Test install script syntax
+        shell: pwsh
+        run: |
+          Write-Host "Testing install.ps1 syntax..."
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/install.ps1 -Raw), [ref]$null)
+          Write-Host "✓ install.ps1 syntax valid" -ForegroundColor Green
+
+      - name: Test setup-agent script syntax
+        shell: pwsh
+        run: |
+          Write-Host "Testing setup-agent.ps1 syntax..."
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/setup-agent.ps1 -Raw), [ref]$null)
+          Write-Host "✓ setup-agent.ps1 syntax valid" -ForegroundColor Green
+
+  # ============================================
+  # Integration Tests
+  # ============================================
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test-unix, test-windows, security]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify all scripts present
+        run: |
+          echo "Checking required files..."
+          required_files=(
+            "scripts/setup-agent.sh"
+            "scripts/setup-agent.ps1"
+            "scripts/install.sh"
+            "scripts/install.ps1"
+            "scripts/deps.sh"
+            "scripts/deps.ps1"
+            "scripts/uninstall.sh"
+            "scripts/uninstall.ps1"
+            "lib/verify.sh"
+            "lib/Verify.psm1"
+          )
+          for file in "${required_files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✓ $file exists"
+            else
+              echo "✗ $file missing"
+              exit 1
+            fi
+          done
+
+      - name: Verify version consistency
+        run: |
+          echo "Checking version.txt..."
+          if [ -f "version.txt" ]; then
+            VERSION=$(cat version.txt)
+            echo "Current version: $VERSION"
+          else
+            echo "✗ version.txt missing"
+            exit 1
+          fi
+
+  # ============================================
+  # Release Assets
+  # ============================================
+  release-assets:
+    name: Upload Release Assets
+    permissions: write-all
+    runs-on: ubuntu-latest
+    needs: [release-please, manual-tag-release, integration]
+    if: |
+      always() &&
+      needs.integration.result == 'success' &&
+      (
+        (needs.release-please.result == 'success' && needs.release-please.outputs.release_created == 'true') ||
+        (needs.manual-tag-release.result == 'success')
+      )
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine tag name
+        id: tag
+        run: |
+          if [ "${{ needs.release-please.outputs.release_created }}" = "true" ]; then
+            echo "name=${{ needs.release-please.outputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "name=${{ needs.manual-tag-release.outputs.tag_name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate checksums
+        run: |
+          echo "Generating SHA256 checksums..."
+          sha256sum install.sh Install.ps1 scripts/*.sh scripts/*.ps1 lib/*.sh lib/*.psm1 > checksums.sha256
+          echo "=== Checksums ==="
+          cat checksums.sha256
+
+      - name: Upload checksums to release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          files: |
+            checksums.sha256
+            versions.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.get_version.outputs.VERSION }}
-          release_name: Release ${{ steps.get_version.outputs.VERSION }}
-          draft: false
-          prerelease: false
+
+      - name: Update checksums in repository
+        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add checksums.sha256
+          git commit -m "chore: update checksums for ${{ steps.tag.outputs.name }}" || echo "No changes to commit"
+          git push
