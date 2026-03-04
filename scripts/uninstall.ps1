@@ -1,17 +1,8 @@
 # Dot-source shared utilities
 # Robust utility sourcing
-$UtilsFile = Join-Path -Path $PSScriptRoot -ChildPath "utils.ps1"
-if (-not (Test-Path $UtilsFile)) {
-    $RepoRef = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "main" }
-    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$RepoRef/scripts/utils.ps1"
-    try {
-        Invoke-WebRequest -Uri $UtilsURL -OutFile $UtilsFile -ErrorAction Stop
-    } catch {
-        Write-Error "Could not download utils.ps1"
-        exit 1
-    }
-}
-. "$UtilsFile"
+if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/utils.ps1" -OutFile "utils.ps1"
+. ./utils.ps1
 
 $AgentVersion = "4.14.2-1"
 $OssecPath = "C:\Program Files (x86)\ossec-agent"

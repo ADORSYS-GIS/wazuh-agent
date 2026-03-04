@@ -254,7 +254,9 @@ try {
     if (-not $isAdmin) {
         WarningMessage "Requesting administrator privileges..."
         $argString = if ($setupArgs.Count -gt 0) { $setupArgs -join ' ' } else { '' }
-        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File `"$scriptPath`" $argString" -Verb RunAs -Wait
+        # Pass WAZUH_AGENT_REPO_REF to the new process
+        $envString = "[System.Environment]::SetEnvironmentVariable('WAZUH_AGENT_REPO_REF', '$($env:WAZUH_AGENT_REPO_REF)', 'Process');"
+        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -Command `"$envString & `"$scriptPath`" $argString`"" -Verb RunAs -Wait
     }
     else {
         & powershell.exe -ExecutionPolicy Bypass -File $scriptPath @setupArgs
