@@ -5,7 +5,19 @@ param(
 )
 
 # Dot-source shared utilities
-. "$PSScriptRoot\utils.ps1"
+# Robust utility sourcing
+$UtilsFile = Join-Path -Path $PSScriptRoot -ChildPath "utils.ps1"
+if (-not (Test-Path $UtilsFile)) {
+    $RepoRef = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "main" }
+    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$RepoRef/scripts/utils.ps1"
+    try {
+        Invoke-WebRequest -Uri $UtilsURL -OutFile $UtilsFile -ErrorAction Stop
+    } catch {
+        Write-Error "Could not download utils.ps1"
+        exit 1
+    }
+}
+. "$UtilsFile"
 
 # Set strict mode for script execution (after param declaration)
 Set-StrictMode -Version Latest
@@ -31,6 +43,7 @@ $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 $global:InstallerFiles = @()
 
 # Cleanup function to remove installer files at the end
+function Cleanup-Installers {
     foreach ($file in $global:InstallerFiles) {
         if (Test-Path $file) {
             Remove-Item $file -Force
@@ -41,14 +54,18 @@ $global:InstallerFiles = @()
 
 # Step 0: Download dependency script and execute
 function Install-Dependencies {
+    $UtilsURL = "$RepoUrl/scripts/utils.ps1"
+    $UtilsPath = "$env:TEMP\utils.ps1"
     $InstallerURL = "$RepoUrl/scripts/deps.ps1"
     $InstallerPath = "$env:TEMP\deps.ps1"
+    $global:InstallerFiles += $UtilsPath
     $global:InstallerFiles += $InstallerPath
 
     try {
-        InfoMessage "Downloading and executing dependency script..."
+        InfoMessage "Downloading utilities and dependency script..."
+        Invoke-WebRequest -Uri $UtilsURL -OutFile $UtilsPath -ErrorAction Stop
         Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
-        InfoMessage "Dependency script downloaded successfully."
+        InfoMessage "Scripts downloaded successfully."
         & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ErrorAction Stop
     }
     catch {

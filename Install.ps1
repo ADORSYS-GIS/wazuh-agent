@@ -198,6 +198,15 @@ try {
         exit 1
     }
 
+    # Download utils.ps1
+    InfoMessage "Downloading utils.ps1..."
+    try {
+        Invoke-WebRequest -Uri "$RepoUrl/$Version/scripts/utils.ps1" -OutFile (Join-Path $TempDir "utils.ps1") -ErrorAction Stop
+    }
+    catch {
+        WarningMessage "Could not download utils.ps1: $($_.Exception.Message)"
+    }
+
     # Verify checksum
     if ((Test-Path $checksumsPath) -and (-not $SkipVerify)) {
         InfoMessage "Verifying script integrity..."

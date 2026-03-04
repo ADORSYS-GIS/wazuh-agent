@@ -1,8 +1,24 @@
 #!/bin/sh
 
 # Source shared utilities
-# shellcheck source=scripts/utils.sh
-. "$(dirname "$0")/utils.sh"
+# Source shared utilities
+UTILS_PATH="$(dirname "$0")/utils.sh"
+if [ ! -f "$UTILS_PATH" ]; then
+    # Fallback: Download utils.sh if not found locally
+    REPO_REF="${WAZUH_AGENT_REPO_REF:-main}"
+    # Remove 'refs/tags/' if present for the raw URL
+    TAG_NAME=$(echo "$REPO_REF" | sed 's|refs/tags/||')
+    curl -sSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${TAG_NAME}/scripts/utils.sh" -o "$UTILS_PATH" || \
+    wget -q "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${TAG_NAME}/scripts/utils.sh" -O "$UTILS_PATH"
+fi
+
+if [ -f "$UTILS_PATH" ]; then
+    # shellcheck source=scripts/utils.sh
+    . "$UTILS_PATH"
+else
+    echo "[ERROR] Could not find or download utils.sh"
+    exit 1
+fi
 
 # ==============================================================================
 # Default Configuration
@@ -165,6 +181,7 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
 # Step -1: Download all core scripts
 info_message "Downloading core component scripts..."
+curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" > "$TMP_FOLDER/utils.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/deps.sh" > "$TMP_FOLDER/install-deps.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"

@@ -166,6 +166,12 @@ main() {
         exit 1
     fi
 
+    # Download utils.sh
+    info_message "Downloading utils.sh..."
+    if ! download_file "${REPO_URL}/${VERSION}/scripts/utils.sh" "$TMP_DIR/utils.sh"; then
+        warn_message "Could not download utils.sh. Scripts might fail if not run from a full repository check-out."
+    fi
+
     # Verify checksum
     if [ -f "$TMP_DIR/$CHECKSUMS_FILE" ] && [ "$SKIP_VERIFY" != "true" ]; then
         info_message "Verifying script integrity..."
