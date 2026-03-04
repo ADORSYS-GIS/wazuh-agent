@@ -1,5 +1,17 @@
 # Dot-source shared utilities
-. "$PSScriptRoot\utils.ps1"
+# Robust utility sourcing
+$UtilsFile = Join-Path -Path $PSScriptRoot -ChildPath "utils.ps1"
+if (-not (Test-Path $UtilsFile)) {
+    $RepoRef = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "main" }
+    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$RepoRef/scripts/utils.ps1"
+    try {
+        Invoke-WebRequest -Uri $UtilsURL -OutFile $UtilsFile -ErrorAction Stop
+    } catch {
+        Write-Error "Could not download utils.ps1"
+        exit 1
+    }
+}
+. "$UtilsFile"
 
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.2-1" }

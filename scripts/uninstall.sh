@@ -1,8 +1,21 @@
 #!/bin/sh
 
 # Source shared utilities
-# shellcheck source=scripts/utils.sh
-. "$(dirname "$0")/utils.sh"
+# Source shared utilities
+UTILS_PATH="$(dirname "$0")/utils.sh"
+if [ ! -f "$UTILS_PATH" ]; then
+    # Fallback: Download utils.sh if not found locally
+    curl -sSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/utils.sh" -o "$UTILS_PATH" || \
+    wget -q "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/utils.sh" -O "$UTILS_PATH"
+fi
+
+if [ -f "$UTILS_PATH" ]; then
+    # shellcheck source=scripts/utils.sh
+    . "$UTILS_PATH"
+else
+    echo "[ERROR] Could not find or download utils.sh"
+    exit 1
+fi
 
 WAZUH_USER=${WAZUH_USER:-'wazuh'}
 WAZUH_GROUP=${WAZUH_GROUP:-'wazuh'}

@@ -1,7 +1,6 @@
 #!/bin/sh
 
 # Set shell options
-# Set shell options
 if [ -n "$BASH_VERSION" ]; then
     set -euo pipefail
 else
@@ -9,8 +8,20 @@ else
 fi
 
 # Source shared utilities
-# shellcheck source=scripts/utils.sh
-. "$(dirname "$0")/utils.sh"
+UTILS_PATH="$(dirname "$0")/utils.sh"
+if [ ! -f "$UTILS_PATH" ]; then
+    # Fallback: Download utils.sh if not found locally
+    curl -sSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/utils.sh" -o "$UTILS_PATH" || \
+    wget -q "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/utils.sh" -O "$UTILS_PATH"
+fi
+
+if [ -f "$UTILS_PATH" ]; then
+    # shellcheck source=scripts/utils.sh
+    . "$UTILS_PATH"
+else
+    echo "[ERROR] Could not find or download utils.sh"
+    exit 1
+fi
 
 LOGGED_IN_USER=""
 
