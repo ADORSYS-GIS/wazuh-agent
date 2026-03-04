@@ -1,24 +1,9 @@
 #!/bin/sh
 
 # Source shared utilities
-# Source shared utilities
-UTILS_PATH="$(dirname "$0")/utils.sh"
-if [ ! -f "$UTILS_PATH" ]; then
-    # Fallback: Download utils.sh if not found locally
-    REPO_REF="${WAZUH_AGENT_REPO_REF:-main}"
-    # Remove 'refs/tags/' if present for the raw URL
-    TAG_NAME=$(echo "$REPO_REF" | sed 's|refs/tags/||')
-    curl -sSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${TAG_NAME}/scripts/utils.sh" -o "$UTILS_PATH" || \
-    wget -q "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${TAG_NAME}/scripts/utils.sh" -O "$UTILS_PATH"
-fi
-
-if [ -f "$UTILS_PATH" ]; then
-    # shellcheck source=scripts/utils.sh
-    . "$UTILS_PATH"
-else
-    echo "[ERROR] Could not find or download utils.sh"
-    exit 1
-fi
+: "${WAZUH_AGENT_REPO_REF:=main}"
+curl -sSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o utils.sh
+. ./utils.sh
 
 # ==============================================================================
 # Default Configuration
@@ -197,28 +182,28 @@ fi
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
-if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" bash "$TMP_FOLDER/install-wazuh-agent.sh") 2>&1; then
+if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-wazuh-agent.sh") 2>&1; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
 
 # Step 2: Download and install wazuh-cert-oauth2-client
 info_message "Installing wazuh-cert-oauth2-client"
-if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh") 2>&1; then
+if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh") 2>&1; then
     error_message "Failed to install 'wazuh-cert-oauth2-client'"
     exit 1
 fi
 
 # Step 3: Download and install wazuh-agent-status
 info_message "Installing wazuh-agent-status"
-if ! (maybe_sudo env WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/install-wazuh-agent-status.sh") 2>&1; then
+if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_AGENT_STATUS_VERSION="$WAZUH_AGENT_STATUS_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/install-wazuh-agent-status.sh") 2>&1; then
     error_message "Failed to install 'wazuh-agent-status'"
     exit 1
 fi
 
 # Step 4: Download and install yara
 info_message "Installing yara"
-if ! (LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH bash "$TMP_FOLDER/install-yara.sh") 2>&1; then
+if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-yara.sh") 2>&1; then
     error_message "Failed to install 'yara'"
     exit 1
 fi
@@ -306,7 +291,7 @@ info_message "Version file downloaded successfully."
 # Step 9: Setup Docker monitoring (only runs if Docker is installed)
 info_message "Setting up Docker monitoring (if Docker is present)..."
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/setup-docker.sh" > "$TMP_FOLDER/setup-docker.sh"
-if ! (maybe_sudo bash "$TMP_FOLDER/setup-docker.sh") 2>&1; then
+if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_PATH="$OSSEC_PATH" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh") 2>&1; then
     error_message "Failed to setup Docker monitoring"
 fi
 
