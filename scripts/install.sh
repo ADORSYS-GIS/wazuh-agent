@@ -10,6 +10,7 @@ fi
 # Variables
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
+WAZUH_AGENT_GROUP=${WAZUH_AGENT_GROUP:-""}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.2-1'}
 
 # Define text formatting
@@ -200,7 +201,7 @@ installation() {
       info_message "Wazuh agent downloaded successfully."
 
       # Set environment variable for Wazuh manager
-      echo "WAZUH_MANAGER='$WAZUH_MANAGER'" > /tmp/wazuh_envs
+      echo "WAZUH_MANAGER='$WAZUH_MANAGER' WAZUH_AGENT_GROUP='$WAZUH_AGENT_GROUP'" > /tmp/wazuh_envs
 
       # Install Wazuh agent using the package
       maybe_sudo installer -pkg "$TMP_DIR/$PKG_NAME" -target /

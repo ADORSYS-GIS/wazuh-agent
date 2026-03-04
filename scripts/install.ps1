@@ -1,5 +1,6 @@
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.2-1" }
+$WAZUH_AGENT_GROUP = if ($env:WAZUH_AGENT_GROUP) { $env:WAZUH_AGENT_GROUP } else { "" }
 
 
 # Global variables
@@ -90,6 +91,7 @@ function Install-Agent {
         "/i $MsiPath"
         "/q"
         "WAZUH_MANAGER=`"$WAZUH_MANAGER`""
+        "WAZUH_AGENT_GROUP=`"$WAZUH_AGENT_GROUP`""
     )
 
     # Install the Wazuh agent

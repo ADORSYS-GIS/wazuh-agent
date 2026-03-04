@@ -29,6 +29,7 @@ USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
+WAZUH_AGENT_GROUP=${WAZUH_AGENT_GROUP:-""}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.2-1'}
 WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.4.1-rc5-user'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
@@ -131,6 +132,9 @@ help_message() {
     echo ""
     echo "  # Install all core components + Snort:"
     echo "  ./setup-agent.sh -n"
+    echo ""
+    echo "  # Install with specific Wazuh groups (using environment variable):"
+    echo "  WAZUH_AGENT_GROUP='group1,group2' ./setup-agent.sh -s ids"
 }
 
 # ==============================================================================
@@ -224,7 +228,7 @@ fi
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
-if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" bash "$TMP_FOLDER/install-wazuh-agent.sh") 2>&1; then
+if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_GROUP="$WAZUH_AGENT_GROUP" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" bash "$TMP_FOLDER/install-wazuh-agent.sh") 2>&1; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi

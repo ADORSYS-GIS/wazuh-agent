@@ -11,6 +11,7 @@ Set-StrictMode -Version Latest
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-client" }
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
+$WAZUH_AGENT_GROUP = if ($env:WAZUH_AGENT_GROUP) { $env:WAZUH_AGENT_GROUP } else { "" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.2-1" }
 $OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\" 
 $OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
@@ -108,7 +109,7 @@ function Install-WazuhAgent {
         InfoMessage "Downloading and executing Wazuh agent script..."
         Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
         InfoMessage "Wazuh agent script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ArgumentList "-WAZUH_AGENT_VERSION", $WAZUH_AGENT_VERSION, "-WAZUH_MANAGER", $WAZUH_MANAGER -ErrorAction Stop
+        & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ArgumentList "-WAZUH_AGENT_VERSION", $WAZUH_AGENT_VERSION, "-WAZUH_MANAGER", $WAZUH_MANAGER, "-WAZUH_AGENT_GROUP", $WAZUH_AGENT_GROUP -ErrorAction Stop
     }
     catch {
         ErrorMessage "Error during Wazuh agent installation: $($_.Exception.Message)"
