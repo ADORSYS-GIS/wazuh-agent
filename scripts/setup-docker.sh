@@ -2,7 +2,7 @@
 
 # Source shared utilities
 : "${WAZUH_AGENT_REPO_REF:=main}"
-if ! curl -sSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o utils.sh; then
+if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o utils.sh; then
     echo "Error: Failed to download utils.sh" >&2
     exit 1
 fi
@@ -21,9 +21,16 @@ OS_TYPE="$(uname -s)"
 # Main
 # ==============================================================================
 
-# 1. Exit silently if Docker is not installed
+# 1. Check if Docker is installed and running
 if ! command_exists docker; then
+    warn_message "Docker command not found. Skipping Docker monitoring setup."
     exit 0
+fi
+
+if ! maybe_sudo docker info >/dev/null 2>&1; then
+    warn_message "Docker command found, but daemon is not running. Please start Docker."
+    warn_message "Skipping Docker monitoring setup."
+    exit 1
 fi
 
 info_message "Docker detected. Setting up Docker listener environment..."

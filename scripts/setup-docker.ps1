@@ -2,8 +2,7 @@
 # Prepares Python environment for DockerListener safely and idempotently.
 # Does nothing if Docker is not installed.
 
-# Dot-source shared utilities
-# Robust utility sourcing
+# Source shared utilities
 if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
 try {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/utils.ps1" -OutFile "utils.ps1" -ErrorAction Stop
@@ -25,9 +24,20 @@ $DOCKER_LISTENER = Join-Path -Path $OSSEC_PATH -ChildPath "wodles\docker\DockerL
 # Main
 # ==============================================================================
 
-# 1. Exit silently if Docker is not installed
+# 1. Exit silently if Docker is not installed or not running
 $dockerPath = Get-Command docker -ErrorAction SilentlyContinue
 if (-not $dockerPath) {
+    WarningMessage "Docker command not found. Skipping Docker monitoring setup."
+    exit 0
+}
+
+try {
+    # Check if daemon is running
+    & docker info 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Docker daemon is not running." }
+} catch {
+    WarningMessage "Docker command found, but daemon is not running. Please start Docker."
+    WarningMessage "Skipping Docker monitoring setup."
     exit 0
 }
 

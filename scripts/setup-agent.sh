@@ -2,7 +2,7 @@
 
 # Source shared utilities
 : "${WAZUH_AGENT_REPO_REF:=main}"
-if ! curl -sSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o utils.sh; then
+if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o utils.sh; then
     echo "Error: Failed to download utils.sh" >&2
     exit 1
 fi
@@ -169,12 +169,31 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
 # Step -1: Download all core scripts
 info_message "Downloading core component scripts..."
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" > "$TMP_FOLDER/utils.sh"
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/deps.sh" > "$TMP_FOLDER/install-deps.sh"
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent.sh"
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent-status.sh"
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-yara.sh"
+for script in "utils.sh" "deps.sh" "install.sh"; do
+    if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/$script" -o "$TMP_FOLDER/$script"; then
+        error_message "Failed to download core script: $script"
+        exit 1
+    fi
+done
+
+# Map filenames for later use
+mv "$TMP_FOLDER/deps.sh" "$TMP_FOLDER/install-deps.sh"
+mv "$TMP_FOLDER/install.sh" "$TMP_FOLDER/install-wazuh-agent.sh"
+
+if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" -o "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"; then
+    error_message "Failed to download install-wazuh-cert-oauth2.sh"
+    exit 1
+fi
+
+if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh" -o "$TMP_FOLDER/install-wazuh-agent-status.sh"; then
+    error_message "Failed to download install-wazuh-agent-status.sh"
+    exit 1
+fi
+
+if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh" -o "$TMP_FOLDER/install-yara.sh"; then
+    error_message "Failed to download install-yara.sh"
+    exit 1
+fi
 
 # Step 0: Install dependencies
 info_message "Installing dependencies"
@@ -212,10 +231,14 @@ if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZ
 fi
 
 # Step 5: Install the selected IDS Engine (Snort or Suricata)
+info_message "Selected IDS engine: $IDS_ENGINE"
 if [ "$IDS_ENGINE" = "suricata" ]; then
     uninstall_snort
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
-    curl -sL --progress-bar "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/v$WAZUH_SURICATA_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-suricata.sh"
+    if ! curl -sLf --progress-bar "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/v$WAZUH_SURICATA_VERSION/scripts/install.sh" -o "$TMP_FOLDER/install-suricata.sh"; then
+        error_message "Failed to download install-suricata.sh"
+        exit 1
+    fi
     # Pass the selected mode to the suricata install script
     if ! (bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE") 2>&1; then
         error_message "Failed to install 'suricata'"
@@ -224,7 +247,10 @@ if [ "$IDS_ENGINE" = "suricata" ]; then
 elif [ "$IDS_ENGINE" = "snort" ]; then
     uninstall_suricata
     info_message "Installing Snort..."
-    curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-snort.sh"
+    if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/install.sh" -o "$TMP_FOLDER/install-snort.sh"; then
+        error_message "Failed to download install-snort.sh"
+        exit 1
+    fi
     if ! (env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH="$OSSEC_CONF_PATH" bash "$TMP_FOLDER/install-snort.sh") 2>&1; then
         error_message "Failed to install 'snort'"
         exit 1
@@ -234,7 +260,10 @@ fi
 # Step 6: Install Trivy if the flag is set
 if [ "$INSTALL_TRIVY" = "TRUE" ]; then
     info_message "Installing Trivy..."
-    curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/install.sh" > "$TMP_FOLDER/install-trivy.sh"
+    if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/install.sh" -o "$TMP_FOLDER/install-trivy.sh"; then
+        error_message "Failed to download install-trivy.sh"
+        exit 1
+    fi
     if ! (bash "$TMP_FOLDER/install-trivy.sh") 2>&1; then
         error_message "Failed to install trivy"
         exit 1
@@ -282,6 +311,7 @@ else
 fi
 
 success_message "USB DLP Active Response scripts installed successfully."
+info_message "Finished USB DLP setup step."
 
 # Step 8: Download version file
 info_message "Downloading version file..."
@@ -293,9 +323,12 @@ info_message "Version file downloaded successfully."
 
 # Step 9: Setup Docker monitoring (only runs if Docker is installed)
 info_message "Setting up Docker monitoring (if Docker is present)..."
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/setup-docker.sh" > "$TMP_FOLDER/setup-docker.sh"
-if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_PATH="$OSSEC_PATH" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh") 2>&1; then
-    error_message "Failed to setup Docker monitoring"
+if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/setup-docker.sh" -o "$TMP_FOLDER/setup-docker.sh"; then
+    error_message "Failed to download setup-docker.sh"
+else
+    if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_PATH="$OSSEC_PATH" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh") 2>&1; then
+        error_message "Failed to setup Docker monitoring"
+    fi
 fi
 
 success_message "Wazuh setup has been completed successfully."
