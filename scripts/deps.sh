@@ -47,7 +47,7 @@ case "$OS_NAME" in
         ;;
     "Darwin")
         info_message "Detected macOS"
-        brew_command install jq gsed bash
+        brew_command install jq gsed bash python3
         ;;
     *)
         error_message "Unsupported operating system: $OS_NAME"

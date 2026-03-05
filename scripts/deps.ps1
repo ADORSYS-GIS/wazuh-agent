@@ -41,6 +41,42 @@ function Ensure-Dependencies {
 }
 
 
+function Install-Python {
+    $PythonUrl = "https://www.python.org/ftp/python/3.12.2/python-3.12.2-amd64.exe"
+    $InstallerPath = "$env:TEMP\python-3.12.2-amd64.exe"
+
+    InfoMessage "Checking if Python 3 is already installed..."
+    $pythonInfo = Get-FunctionalPythonPath
+    if ($pythonInfo) {
+        SuccessMessage "Python 3 $($pythonInfo.Version) detected at $($pythonInfo.Path)"
+        return
+    }
+
+    try {
+        InfoMessage "Python 3 not found. Downloading installer from $PythonUrl..."
+        Invoke-WebRequest -Uri $PythonUrl -OutFile $InstallerPath -ErrorAction Stop
+        
+        InfoMessage "Installing Python 3 (silent)..."
+        # /quiet: Minimal UI
+        # InstallAllUsers=1: Install for all users
+        # PrependPath=1: Add to PATH
+        $process = Start-Process -FilePath $InstallerPath -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait -PassThru
+        
+        if ($process.ExitCode -eq 0) {
+            SuccessMessage "Python 3 installed successfully."
+            # Update current process PATH
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine) + ";" + [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+        } else {
+            ErrorMessage "Python 3 installation failed with exit code $($process.ExitCode)."
+        }
+    } catch {
+        ErrorMessage "Failed to download or install Python 3: $($_.Exception.Message)"
+    } finally {
+        if (Test-Path $InstallerPath) { Remove-Item -Path $InstallerPath }
+    }
+}
+
+
 function Install-BurntToastModule {
     [CmdletBinding()]
     param()
@@ -161,6 +197,7 @@ function IsVCppInstalled {
 
 
 IsVCppInstalled
+Install-Python
 Install-GnuSed
 Ensure-Dependencies
 Install-BurntToastModule

@@ -51,6 +51,20 @@ maybe_sudo() {
     fi
 }
 
+# Find a functional Python 3 binary
+get_functional_python() {
+    for cmd in python3 python; do
+        if command_exists "$cmd"; then
+            # Verify it's actually functional (not a broken link or stub)
+            if "$cmd" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" >/dev/null 2>&1; then
+                echo "$cmd"
+                return 0
+            fi
+        fi
+    done
+    return 1
+}
+
 # In-place sed that works on both Linux (GNU) and macOS (BSD)
 sed_inplace() {
     if command_exists gsed; then

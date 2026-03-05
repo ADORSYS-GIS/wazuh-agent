@@ -42,17 +42,15 @@ fi
 info_message "Docker detected. Setting up Docker listener environment..."
 
 # 2. Ensure Python3 exists
-PYTHON_BIN=""
-if command_exists python3; then
-    PYTHON_BIN="python3"
-elif command_exists python; then
-    PYTHON_BIN="python"
-else
-    error_message "Python is not installed. Cannot set up Docker listener."
+PYTHON_BIN=$(get_functional_python)
+
+if [ -z "$PYTHON_BIN" ]; then
+    error_message "Python 3 is not installed. Please install Python 3."
     exit 0
 fi
 
-info_message "Using Python: $PYTHON_BIN"
+python_version=$($PYTHON_BIN -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+info_message "Python version detected: $python_version"
 
 # 3. Create or repair virtual environment
 if [ ! -d "$VENV_DIR" ]; then

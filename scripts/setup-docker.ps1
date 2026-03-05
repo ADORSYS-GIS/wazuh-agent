@@ -44,19 +44,16 @@ try {
 InfoMessage "Docker detected. Setting up Docker listener environment..."
 
 # 2. Ensure Python3 exists
-$pythonPath = Get-Command python -ErrorAction SilentlyContinue
-if (-not $pythonPath) {
-    $pythonPath = Get-Command python3 -ErrorAction SilentlyContinue
-}
-
-if (-not $pythonPath) {
-    ErrorMessage "Python is not installed. Please install Python 3 from https://www.python.org/downloads/"
-    ErrorMessage "Ensure 'Add Python to PATH' is checked during installation."
+$pythonInfo = Get-FunctionalPythonPath
+if (-not $pythonInfo) {
+    ErrorMessage "Python 3 is not installed or not found in PATH."
+    ErrorMessage "Please install Python 3 from https://www.python.org/downloads/"
+    ErrorMessage "IMPORTANT: Ensure 'Add Python to PATH' is checked during installation."
     exit 0
 }
 
-$PYTHON_BIN = $pythonPath.Source
-$pythonVersion = & $PYTHON_BIN -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
+$PYTHON_BIN = $pythonInfo.Path
+$pythonVersion = $pythonInfo.Version
 InfoMessage "Python version detected: $pythonVersion"
 
 # 3. Create or repair virtual environment
