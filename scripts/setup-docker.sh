@@ -28,9 +28,15 @@ if ! command_exists docker; then
 fi
 
 if ! maybe_sudo docker info >/dev/null 2>&1; then
-    warn_message "Docker command found, but daemon is not running. Please start Docker."
-    warn_message "Skipping Docker monitoring setup."
-    exit 1
+    # On macOS, Docker info might fail as root if the socket isn't linked correctly
+    # or if the user doesn't have the DOCKER_HOST set. We check the socket as a fallback.
+    if [ "$OS_TYPE" = "Darwin" ] && [ -S "/var/run/docker.sock" ]; then
+        info_message "Docker command failed info check, but socket found. Proceeding on macOS."
+    else
+        warn_message "Docker command found, but daemon is not responding. Please ensure Docker Desktop is running."
+        warn_message "Skipping Docker monitoring setup."
+        exit 0
+    fi
 fi
 
 info_message "Docker detected. Setting up Docker listener environment..."
