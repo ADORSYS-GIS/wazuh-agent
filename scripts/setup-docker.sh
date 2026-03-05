@@ -77,7 +77,12 @@ info_message "Installing Docker Python library..."
 maybe_sudo "$PIP" install --upgrade "docker>=7.0.0" >/dev/null 2>&1
 
 # 5. Update DockerListener shebang
-DOCKER_LISTENER="/var/ossec/wodles/docker/DockerListener"
+if [ "$OS_TYPE" = "Darwin" ]; then
+    DOCKER_LISTENER="/Library/Ossec/wodles/docker/DockerListener"
+else
+    DOCKER_LISTENER="/var/ossec/wodles/docker/DockerListener"
+fi
+
 if [ -f "$DOCKER_LISTENER" ]; then
     VENV_PYTHON="$VENV_DIR/bin/python3"
     EXPECTED_SHEBANG="#!${VENV_PYTHON}"

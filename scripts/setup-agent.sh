@@ -18,12 +18,13 @@ WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.14"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.4"}
 WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.2.0"}
 
-# Define the OSSEC configuration path
+# Define the OSSEC base path
 if [ "$(uname)" = "Darwin" ]; then
-    OSSEC_PATH="/Library/Ossec/etc"
+    OSSEC_ROOT="/Library/Ossec"
 else
-    OSSEC_PATH="/var/ossec/etc"
+    OSSEC_ROOT="/var/ossec"
 fi
+OSSEC_PATH="$OSSEC_ROOT/etc"
 OSSEC_CONF_PATH="$OSSEC_PATH/ossec.conf"
 
 USER=${USER:-"root"}
@@ -315,7 +316,7 @@ info_message "Finished USB DLP setup step."
 
 # Step 8: Download version file
 info_message "Downloading version file..."
-if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" -o "$OSSEC_PATH/version.txt") 2>&1; then
+if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" -o "$OSSEC_ROOT/version.txt") 2>&1; then
     error_message "Failed to download version file"
     exit 1
 fi
