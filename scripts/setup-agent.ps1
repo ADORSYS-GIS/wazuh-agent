@@ -290,7 +290,7 @@ function Show-Help {
 
 # Step 9: Setup Docker monitoring (only runs if Docker is installed)
 function Install-DockerListener {
-    $DockerSetupUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/setup-docker.ps1"
+    $DockerSetupUrl = "$RepoUrl/scripts/setup-docker.ps1"
     $DockerSetupScript = "$env:TEMP\setup-docker.ps1"
     $global:InstallerFiles += $DockerSetupScript
 
