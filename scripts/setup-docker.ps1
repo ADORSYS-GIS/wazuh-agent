@@ -18,7 +18,8 @@ Set-StrictMode -Version Latest
 # Configuration
 # ==============================================================================
 $VENV_DIR = if ($env:VENV_DIR) { $env:VENV_DIR } else { "C:\wazuh-docker-env" }
-$DOCKER_LISTENER = Join-Path -Path $OSSEC_PATH -ChildPath "wodles\docker\DockerListener"
+$DOCKER_WODLE_DIR = Join-Path -Path $OSSEC_PATH -ChildPath "wodles\docker"
+$DOCKER_LISTENER = Join-Path -Path $DOCKER_WODLE_DIR -ChildPath "DockerListener"
 
 # ==============================================================================
 # Main
@@ -91,7 +92,36 @@ if ($LASTEXITCODE -ne 0) {
     exit 0
 }
 
-# 5. Update DockerListener shebang if present
+# 5. Ensure DockerListener exists and is patched for Windows
+if (-not (Test-Path $DOCKER_WODLE_DIR)) {
+    InfoMessage "Creating Docker wodle directory at $DOCKER_WODLE_DIR"
+    New-Item -ItemType Directory -Path $DOCKER_WODLE_DIR -Force | Out-Null
+}
+
+if (-not (Test-Path $DOCKER_LISTENER)) {
+    $DockerListenerUrl = "https://raw.githubusercontent.com/wazuh/wazuh/main/wodles/docker-listener/DockerListener.py"
+    InfoMessage "DockerListener not found. Downloading from Wazuh repository..."
+    try {
+        Invoke-WebRequest -Uri $DockerListenerUrl -OutFile $DOCKER_LISTENER -ErrorAction Stop
+        
+        # Patch: Remove the Windows-specific exit check
+        InfoMessage "Patching DockerListener for Windows compatibility..."
+        $scriptContent = Get-Content $DOCKER_LISTENER
+        $patchedContent = @()
+        $skip = $false
+        foreach ($line in $scriptContent) {
+            if ($line -match 'if sys\.platform == "win32":') { $skip = $true; continue }
+            if ($skip -and ($line -match 'sys\.stderr\.write' -or $line -match 'sys\.exit\(1\)')) { continue }
+            $skip = $false
+            $patchedContent += $line
+        }
+        $patchedContent | Set-Content $DOCKER_LISTENER
+    } catch {
+        ErrorMessage "Failed to download or patch DockerListener: $($_.Exception.Message)"
+        exit 0
+    }
+}
+
 if (Test-Path $DOCKER_LISTENER) {
     $venvPython = Join-Path -Path $VENV_DIR -ChildPath "Scripts\python.exe"
     $expectedShebang = "#!$venvPython"
