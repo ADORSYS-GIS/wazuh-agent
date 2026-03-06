@@ -1,50 +1,12 @@
-
-# Function to log messages with a timestamp
-function Log {
-    param (
-        [string]$Level,
-        [string]$Message,
-        [string]$Color = "White"  # Default color
-    )
-    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
-}
-
-# Logging helpers with colors
-function InfoMessage {
-    param ([string]$Message)
-    Log "[INFO]" $Message "White"
-}
-
-function WarnMessage {
-    param ([string]$Message)
-    Log "[WARNING]" $Message "Yellow"
-}
-
-function ErrorMessage {
-    param ([string]$Message)
-    Log "[ERROR]" $Message "Red"
-}
-
-function SuccessMessage {
-    param ([string]$Message)
-    Log "[SUCCESS]" $Message "Green"
-}
-
-function PrintStep {
-    param (
-        [int]$StepNumber,
-        [string]$Message
-    )
-    Log "[STEP]" "Step ${StepNumber}: $Message" "White"
-}
-
-# Exit script with an error message
-function ErrorExit {
-    param ([string]$Message)
-    ErrorMessage $Message
+# Source shared utilities
+if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
+try {
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/utils.ps1" -OutFile "utils.ps1" -ErrorAction Stop
+} catch {
+    Write-Error "Failed to download utils.ps1: $($_.Exception.Message)"
     exit 1
 }
+. ./utils.ps1
 
 function Ensure-Dependencies {
     InfoMessage "Ensuring dependencies are installed (curl, jq)"   
@@ -75,6 +37,42 @@ function Ensure-Dependencies {
         $env:Path += ";C:\Program Files"
         [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
         InfoMessage "jq added to PATH environment variable."
+    }
+}
+
+
+function Install-Python {
+    $PythonUrl = "https://www.python.org/ftp/python/3.12.2/python-3.12.2-amd64.exe"
+    $InstallerPath = "$env:TEMP\python-3.12.2-amd64.exe"
+
+    InfoMessage "Checking if Python 3 is already installed..."
+    $pythonInfo = Get-FunctionalPythonPath
+    if ($pythonInfo) {
+        SuccessMessage "Python 3 $($pythonInfo.Version) detected at $($pythonInfo.Path)"
+        return
+    }
+
+    try {
+        InfoMessage "Python 3 not found. Downloading installer from $PythonUrl..."
+        Invoke-WebRequest -Uri $PythonUrl -OutFile $InstallerPath -ErrorAction Stop
+        
+        InfoMessage "Installing Python 3 (silent)..."
+        # /quiet: Minimal UI
+        # InstallAllUsers=1: Install for all users
+        # PrependPath=1: Add to PATH
+        $process = Start-Process -FilePath $InstallerPath -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait -PassThru
+        
+        if ($process.ExitCode -eq 0) {
+            SuccessMessage "Python 3 installed successfully."
+            # Update current process PATH
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine) + ";" + [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+        } else {
+            ErrorMessage "Python 3 installation failed with exit code $($process.ExitCode)."
+        }
+    } catch {
+        ErrorMessage "Failed to download or install Python 3: $($_.Exception.Message)"
+    } finally {
+        if (Test-Path $InstallerPath) { Remove-Item -Path $InstallerPath }
     }
 }
 
@@ -199,6 +197,7 @@ function IsVCppInstalled {
 
 
 IsVCppInstalled
+Install-Python
 Install-GnuSed
 Ensure-Dependencies
 Install-BurntToastModule
