@@ -90,6 +90,20 @@ function Remove-WazuhService {
 function Cleanup-Files {
     InfoMessage "Cleaning up remaining Wazuh files"
     
+    # 1. Cleanup Docker Monitoring Task and Environment
+    $dockerTask = "WazuhDockerListener"
+    if (Get-ScheduledTask -TaskName $dockerTask -ErrorAction SilentlyContinue) {
+        InfoMessage "Removing Docker Listener Scheduled Task..."
+        Unregister-ScheduledTask -TaskName $dockerTask -Confirm:$false
+    }
+    
+    $venvPath = "C:\wazuh-docker-env"
+    if (Test-Path $venvPath) {
+        InfoMessage "Removing Docker Python virtual environment..."
+        Remove-Item -Path $venvPath -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    # 2. Cleanup ossec-agent directory
     if (Test-Path -Path $OssecPath) {
         try {
             Remove-Item -Path $OssecPath -Recurse -Force

@@ -1,6 +1,8 @@
+param(
+    [switch]$CaptureLogs
+)
+
 # Wazuh Docker Listener Setup (Windows)
-# Prepares Python environment for DockerListener safely and idempotently.
-# Does nothing if Docker is not installed.
 
 # Source shared utilities
 if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
@@ -11,6 +13,8 @@ try {
     exit 1
 }
 . ./utils.ps1
+
+$RepoUrl = if ($RepoUrl) { $RepoUrl } else { "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)" }
 
 Set-StrictMode -Version Latest
 
@@ -92,52 +96,73 @@ if ($LASTEXITCODE -ne 0) {
     exit 0
 }
 
-# 5. Ensure DockerListener exists and is patched for Windows
+# 5. Ensure DockerListener exists
 if (-not (Test-Path $DOCKER_WODLE_DIR)) {
     InfoMessage "Creating Docker wodle directory at $DOCKER_WODLE_DIR"
     New-Item -ItemType Directory -Path $DOCKER_WODLE_DIR -Force | Out-Null
 }
 
-if (-not (Test-Path $DOCKER_LISTENER)) {
-    $DockerListenerUrl = "https://raw.githubusercontent.com/wazuh/wazuh/main/wodles/docker-listener/DockerListener.py"
-    InfoMessage "DockerListener not found. Downloading from Wazuh repository..."
-    try {
-        Invoke-WebRequest -Uri $DockerListenerUrl -OutFile $DOCKER_LISTENER -ErrorAction Stop
+$customScriptSource = "$RepoUrl/files/wodles/docker/DockerListener.py"
+InfoMessage "Installing custom Windows DockerListener from $customScriptSource"
+try {
+    Invoke-WebRequest -Uri $customScriptSource -OutFile $DOCKER_LISTENER -ErrorAction Stop
+} catch {
+    ErrorMessage "Failed to install custom DockerListener: $($_.Exception.Message)"
+    exit 0
+}
+
+# 6. Configure Wazuh Agent to monitor the Docker events log
+$dockerLogPath = "C:\Program Files (x86)\ossec-agent\logs\docker_events.log"
+if (Test-Path $OSSEC_CONF_PATH) {
+    [xml]$xml = Get-Content $OSSEC_CONF_PATH
+    $alreadyConfigured = $xml.ossec_config.localfile | Where-Object { $_.location -eq $dockerLogPath }
+    
+    if (-not $alreadyConfigured) {
+        InfoMessage "Adding Docker log monitoring to ossec.conf..."
+        $newLocalFile = $xml.CreateElement("localfile", "http://www.ossec.net/ossec")
+        $location = $xml.CreateElement("location", "http://www.ossec.net/ossec")
+        $location.InnerText = $dockerLogPath
+        $logFormat = $xml.CreateElement("log_format", "http://www.ossec.net/ossec")
+        $logFormat.InnerText = "json"
+        $label = $xml.CreateElement("label", "http://www.ossec.net/ossec")
+        $label.SetAttribute("key", "source")
+        $label.InnerText = "docker"
         
-        # Patch: Remove the Windows-specific exit check
-        InfoMessage "Patching DockerListener for Windows compatibility..."
-        $scriptContent = Get-Content $DOCKER_LISTENER
-        $patchedContent = @()
-        $skip = $false
-        foreach ($line in $scriptContent) {
-            if ($line -match 'if sys\.platform == "win32":') { $skip = $true; continue }
-            if ($skip -and ($line -match 'sys\.stderr\.write' -or $line -match 'sys\.exit\(1\)')) { continue }
-            $skip = $false
-            $patchedContent += $line
-        }
-        $patchedContent | Set-Content $DOCKER_LISTENER
-    } catch {
-        ErrorMessage "Failed to download or patch DockerListener: $($_.Exception.Message)"
-        exit 0
-    }
-}
-
-if (Test-Path $DOCKER_LISTENER) {
-    $venvPython = Join-Path -Path $VENV_DIR -ChildPath "Scripts\python.exe"
-    $expectedShebang = "#!$venvPython"
-    $content = Get-Content $DOCKER_LISTENER
-    $currentShebang = $content[0]
-
-    if ($currentShebang -ne $expectedShebang) {
-        $content[0] = $expectedShebang
-        $content | Set-Content $DOCKER_LISTENER
-        InfoMessage "DockerListener shebang updated to use venv Python."
+        $newLocalFile.AppendChild($location) | Out-Null
+        $newLocalFile.AppendChild($logFormat) | Out-Null
+        $newLocalFile.AppendChild($label) | Out-Null
+        
+        $xml.ossec_config.AppendChild($newLocalFile) | Out-Null
+        $xml.Save($OSSEC_CONF_PATH)
+        SuccessMessage "ossec.conf updated with Docker log monitoring."
     } else {
-        InfoMessage "DockerListener shebang already correct."
+        InfoMessage "Docker log monitoring already configured in ossec.conf."
     }
-} else {
-    InfoMessage "DockerListener not found at $DOCKER_LISTENER. Skipping shebang update."
 }
 
-SuccessMessage "Wazuh Docker listener environment is ready."
+# 7. Create/Update Scheduled Task for background execution
+$taskName = "WazuhDockerListener"
+$venvPython = Join-Path -Path $VENV_DIR -ChildPath "Scripts\python.exe"
+
+# We use a PowerShell wrapper to set the environment variable for the listener
+$captureLogsVal = if ($CaptureLogs) { "True" } else { "False" }
+$logStreamingStatus = if ($CaptureLogs) { "ENABLED" } else { "DISABLED" }
+InfoMessage "Container log streaming will be $logStreamingStatus"
+
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -Command `"`$env:CAPTURE_DOCKER_LOGS='$captureLogsVal'; & '$venvPython' '$DOCKER_LISTENER'`""
+$trigger = New-ScheduledTaskTrigger -AtStartup
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
+$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+
+$existingTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+if ($existingTask) {
+    InfoMessage "Updating existing Scheduled Task: $taskName"
+    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
+}
+
+InfoMessage "Registering Scheduled Task: $taskName (Runs as SYSTEM at startup)"
+Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Principal $principal | Out-Null
+Start-ScheduledTask -TaskName $taskName
+
+SuccessMessage "Wazuh Docker listener for Windows is installed and running."
 exit 0

@@ -1,6 +1,7 @@
 param(
     [switch]$InstallSnort,
     [switch]$InstallSuricata,
+    [switch]$CaptureDockerLogs,
     [switch]$Help
 )
 
@@ -298,7 +299,9 @@ function Install-DockerListener {
         InfoMessage "Downloading and executing Docker listener setup script..."
         Invoke-WebRequest -Uri $DockerSetupUrl -OutFile $DockerSetupScript -ErrorAction Stop
         InfoMessage "Docker listener setup script downloaded successfully."
-        & powershell.exe -ExecutionPolicy Bypass -File $DockerSetupScript -ErrorAction Stop
+        $argList = @()
+        if ($CaptureDockerLogs) { $argList += "-CaptureLogs" }
+        & powershell.exe -ExecutionPolicy Bypass -File $DockerSetupScript $argList -ErrorAction Stop
     }
     catch {
         ErrorMessage "Error during Docker listener setup: $($_.Exception.Message)"
