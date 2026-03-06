@@ -123,7 +123,7 @@ if (Test-Path $OSSEC_CONF_PATH) {
         $location = $xml.CreateElement("location", "http://www.ossec.net/ossec")
         $location.InnerText = $dockerLogPath
         $logFormat = $xml.CreateElement("log_format", "http://www.ossec.net/ossec")
-        $logFormat.InnerText = "json"
+        $logFormat.InnerText = "syslog"
         $label = $xml.CreateElement("label", "http://www.ossec.net/ossec")
         $label.SetAttribute("key", "source")
         $label.InnerText = "docker"

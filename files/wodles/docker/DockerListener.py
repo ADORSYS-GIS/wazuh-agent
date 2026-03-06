@@ -56,15 +56,12 @@ class WindowsDockerListener:
         return False
 
     def write_output(self, data, data_type="event"):
-        """Write structured data to the log file for Wazuh."""
+        """Write structured data to the log file for Wazuh with official prefix."""
         try:
-            wazuh_format = {
-                'integration': 'docker',
-                'type': data_type,
-                'docker': data
-            }
+            # Prepend Wazuh-Docker: prefix and don't wrap in custom objects
+            # This matches the official Wazuh Docker decoder expectations
             with open(DOCKER_EVENTS_LOG, "a", encoding="utf-8") as f:
-                f.write(json.dumps(wazuh_format) + "\n")
+                f.write(f"Wazuh-Docker: {json.dumps(data)}\n")
         except Exception as e:
             logging.error(f"Failed to write {data_type}: {e}")
 

@@ -22,8 +22,7 @@ To provide professional Docker monitoring for Windows, we have implemented a nat
 - **Dual-Mode Capture**:
   - **Events**: Captures all container lifecycle events (start, stop, pause, etc.), matching the official Wazuh schema.
   - **Logs (Optional)**: Can stream `stdout` and `stderr` from all running containers in real-time.
-- **Wazuh Integration**: Bypasses the missing Unix sockets by writing events to a structured JSON log file:
-  - Path: `C:\Program Files (x86)\ossec-agent\logs\docker_events.log`
+- **Wazuh Integration**: Bypasses the missing Unix sockets by writing events to a structured log file with the official `Wazuh-Docker: ` prefix.
 - **Process Persistence**: Automatically managed as a **Windows Scheduled Task** (`WazuhDockerListener`), ensuring it runs as `SYSTEM` at startup and restarts automatically on failure.
 
 ## Installation & Usage
