@@ -58,10 +58,14 @@ class WindowsDockerListener:
     def write_output(self, data, data_type="event"):
         """Write structured data to the log file for Wazuh with official prefix."""
         try:
-            # Prepend Wazuh-Docker: prefix and don't wrap in custom objects
-            # This matches the official Wazuh Docker decoder expectations
+            # Prepend Wazuh-Docker: prefix and nest under 'docker' key
+            # This ensures JSON_Decoder produces fields like 'docker.status' exactly as rules expect
+            wazuh_payload = {
+                'integration': 'docker',
+                'docker': data
+            }
             with open(DOCKER_EVENTS_LOG, "a", encoding="utf-8") as f:
-                f.write(f"Wazuh-Docker: {json.dumps(data)}\n")
+                f.write(f"Wazuh-Docker: {json.dumps(wazuh_payload)}\n")
         except Exception as e:
             logging.error(f"Failed to write {data_type}: {e}")
 
@@ -72,7 +76,6 @@ class WindowsDockerListener:
         logging.info(f"Started log streaming for container {container_name} ({container_id})")
         
         try:
-            # stream=True, follow=True provides an iterator for logs
             for line in container.logs(stream=True, follow=True, timestamps=True):
                 if self.stop_event.is_set():
                     break
@@ -117,7 +120,6 @@ class WindowsDockerListener:
             if not self.connect():
                 break
                 
-            # Initial sync of running containers (if logging is enabled)
             self.sync_existing_containers()
             
             try:
@@ -129,7 +131,6 @@ class WindowsDockerListener:
                     # Record the event
                     self.write_output(event, data_type="event")
                     
-                    # Manage log threads based on events (only if logging is enabled)
                     if self.capture_logs:
                         status = event.get('status')
                         if status == 'start':

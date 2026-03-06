@@ -31,6 +31,7 @@ To provide professional Docker monitoring for Windows, we have implemented a nat
 
 - Python 3 installed on the Windows host.
 - Docker Desktop or Docker Engine running with the Windows Named Pipe enabled (default).
+- **Note**: Unlike Linux, you do **not** need to add the agent or user to a "docker" group. The listener runs as a Scheduled Task under the `SYSTEM` account, which has native access to the Docker Named Pipe.
 
 ### 2. Standard Installation
 
