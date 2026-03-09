@@ -60,12 +60,17 @@ class WindowsDockerListener:
         try:
             # Prepend Wazuh-Docker: prefix and nest under 'docker' key
             # This ensures JSON_Decoder produces fields like 'docker.status' exactly as rules expect
+            # Ensure 'status' field is present for compatibility with Wazuh rules
+            # Modern Docker APIs use 'Action', but many rules expect 'status'
+            if 'Action' in data and 'status' not in data:
+                data['status'] = data['Action']
+
             wazuh_payload = {
                 'integration': 'docker',
                 'docker': data
             }
             with open(DOCKER_EVENTS_LOG, "a", encoding="utf-8") as f:
-                f.write(f"Wazuh-Docker: {json.dumps(wazuh_payload)}\n")
+                f.write(f"{json.dumps(wazuh_payload)}\n")
         except Exception as e:
             logging.error(f"Failed to write {data_type}: {e}")
 
