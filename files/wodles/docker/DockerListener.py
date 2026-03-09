@@ -67,10 +67,11 @@ class WindowsDockerListener:
 
             wazuh_payload = {
                 'integration': 'docker',
+                'type': data_type,
                 'docker': data
             }
             with open(DOCKER_EVENTS_LOG, "a", encoding="utf-8") as f:
-                f.write(f"{json.dumps(wazuh_payload)}\n")
+                f.write(f"Wazuh-Docker: {json.dumps(wazuh_payload)}\n")
         except Exception as e:
             logging.error(f"Failed to write {data_type}: {e}")
 

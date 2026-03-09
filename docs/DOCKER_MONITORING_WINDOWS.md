@@ -20,10 +20,11 @@ To provide professional Docker monitoring for Windows, we have implemented a nat
 
 - **Named Pipe Connectivity**: Uses the `docker-py` library to communicate natively with the Windows Docker Engine via Named Pipes.
 - **Dual-Mode Capture**:
-  - **Events**: Captures all container lifecycle events (start, stop, pause, etc.), matching the official Wazuh schema.
-  - **Logs (Optional)**: Can stream `stdout` and `stderr` from all running containers in real-time.
-- **Wazuh Integration**: Bypasses the missing Unix sockets by writing events to a structured log file with the official `Wazuh-Docker: ` prefix.
-- **Process Persistence**: Automatically managed as a **Windows Scheduled Task** (`WazuhDockerListener`), ensuring it runs as `SYSTEM` at startup and restarts automatically on failure.
+- **Events**: Captures all container lifecycle events (start, stop, exec, etc.).
+  - **Logs (Optional)**: Real-time `stdout`/`stderr` streaming from all containers.
+- **Rule Compatibility**: Automatically maps modern Docker fields (like `Action`) to legacy fields (like `status`) to ensure all built-in Wazuh rules trigger correctly.
+- **Wazuh Integration**: Writes events to a local JSON log file which the Wazuh Agent monitors as a "bridge" to the manager.
+- **Process Persistence**: Automatically managed as a **Windows Scheduled Task** (`WazuhDockerListener`) running as `SYSTEM`.
 
 ## Installation & Usage
 
@@ -31,8 +32,7 @@ To provide professional Docker monitoring for Windows, we have implemented a nat
 
 - Python 3 installed on the Windows host.
 - Docker Desktop or Docker Engine running with the Windows Named Pipe enabled (default).
-- **Note**: Unlike Linux, you do **not** need to add the agent or user to a "docker" group. The listener runs as a Scheduled Task under the `SYSTEM` account, which has native access to the Docker Named Pipe.
-
+- **Note**: Unlike Linux/macOS, you do **not** need to add the agent or user to a "docker" group. The listener runs as a Scheduled Task under the `SYSTEM` account, which has native, unrestricted access to the Docker Named Pipe (`\\.\pipe\docker_engine`).
 ### 2. Standard Installation
 
 By default, the installer only captures **Events** (to minimize noise):
@@ -65,6 +65,13 @@ Get-Content "C:\Program Files (x86)\ossec-agent\logs\docker_events.log"
 
 ## Management & Troubleshooting
 
-- **Service Management**: Use the Windows Task Scheduler to start/stop the `WazuhDockerListener` task.
-- **Configuration**: The Wazuh Agent `ossec.conf` is automatically updated to monitor the `docker_events.log` file with the `source: docker` label.
-- **Cleanup**: Running `uninstall.ps1` will fully remove the listener, the scheduled task, and the Python virtual environment.
+- **Service Management**: Use Task Scheduler to start/stop the `WazuhDockerListener` task.
+- **Agent Configuration**: The installer adds this block to `ossec.conf` to bridge the logs:
+  ```xml
+  <localfile>
+    <location>C:\Program Files (x86)\ossec-agent\logs\docker_events.log</location>
+    <log_format>syslog</log_format>
+    <label key="source">docker</label>
+  </localfile>
+  ```
+- **Cleanup**: Running `uninstall.ps1` fully removes the listener, task, and virtual environment.
