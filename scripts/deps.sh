@@ -1,36 +1,19 @@
 #!/bin/sh
 
 # Set shell options
-
-# Set shell options
 if [ -n "$BASH_VERSION" ]; then
     set -euo pipefail
 else
     set -eu
 fi
 
-# Function for logging with timestamp
-log() {
-    local LEVEL="$1"
-    shift
-    local MESSAGE="$*"
-    local TIMESTAMP
-    TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    echo "$TIMESTAMP [$LEVEL] $MESSAGE"
-}
-
-# Logging helpers
-info_message() {
-    log INFO "$*"
-}
-
-error_message() {
-    log ERROR "$*"
-}
-
-success_message() {
-    log INFO "$*"
-}
+# Source shared utilities
+: "${WAZUH_AGENT_REPO_REF:=main}"
+if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o utils.sh; then
+    echo "Error: Failed to download utils.sh" >&2
+    exit 1
+fi
+. ./utils.sh
 
 LOGGED_IN_USER=""
 
@@ -43,25 +26,6 @@ brew_command() {
     sudo -u "$LOGGED_IN_USER" -i brew "$@"
 }
 
-# Ensure root privileges, either directly or through sudo
-maybe_sudo() {
-    if [ "$(id -u)" -ne 0 ]; then
-        if command -v sudo >/dev/null 2>&1; then
-            sudo "$@"
-        else
-            error_message "This script requires root privileges. Please run with sudo or as root."
-            exit 1
-        fi
-    else
-        "$@"
-    fi
-}
-
-# Function to check if a command is installed
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
 # Detect OS and install packages
 OS_NAME=$(uname -s)
 case "$OS_NAME" in
@@ -69,13 +33,13 @@ case "$OS_NAME" in
         if command_exists apt-get; then
             info_message "Detected Debian/Ubuntu-based system"
             maybe_sudo apt-get update
-            maybe_sudo apt-get install -y curl jq
+            maybe_sudo apt-get install -y curl jq python3-venv python3-pip
         elif command_exists yum; then
             info_message "Detected Red Hat/CentOS-based system"
-            maybe_sudo yum install -y curl jq
+            maybe_sudo yum install -y curl jq python3-pip
         elif command_exists apk; then
             info_message "Detected Alpine Linux system"
-            maybe_sudo apk add --no-cache curl jq
+            maybe_sudo apk add --no-cache curl jq python3 py3-pip
         else
             error_message "Unsupported Linux distribution"
             exit 1
@@ -83,7 +47,7 @@ case "$OS_NAME" in
         ;;
     "Darwin")
         info_message "Detected macOS"
-        brew_command install jq gsed bash
+        brew_command install jq gsed bash python3
         ;;
     *)
         error_message "Unsupported operating system: $OS_NAME"

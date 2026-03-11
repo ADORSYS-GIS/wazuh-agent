@@ -1,11 +1,15 @@
+# Source shared utilities
+if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
+try {
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/utils.ps1" -OutFile "utils.ps1" -ErrorAction Stop
+} catch {
+    Write-Error "Failed to download utils.ps1: $($_.Exception.Message)"
+    exit 1
+}
+. ./utils.ps1
+
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.2-1" }
-
-
-# Global variables
-$OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
-$OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
-$APP_DATA = "C:\ProgramData\ossec-agent\"
 
 # Variables
 $AgentFileName = "wazuh-agent-$WAZUH_AGENT_VERSION.msi"
@@ -18,52 +22,7 @@ $RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
 $APP_LOGO_URL = "$RepoUrl/assets/wazuh-logo.png"
 $APP_LOGO_PATH = Join-Path -Path $APP_DATA -ChildPath "wazuh-logo.png"
 
-# Function for logging with timestamp
-function Log {
-    param (
-        [string]$Level,
-        [string]$Message,
-        [string]$Color = "White"  # Default color
-    )
-    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
-}
-
-# Logging helpers with colors
-function InfoMessage {
-    param ([string]$Message)
-    Log "[INFO]" $Message "White"
-}
-
-function WarnMessage {
-    param ([string]$Message)
-    Log "[WARNING]" $Message "Yellow"
-}
-
-function ErrorMessage {
-    param ([string]$Message)
-    Log "[ERROR]" $Message "Red"
-}
-
-function SuccessMessage {
-    param ([string]$Message)
-    Log "[SUCCESS]" $Message "Green"
-}
-
-function PrintStep {
-    param (
-        [int]$StepNumber,
-        [string]$Message
-    )
-    Log "[STEP]" "Step ${StepNumber}: $Message" "White"
-}
-
 # Exit script with an error message
-function ErrorExit {
-    param ([string]$Message)
-    ErrorMessage $Message
-    exit 1
-}
 
 # Function to install Wazuh Agent
 function Install-Agent {

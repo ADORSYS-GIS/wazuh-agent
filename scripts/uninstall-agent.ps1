@@ -4,6 +4,15 @@ param(
     [switch]$Help
 )
 
+# Source shared utilities
+if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
+try {
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/utils.ps1" -OutFile "utils.ps1" -ErrorAction Stop
+} catch {
+    Write-Error "Failed to download utils.ps1: $($_.Exception.Message)"
+    exit 1
+}
+. ./utils.ps1
 
 # Set strict mode for script execution
 Set-StrictMode -Version Latest
@@ -19,30 +28,6 @@ $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.2" }
 $WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.9.0-rc.1" }
 # Global array to track uninstaller files
 $global:UninstallerFiles = @()
-
-# Function to log messages with a timestamp and color
-function Log {
-    param (
-        [string]$Level,
-        [string]$Message,
-        [string]$Color = "White"
-    )
-    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
-}
-
-function InfoMessage { param([string]$Message) Log "[INFO]" $Message "Cyan" }
-function WarningMessage { param([string]$Message) Log "[WARNING]" $Message "Yellow" }
-function SuccessMessage { param([string]$Message) Log "[SUCCESS]" $Message "Green" }
-function ErrorMessage { param([string]$Message) Log "[ERROR]" $Message "Red" }
-function SectionSeparator {
-    param ([string]$SectionName)
-    Write-Host ""
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host "  $SectionName" -ForegroundColor Magenta
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host ""
-}
 
 # Cleanup function to remove uninstaller files at the end
 function Cleanup-Uninstallers {

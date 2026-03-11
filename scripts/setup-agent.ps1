@@ -1,8 +1,19 @@
 param(
     [switch]$InstallSnort,
     [switch]$InstallSuricata,
+    [switch]$CaptureDockerLogs,
     [switch]$Help
 )
+
+# Source shared utilities
+if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
+try {
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/utils.ps1" -OutFile "utils.ps1" -ErrorAction Stop
+} catch {
+    Write-Error "Failed to download utils.ps1: $($_.Exception.Message)"
+    exit 1
+}
+. ./utils.ps1
 
 # Set strict mode for script execution (after param declaration)
 Set-StrictMode -Version Latest
@@ -12,8 +23,6 @@ $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-client" }
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.2-1" }
-$OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\" 
-$OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
 $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.14" }
 $WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4" }
@@ -29,48 +38,6 @@ $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 # Global array to track installer files
 $global:InstallerFiles = @()
 
-# Function to log messages with a timestamp
-function Log {
-    param (
-        [string]$Level,
-        [string]$Message,
-        [string]$Color = "White"  # Default color
-    )
-    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
-}
-
-function InfoMessage {
-    param ([string]$Message)
-    Log "[INFO]" $Message "Cyan"
-}
-
-function WarningMessage {
-    param ([string]$Message)
-    Log "[WARNING]" $Message "Yellow"
-}
-
-function SuccessMessage {
-    param ([string]$Message)
-    Log "[SUCCESS]" $Message "Green"
-}
-
-function ErrorMessage {
-    param ([string]$Message)
-    Log "[ERROR]" $Message "Red"
-}
-
-function SectionSeparator {
-    param (
-        [string]$SectionName
-    )
-    Write-Host ""
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host "  $SectionName" -ForegroundColor Magenta
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host ""
-}
-
 # Cleanup function to remove installer files at the end
 function Cleanup-Installers {
     foreach ($file in $global:InstallerFiles) {
@@ -83,14 +50,18 @@ function Cleanup-Installers {
 
 # Step 0: Download dependency script and execute
 function Install-Dependencies {
+    $UtilsURL = "$RepoUrl/scripts/utils.ps1"
+    $UtilsPath = "$env:TEMP\utils.ps1"
     $InstallerURL = "$RepoUrl/scripts/deps.ps1"
     $InstallerPath = "$env:TEMP\deps.ps1"
+    $global:InstallerFiles += $UtilsPath
     $global:InstallerFiles += $InstallerPath
 
     try {
-        InfoMessage "Downloading and executing dependency script..."
+        InfoMessage "Downloading utilities and dependency script..."
+        Invoke-WebRequest -Uri $UtilsURL -OutFile $UtilsPath -ErrorAction Stop
         Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
-        InfoMessage "Dependency script downloaded successfully."
+        InfoMessage "Scripts downloaded successfully."
         & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ErrorAction Stop
     }
     catch {
@@ -226,7 +197,7 @@ function Uninstall-Suricata {
 
 # Step 6: Download and install Wazuh Agent Status with error handling
 function Install-AgentStatus {
-    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION-user/scripts/install.ps1"
+    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.ps1"
     $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
     $global:InstallerFiles += $AgentStatusScript
 
@@ -318,6 +289,26 @@ function Show-Help {
     Write-Host ""
 }
 
+# Step 8: Setup Docker monitoring (only runs if Docker is installed)
+function Install-DockerListener {
+    $DockerSetupUrl = "$RepoUrl/scripts/setup-docker.ps1"
+    $DockerSetupScript = "$env:TEMP\setup-docker.ps1"
+    $global:InstallerFiles += $DockerSetupScript
+
+    try {
+        InfoMessage "Downloading and executing Docker listener setup script..."
+        Invoke-WebRequest -Uri $DockerSetupUrl -OutFile $DockerSetupScript -ErrorAction Stop
+        InfoMessage "Docker listener setup script downloaded successfully."
+        $argList = @()
+        if ($CaptureDockerLogs) { $argList += "-CaptureLogs" }
+        & powershell.exe -ExecutionPolicy Bypass -File $DockerSetupScript $argList -ErrorAction Stop
+        InfoMessage "Docker monitoring setup completed successfully."
+    }
+    catch {
+        ErrorMessage "Error during Docker listener setup: $($_.Exception.Message)"
+    }
+}
+
 # Show help if -Help is specified
 if ($Help) {
     Show-Help
@@ -367,6 +358,9 @@ try {
 
     SectionSeparator "Installing USB DLP Scripts"
     Install-USBDLPScripts
+
+    SectionSeparator "Setting up Docker Monitoring"
+    Install-DockerListener
 
     SectionSeparator "Downloading Version File"
     DownloadVersionFile
