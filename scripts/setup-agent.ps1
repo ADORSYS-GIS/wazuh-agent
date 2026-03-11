@@ -289,7 +289,7 @@ function Show-Help {
     Write-Host ""
 }
 
-# Step 9: Setup Docker monitoring (only runs if Docker is installed)
+# Step 8: Setup Docker monitoring (only runs if Docker is installed)
 function Install-DockerListener {
     $DockerSetupUrl = "$RepoUrl/scripts/setup-docker.ps1"
     $DockerSetupScript = "$env:TEMP\setup-docker.ps1"
@@ -302,6 +302,7 @@ function Install-DockerListener {
         $argList = @()
         if ($CaptureDockerLogs) { $argList += "-CaptureLogs" }
         & powershell.exe -ExecutionPolicy Bypass -File $DockerSetupScript $argList -ErrorAction Stop
+        InfoMessage "Docker monitoring setup completed successfully."
     }
     catch {
         ErrorMessage "Error during Docker listener setup: $($_.Exception.Message)"
@@ -358,11 +359,11 @@ try {
     SectionSeparator "Installing USB DLP Scripts"
     Install-USBDLPScripts
 
-    SectionSeparator "Downloading Version File"
-    DownloadVersionFile
-
     SectionSeparator "Setting up Docker Monitoring"
     Install-DockerListener
+
+    SectionSeparator "Downloading Version File"
+    DownloadVersionFile
 }
 finally {
     InfoMessage "Cleaning up installer files..."

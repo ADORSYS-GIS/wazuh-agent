@@ -314,22 +314,24 @@ fi
 success_message "USB DLP Active Response scripts installed successfully."
 info_message "Finished USB DLP setup step."
 
-# Step 8: Download version file
-info_message "Downloading version file..."
-if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" -o "$OSSEC_ROOT/version.txt") 2>&1; then
-    error_message "Failed to download version file"
-    exit 1
-fi
-info_message "Version file downloaded successfully."
-
-# Step 9: Setup Docker monitoring (only runs if Docker is installed)
+# Step 8: Setup Docker monitoring (only runs if Docker is installed)
 info_message "Setting up Docker monitoring (if Docker is present)..."
 if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/setup-docker.sh" -o "$TMP_FOLDER/setup-docker.sh"; then
     error_message "Failed to download setup-docker.sh"
 else
     if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_PATH="$OSSEC_PATH" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then
         error_message "Failed to setup Docker monitoring"
+    else
+        info_message "Docker monitoring setup completed successfully."
     fi
 fi
+
+# Step 9: Download version file
+info_message "Downloading version file..."
+if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" -o "$OSSEC_ROOT/version.txt") 2>&1; then
+    error_message "Failed to download version file"
+    exit 1
+fi
+info_message "Version file downloaded successfully."
 
 success_message "Wazuh setup has been completed successfully."
