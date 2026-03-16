@@ -52,7 +52,6 @@ curl -fsSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AG
 
 #### Windows (PowerShell)
 
-
 ```powershell
 $env:WAZUH_MANAGER = "your-manager-ip"
 $env:WAZUH_AGENT_REPO_REF = "main"
