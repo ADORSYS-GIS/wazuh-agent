@@ -228,8 +228,23 @@ try {
         }
         else {
             if (-not (Test-Checksum -FilePath $scriptPath -ExpectedHash $expectedHash)) {
-                ErrorMessage "Aborting installation due to checksum mismatch"
+                ErrorMessage "Aborting installation due to checksum mismatch for $ScriptName"
                 exit 1
+            }
+
+            # Verify utils.ps1
+            $utilsHash = $null
+            foreach ($line in $checksumLines) {
+                if ($line -match "scripts/utils.ps1") {
+                    $utilsHash = ($line -split '\s+')[0]
+                    break
+                }
+            }
+            if (-not [string]::IsNullOrWhiteSpace($utilsHash) -and (Test-Path (Join-Path $TempDir "utils.ps1"))) {
+                if (-not (Test-Checksum -FilePath (Join-Path $TempDir "utils.ps1") -ExpectedHash $utilsHash)) {
+                    ErrorMessage "Aborting installation due to checksum mismatch for utils.ps1"
+                    exit 1
+                }
             }
         }
     }

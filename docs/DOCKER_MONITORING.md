@@ -46,7 +46,7 @@ Since Wazuh lacks native Windows support, we use a custom Python listener.
 
 ```bash
 export WAZUH_MANAGER="your-manager-ip"
-export WAZUH_AGENT_REPO_REF="refs/heads/feat/docker-monitoring-setup"
+export WAZUH_AGENT_REPO_REF="main"
 curl -fsSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/install.sh" | bash
 ```
 
@@ -55,7 +55,7 @@ curl -fsSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AG
 
 ```powershell
 $env:WAZUH_MANAGER = "your-manager-ip"
-$env:WAZUH_AGENT_REPO_REF = "refs/heads/feat/docker-monitoring-setup"
+$env:WAZUH_AGENT_REPO_REF = "main"
 
 # Optional: -CaptureDockerLogs enables real-time container log streaming
 .\setup-agent.ps1 -CaptureDockerLogs

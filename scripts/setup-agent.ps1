@@ -7,13 +7,30 @@ param(
 
 # Source shared utilities
 if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
+
+$UtilsTmp = Join-Path -Path $env:TEMP -ChildPath "wazuh_utils_$((Get-Date).Ticks)"
+New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
+
 try {
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/utils.ps1" -OutFile "utils.ps1" -ErrorAction Stop
+    $ChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/checksums.sha256"
+    $UtilsUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/utils.ps1"
+    
+    Invoke-WebRequest -Uri $ChecksumUrl -OutFile "$UtilsTmp\checksums.sha256" -ErrorAction Stop
+    Invoke-WebRequest -Uri $UtilsUrl -OutFile "$UtilsTmp\utils.ps1" -ErrorAction Stop
+
+    $ExpectedHash = (Select-String -Path "$UtilsTmp\checksums.sha256" -Pattern "scripts/utils.ps1").Line.Split(" ")[0]
+    $ActualHash = (Get-FileHash -Path "$UtilsTmp\utils.ps1" -Algorithm SHA256).Hash.ToLower()
+
+    if ([string]::IsNullOrWhiteSpace($ExpectedHash) -or $ExpectedHash -ne $ActualHash) {
+        Write-Error "Checksum verification failed for utils.ps1"
+        exit 1
+    }
 } catch {
-    Write-Error "Failed to download utils.ps1: $($_.Exception.Message)"
+    Write-Error "Failed to download or verify utils.ps1: $($_.Exception.Message)"
     exit 1
 }
-. ./utils.ps1
+
+. "$UtilsTmp\utils.ps1"
 
 # Set strict mode for script execution (after param declaration)
 Set-StrictMode -Version Latest
@@ -48,20 +65,46 @@ function Cleanup-Installers {
     }
 }
 
-# Step 0: Download dependency script and execute
-function Install-Dependencies {
-    $UtilsURL = "$RepoUrl/scripts/utils.ps1"
-    $UtilsPath = "$env:TEMP\utils.ps1"
-    $InstallerURL = "$RepoUrl/scripts/deps.ps1"
-    $InstallerPath = "$env:TEMP\deps.ps1"
-    $global:InstallerFiles += $UtilsPath
-    $global:InstallerFiles += $InstallerPath
+# Step 0: Download and execute core scripts
+function Download-CoreScripts {
+    $CoreScripts = @("deps.ps1", "install.ps1")
+    $env:WAZUH_AGENT_REPO_REF = $WAZUH_AGENT_REPO_REF
+    
+    # We already have utils.ps1 verified in the bootstrap phase, let's copy it to TEMP
+    Copy-Item -Path "$UtilsTmp\utils.ps1" -Destination "$env:TEMP\utils.ps1" -Force
+    $global:InstallerFiles += "$env:TEMP\utils.ps1"
 
+    foreach ($script in $CoreScripts) {
+        $url = "$RepoUrl/scripts/$script"
+        $dest = "$env:TEMP\$script"
+        $global:InstallerFiles += $dest
+
+        try {
+            InfoMessage "Downloading $script..."
+            Invoke-WebRequest -Uri $url -OutFile $dest -ErrorAction Stop
+            
+            # Verify checksum using the already downloaded checksums file
+            $expectedHash = (Select-String -Path "$UtilsTmp\checksums.sha256" -Pattern "scripts/$script").Line.Split(" ")[0]
+            if (-not [string]::IsNullOrWhiteSpace($expectedHash)) {
+                if (-not (Test-Checksum -FilePath $dest -ExpectedHash $expectedHash)) {
+                    exit 1
+                }
+            } else {
+                WarningMessage "No checksum found for $script, skipping verification"
+            }
+        }
+        catch {
+            ErrorMessage "Error downloading $script: $($_.Exception.Message)"
+            exit 1
+        }
+    }
+}
+
+# Step 0.1: Execute dependencies
+function Install-Dependencies {
+    $InstallerPath = "$env:TEMP\deps.ps1"
     try {
-        InfoMessage "Downloading utilities and dependency script..."
-        Invoke-WebRequest -Uri $UtilsURL -OutFile $UtilsPath -ErrorAction Stop
-        Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
-        InfoMessage "Scripts downloaded successfully."
+        InfoMessage "Installing dependencies..."
         & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ErrorAction Stop
     }
     catch {
@@ -69,16 +112,11 @@ function Install-Dependencies {
     }
 }
 
-# Step 1: Download and execute Wazuh agent script with error handling
+# Step 1: Execute Wazuh agent script
 function Install-WazuhAgent {
-    $InstallerURL = "$RepoUrl/scripts/install.ps1"
     $InstallerPath = "$env:TEMP\install.ps1"
-    $global:InstallerFiles += $InstallerPath
-
     try {
-        InfoMessage "Downloading and executing Wazuh agent script..."
-        Invoke-WebRequest -Uri $InstallerURL -OutFile $InstallerPath -ErrorAction Stop
-        InfoMessage "Wazuh agent script downloaded successfully."
+        InfoMessage "Executing Wazuh agent installation script..."
         & powershell.exe -ExecutionPolicy Bypass -File $InstallerPath -ArgumentList "-WAZUH_AGENT_VERSION", $WAZUH_AGENT_VERSION, "-WAZUH_MANAGER", $WAZUH_MANAGER -ErrorAction Stop
     }
     catch {
@@ -301,6 +339,7 @@ function Install-DockerListener {
         InfoMessage "Docker listener setup script downloaded successfully."
         $argList = @()
         if ($CaptureDockerLogs) { $argList += "-CaptureLogs" }
+        $env:WAZUH_AGENT_REPO_REF = $WAZUH_AGENT_REPO_REF
         & powershell.exe -ExecutionPolicy Bypass -File $DockerSetupScript $argList -ErrorAction Stop
         InfoMessage "Docker monitoring setup completed successfully."
     }
@@ -330,6 +369,8 @@ if ($InstallSnort -and $InstallSuricata) {
 
 # Main Execution wrapped in a try-finally to ensure cleanup runs even if errors occur.
 try {
+    SectionSeparator "Downloading Core Scripts"
+    Download-CoreScripts
     SectionSeparator "Installing Dependencies"
     Install-Dependencies
     SectionSeparator "Installing Wazuh Agent"

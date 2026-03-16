@@ -2,11 +2,43 @@
 
 # Source shared utilities
 : "${WAZUH_AGENT_REPO_REF:=main}"
-if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o utils.sh; then
+
+# Create a secure temporary directory for utilities
+UTILS_TMP=$(mktemp -d)
+trap 'rm -rf "$UTILS_TMP"' EXIT
+
+# Function to calculate SHA256 (cross-platform bootstrap)
+calculate_sha256_bootstrap() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    else
+        shasum -a 256 "$1" | awk '{print $1}'
+    fi
+}
+
+# 1. Download checksums
+if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" -o "$UTILS_TMP/checksums.sha256"; then
+    echo "Error: Failed to download checksums.sha256" >&2
+    exit 1
+fi
+
+# 2. Download utils.sh
+if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o "$UTILS_TMP/utils.sh"; then
     echo "Error: Failed to download utils.sh" >&2
     exit 1
 fi
-. ./utils.sh
+
+# 3. Verify utils.sh integrity
+EXPECTED_HASH=$(grep "scripts/utils.sh" "$UTILS_TMP/checksums.sha256" | awk '{print $1}')
+ACTUAL_HASH=$(calculate_sha256_bootstrap "$UTILS_TMP/utils.sh")
+
+if [ -z "$EXPECTED_HASH" ] || [ "$EXPECTED_HASH" != "$ACTUAL_HASH" ]; then
+    echo "Error: Checksum verification failed for utils.sh" >&2
+    exit 1
+fi
+
+# shellcheck source=/dev/null
+. "$UTILS_TMP/utils.sh"
 
 WAZUH_USER=${WAZUH_USER:-'wazuh'}
 WAZUH_GROUP=${WAZUH_GROUP:-'wazuh'}

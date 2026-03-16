@@ -2,11 +2,43 @@
 
 # Source shared utilities
 : "${WAZUH_AGENT_REPO_REF:=main}"
-if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o utils.sh; then
+
+# Create a secure temporary directory for utilities
+UTILS_TMP=$(mktemp -d)
+trap 'rm -rf "$UTILS_TMP"' EXIT
+
+# Function to calculate SHA256 (cross-platform)
+calculate_sha256() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    else
+        shasum -a 256 "$1" | awk '{print $1}'
+    fi
+}
+
+# 1. Download checksums
+if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" -o "$UTILS_TMP/checksums.sha256"; then
+    echo "Error: Failed to download checksums.sha256" >&2
+    exit 1
+fi
+
+# 2. Download utils.sh
+if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o "$UTILS_TMP/utils.sh"; then
     echo "Error: Failed to download utils.sh" >&2
     exit 1
 fi
-. ./utils.sh
+
+# 3. Verify utils.sh integrity
+EXPECTED_HASH=$(grep "scripts/utils.sh" "$UTILS_TMP/checksums.sha256" | awk '{print $1}')
+ACTUAL_HASH=$(calculate_sha256 "$UTILS_TMP/utils.sh")
+
+if [ -z "$EXPECTED_HASH" ] || [ "$EXPECTED_HASH" != "$ACTUAL_HASH" ]; then
+    echo "Error: Checksum verification failed for utils.sh" >&2
+    exit 1
+fi
+
+# shellcheck source=/dev/null
+. "$UTILS_TMP/utils.sh"
 
 # ==============================================================================
 # Default Configuration
@@ -168,12 +200,26 @@ uninstall_suricata() {
 
 info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
-# Step -1: Download all core scripts
-info_message "Downloading core component scripts..."
-for script in "utils.sh" "deps.sh" "install.sh"; do
+# Step -1: Download and verify all core scripts
+info_message "Downloading and verifying core component scripts..."
+cp "$UTILS_TMP/checksums.sha256" "$TMP_FOLDER/checksums.sha256"
+
+# We already have a verified utils.sh, let's copy it
+cp "$UTILS_TMP/utils.sh" "$TMP_FOLDER/utils.sh"
+
+for script in "deps.sh" "install.sh"; do
     if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/$script" -o "$TMP_FOLDER/$script"; then
         error_message "Failed to download core script: $script"
         exit 1
+    fi
+    
+    EXPECTED_SCRIPT_HASH=$(grep "scripts/$script" "$TMP_FOLDER/checksums.sha256" | awk '{print $1}')
+    if [ -n "$EXPECTED_SCRIPT_HASH" ]; then
+        if ! verify_checksum "$TMP_FOLDER/$script" "$EXPECTED_SCRIPT_HASH"; then
+            exit 1
+        fi
+    else
+        warn_message "No checksum found for $script, skipping verification"
     fi
 done
 
@@ -198,7 +244,7 @@ fi
 
 # Step 0: Install dependencies
 info_message "Installing dependencies"
-if ! (bash "$TMP_FOLDER/install-deps.sh" < /dev/null) 2>&1; then
+if ! (env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-deps.sh" < /dev/null) 2>&1; then
     error_message "Failed to install dependencies"
     exit 1
 fi
@@ -265,7 +311,7 @@ if [ "$INSTALL_TRIVY" = "TRUE" ]; then
         error_message "Failed to download install-trivy.sh"
         exit 1
     fi
-    if ! (bash "$TMP_FOLDER/install-trivy.sh" < /dev/null) 2>&1; then
+    if ! (env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-trivy.sh" < /dev/null) 2>&1; then
         error_message "Failed to install trivy"
         exit 1
     fi

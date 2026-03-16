@@ -185,8 +185,18 @@ main() {
             warn_message "Proceeding without verification..."
         else
             if ! verify_checksum "$TMP_DIR/$SCRIPT_NAME" "$expected_hash"; then
-                error_message "Aborting installation due to checksum mismatch"
+                error_message "Aborting installation due to checksum mismatch for ${SCRIPT_NAME}"
                 exit 1
+            fi
+
+            # Verify utils.sh
+            local utils_hash
+            utils_hash=$(grep "scripts/utils.sh" "$TMP_DIR/$CHECKSUMS_FILE" | awk '{print $1}')
+            if [ -n "$utils_hash" ] && [ -f "$TMP_DIR/utils.sh" ]; then
+                if ! verify_checksum "$TMP_DIR/utils.sh" "$utils_hash"; then
+                    error_message "Aborting installation due to checksum mismatch for utils.sh"
+                    exit 1
+                fi
             fi
         fi
     elif [ "$SKIP_VERIFY" = "true" ]; then

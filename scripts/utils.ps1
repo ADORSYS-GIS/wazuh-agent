@@ -70,3 +70,26 @@ function Get-FunctionalPythonPath {
     }
     return $null
 }
+
+function Get-FileChecksum {
+    param([string]$FilePath)
+    if (-not (Test-Path $FilePath)) {
+        throw "File not found: $FilePath"
+    }
+    return (Get-FileHash -Path $FilePath -Algorithm SHA256).Hash.ToLower()
+}
+
+function Test-Checksum {
+    param(
+        [string]$FilePath,
+        [string]$ExpectedHash
+    )
+    $actualHash = Get-FileChecksum -FilePath $FilePath
+    if ($actualHash -ne $ExpectedHash.ToLower()) {
+        ErrorMessage "Checksum verification FAILED for $FilePath!"
+        ErrorMessage "  Expected: $ExpectedHash"
+        ErrorMessage "  Got:      $actualHash"
+        return $false
+    }
+    return $true
+}

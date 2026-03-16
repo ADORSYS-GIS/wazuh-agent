@@ -7,7 +7,9 @@ import logging
 from datetime import datetime
 
 # Configure logging for the listener itself
-LOG_DIR = "C:\\Program Files (x86)\\ossec-agent\\logs"
+# Respect OSSEC_LOG_PATH if set, otherwise fallback to default Windows path
+DEFAULT_LOG_DIR = "C:\\Program Files (x86)\\ossec-agent\\logs"
+LOG_DIR = os.environ.get("OSSEC_LOG_PATH", DEFAULT_LOG_DIR)
 LOG_FILE = os.path.join(LOG_DIR, "docker_listener.log")
 DOCKER_EVENTS_LOG = os.path.join(LOG_DIR, "docker_events.log")
 

@@ -65,6 +65,35 @@ get_functional_python() {
     return 1
 }
 
+# Calculate SHA256 hash (cross-platform)
+calculate_sha256() {
+    local file="$1"
+    if command_exists sha256sum; then
+        sha256sum "$file" | awk '{print $1}'
+    elif command_exists shasum; then
+        shasum -a 256 "$file" | awk '{print $1}'
+    else
+        error_message "No SHA256 tool available (sha256sum or shasum required)"
+        return 1
+    fi
+}
+
+# Verify file checksum
+verify_checksum() {
+    local file="$1"
+    local expected="$2"
+    local actual
+    actual=$(calculate_sha256 "$file")
+
+    if [ "$actual" != "$expected" ]; then
+        error_message "Checksum verification FAILED for $file!"
+        error_message "  Expected: $expected"
+        error_message "  Got:      $actual"
+        return 1
+    fi
+    return 0
+}
+
 # In-place sed that works on both Linux (GNU) and macOS (BSD)
 sed_inplace() {
     if command_exists gsed; then
