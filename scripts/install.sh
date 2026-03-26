@@ -2,6 +2,7 @@
 
 # Source shared utilities
 : "${WAZUH_AGENT_REPO_REF:=main}"
+echo "Debug: WAZUH_AGENT_REPO_REF is $WAZUH_AGENT_REPO_REF"
 if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o utils.sh; then
     echo "Error: Failed to download utils.sh" >&2
     exit 1

@@ -238,10 +238,12 @@ jobs:
 
       - name: Test install script
         run: |
+          echo "Debug: WAZUH_AGENT_REPO_REF is $WAZUH_AGENT_REPO_REF"
           sudo -E ./scripts/install.sh
 
       - name: Test setup-agent script
         run: |
+          echo "Debug: WAZUH_AGENT_REPO_REF is $WAZUH_AGENT_REPO_REF"
           sudo -E ./scripts/setup-agent.sh
 
   # ============================================
@@ -294,6 +296,7 @@ jobs:
         shell: pwsh
         run: |
           # Run deps script in dry-run mode if available, otherwise skip heavy installs
+          Write-Host "Debug: WAZUH_AGENT_REPO_REF is $env:WAZUH_AGENT_REPO_REF"
           Write-Host "Testing deps.ps1 syntax..."
           $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/deps.ps1 -Raw), [ref]$null)
           Write-Host "✓ deps.ps1 syntax valid" -ForegroundColor Green
