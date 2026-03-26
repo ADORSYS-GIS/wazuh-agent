@@ -94,7 +94,7 @@ function Download-CoreScripts {
             }
         }
         catch {
-            ErrorMessage "Error downloading $script: $($_.Exception.Message)"
+            ErrorMessage "Error downloading ${script}: $($_.Exception.Message)"
             exit 1
         }
     }
