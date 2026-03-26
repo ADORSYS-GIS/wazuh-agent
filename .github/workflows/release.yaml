@@ -15,7 +15,7 @@ on:
       - hotfix/**
 
 env:
-  WAZUH_AGENT_REPO_REF: ${{ github.ref }}
+  WAZUH_AGENT_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
 
 jobs:
   # ============================================
