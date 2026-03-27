@@ -6,19 +6,20 @@ set -eu
 WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.1'}
 WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
 
+# Create a secure temporary directory for utilities
+TMP_FOLDER="$(mktemp -d)"
+trap 'rm -rf "$TMP_FOLDER"' EXIT
+
 # Try to source local utils.sh first, fallback to downloading
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -f "$SCRIPT_DIR/../shared/utils.sh" ]; then
     . "$SCRIPT_DIR/../shared/utils.sh"
 else
-    # Create a secure temporary directory for utilities
-    UTILS_TMP=$(mktemp -d)
-    trap 'rm -rf "$UTILS_TMP"' EXIT
-    if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$UTILS_TMP/utils.sh"; then
+    if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$TMP_FOLDER/utils.sh"; then
         error_message "Failed to download utils.sh"
         exit 1
     fi
-    . "$UTILS_TMP/utils.sh"
+    . "$TMP_FOLDER/utils.sh"
 fi
 
 # Function to calculate SHA256 (cross-platform bootstrap)
@@ -30,27 +31,17 @@ calculate_sha256_bootstrap() {
     fi
 }
 
-if [ -f "$SCRIPT_DIR/../shared/utils.sh" ]; then
-    . "$SCRIPT_DIR/../shared/utils.sh"
-else
-    if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$UTILS_TMP/utils.sh"; then
-        error_message "Failed to download utils.sh"
-        exit 1
-    fi
-    . "$UTILS_TMP/utils.sh"
-fi
-
 # 1. Download checksums
 info_message "Downloading checksums..."
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" "$UTILS_TMP/checksums.sha256"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" "$TMP_FOLDER/checksums.sha256"; then
     error_message "Failed to download checksums.sha256"
     exit 1
 fi
 
 # 2. Verify utils.sh integrity (only if we downloaded it)
 if [ ! -f "$SCRIPT_DIR/../shared/utils.sh" ]; then
-    EXPECTED_HASH=$(grep "scripts/shared/utils.sh" "$UTILS_TMP/checksums.sha256" | awk '{print $1}')
-    ACTUAL_HASH=$(calculate_sha256_bootstrap "$UTILS_TMP/utils.sh")
+    EXPECTED_HASH=$(grep "scripts/shared/utils.sh" "$TMP_FOLDER/checksums.sha256" | awk '{print $1}')
+    ACTUAL_HASH=$(calculate_sha256_bootstrap "$TMP_FOLDER/utils.sh")
 
     if [ -z "$EXPECTED_HASH" ] || [ "$EXPECTED_HASH" != "$ACTUAL_HASH" ]; then
         echo "Error: Checksum verification failed for utils.sh" >&2
@@ -93,15 +84,6 @@ WAZUH_AGENT_STATUS_REPO_REF=${WAZUH_AGENT_STATUS_REPO_REF:-"refs/tags/v$WAZUH_AG
 IDS_ENGINE=""
 SURICATA_MODE=""
 INSTALL_TRIVY="FALSE"
-
-TMP_FOLDER="$(mktemp -d)"
-
-# Provide a non-interactive default for NIDS selection (default: suricata)
-default_nids="suricata"
-
-# ==============================================================================
-# Cleanup and Helper Functions
-# ==============================================================================
 
 cleanup() {
     # Remove temporary folder
@@ -227,14 +209,10 @@ uninstall_suricata() {
 # Main Installation Logic
 # ==============================================================================
 
-info_message "Starting macOS setup. Using temporary directory: \"$TMP_FOLDER\""
+info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 
 # Step -1: Download and verify all core scripts
 info_message "Downloading and verifying core component scripts..."
-cp "$UTILS_TMP/checksums.sha256" "$TMP_FOLDER/checksums.sha256"
-
-# We already have a verified utils.sh, let's copy it
-cp "$UTILS_TMP/utils.sh" "$TMP_FOLDER/utils.sh"
 
 for script in "deps.sh" "install.sh" "setup-agent.sh" "setup-docker.sh" "uninstall-agent.sh" "uninstall.sh"; do
     if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/$script" "$TMP_FOLDER/$script"; then
@@ -242,7 +220,7 @@ for script in "deps.sh" "install.sh" "setup-agent.sh" "setup-docker.sh" "uninsta
         exit 1
     fi
     
-    EXPECTED_SCRIPT_HASH=$(grep "scripts/linux/$script" "$TMP_FOLDER/checksums.sha256" | awk '{print $1}')
+    EXPECTED_SCRIPT_HASH=$(grep "scripts/macos/$script" "$TMP_FOLDER/checksums.sha256" | awk '{print $1}')
     if [ -n "$EXPECTED_SCRIPT_HASH" ]; then
         if ! verify_checksum "$TMP_FOLDER/$script" "$EXPECTED_SCRIPT_HASH"; then
             exit 1
@@ -358,8 +336,8 @@ USB_DLP_BASE_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZ
 
 # macOS-specific scripts
 info_message "Installing macOS USB DLP scripts..."
-if ! download_file "$USB_DLP_BASE_URL/disable-usb-storage-macos.sh" "$TMP_FOLDER/disable-usb-storage-macos.sh"; then
-    error_message "Failed to download disable-usb-storage-macos.sh"
+if ! download_file "$USB_DLP_BASE_URL/disable-usb-storage.sh" "$TMP_FOLDER/disable-usb-storage.sh"; then
+    error_message "Failed to download disable-usb-storage.sh"
     exit 1
 fi
 if ! download_file "$USB_DLP_BASE_URL/alert-usb-hid.sh" "$TMP_FOLDER/alert-usb-hid.sh"; then
@@ -367,11 +345,11 @@ if ! download_file "$USB_DLP_BASE_URL/alert-usb-hid.sh" "$TMP_FOLDER/alert-usb-h
     exit 1
 fi
 
-maybe_sudo cp "$TMP_FOLDER/disable-usb-storage-macos.sh" "$AR_BIN_DIR/"
+maybe_sudo cp "$TMP_FOLDER/disable-usb-storage.sh" "$AR_BIN_DIR/"
 maybe_sudo cp "$TMP_FOLDER/alert-usb-hid.sh" "$AR_BIN_DIR/"
 
-maybe_sudo chown root:wazuh "$AR_BIN_DIR/disable-usb-storage-macos.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
-maybe_sudo chmod 750 "$AR_BIN_DIR/disable-usb-storage-macos.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
+maybe_sudo chown root:wazuh "$AR_BIN_DIR/disable-usb-storage.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
+maybe_sudo chmod 750 "$AR_BIN_DIR/disable-usb-storage.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
 
 success_message "USB DLP Active Response scripts installed successfully."
 info_message "Finished USB DLP setup step."
