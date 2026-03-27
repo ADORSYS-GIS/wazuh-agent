@@ -1,11 +1,6 @@
 #!/bin/sh
 
-# Set shell options
-if [ -n "$BASH_VERSION" ]; then
-    set -euo pipefail
-else
-    set -eu
-fi
+set -eu
 
 # Define text formatting
 RED='\033[0;31m'
@@ -31,6 +26,7 @@ warn_message() { log "${YELLOW}${BOLD}[WARNING]${NORMAL}" "$*"; }
 error_message() { log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"; }
 success_message() { log "${GREEN}${BOLD}[SUCCESS]${NORMAL}" "$*"; }
 print_step() { log "${BLUE}${BOLD}[STEP]${NORMAL}" "$1: $2"; }
+error_exit() { error_message "$*"; exit 1; }
 
 # Check if a command exists
 command_exists() {
@@ -103,4 +99,66 @@ sed_inplace() {
     else
         maybe_sudo sed -i "$@"
     fi
+}
+
+# Download file with improved error handling
+# Usage: download_file <url> <destination>
+download_file() {
+    local url="$1"
+    local dest="$2"
+    local max_retries="${3:-3}"
+    local retry_count=0
+    
+    # Validate arguments
+    if [ -z "$url" ] || [ -z "$dest" ]; then
+        error_message "Usage: download_file <url> <destination> [max_retries]"
+        return 1
+    fi
+    
+    # Create destination directory if it doesn't exist
+    local dest_dir
+    dest_dir=$(dirname "$dest")
+    if [ ! -d "$dest_dir" ]; then
+        mkdir -p "$dest_dir" || {
+            error_message "Failed to create destination directory: $dest_dir"
+            return 1
+        }
+    fi
+    
+    # Attempt download with retries
+    while [ $retry_count -lt "$max_retries" ]; do
+        retry_count=$((retry_count + 1))
+        
+        if command_exists curl; then
+            # Use curl with better error handling and progress
+            if curl -fsSL --connect-timeout 30 --max-time 300 "$url" -o "$dest" 2>/dev/null; then
+                # Verify we got a non-empty file
+                if [ -s "$dest" ]; then
+                    return 0
+                else
+                    warn_message "Downloaded file is empty, retrying... (attempt $retry_count/$max_retries)"
+                    rm -f "$dest"
+                fi
+            fi
+        elif command_exists wget; then
+            # Use wget as fallback
+            if wget -q --timeout=30 --tries=1 "$url" -O "$dest" 2>/dev/null; then
+                if [ -s "$dest" ]; then
+                    return 0
+                else
+                    warn_message "Downloaded file is empty, retrying... (attempt $retry_count/$max_retries)"
+                    rm -f "$dest"
+                fi
+            fi
+        else
+            error_message "Neither curl nor wget is available. Please install one of them."
+            return 1
+        fi
+        
+        # Small delay before retry
+        sleep 2
+    done
+    
+    error_message "Failed to download $url after $max_retries attempts"
+    return 1
 }

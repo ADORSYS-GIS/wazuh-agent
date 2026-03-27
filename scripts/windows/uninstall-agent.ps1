@@ -26,6 +26,15 @@ $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.2-1" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.2" }
 $WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.9.0-rc.1" }
+
+# Repo ref variables for components
+$WAZUH_CERT_OAUTH2_REPO_REF = if ($env:WAZUH_CERT_OAUTH2_REPO_REF) { $env:WAZUH_CERT_OAUTH2_REPO_REF } else { "refs/tags/v$WOPS_VERSION" }
+$WAZUH_YARA_REPO_REF = if ($env:WAZUH_YARA_REPO_REF) { $env:WAZUH_YARA_REPO_REF } else { "refs/tags/v$WAZUH_YARA_VERSION" }
+$WAZUH_SNORT_REPO_REF = if ($env:WAZUH_SNORT_REPO_REF) { $env:WAZUH_SNORT_REPO_REF } else { "refs/tags/v$WAZUH_SNORT_VERSION" }
+$WAZUH_SURICATA_REPO_REF = if ($env:WAZUH_SURICATA_REPO_REF) { $env:WAZUH_SURICATA_REPO_REF } else { "refs/tags/v$WAZUH_SURICATA_VERSION" }
+$WAZUH_TRIVY_REPO_REF = if ($env:WAZUH_TRIVY_REPO_REF) { $env:WAZUH_TRIVY_REPO_REF } else { "main" }
+$WAZUH_AGENT_STATUS_REPO_REF = if ($env:WAZUH_AGENT_STATUS_REPO_REF) { $env:WAZUH_AGENT_STATUS_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_STATUS_VERSION" }
+$WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
 # Global array to track uninstaller files
 $global:UninstallerFiles = @()
 
@@ -73,7 +82,7 @@ if ($Help) {
 
 # Step 1: Download and execute Wazuh agent uninstall script with error handling
 function Uninstall-WazuhAgent {
-    $UninstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/uninstall.ps1"
+    $UninstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/uninstall.ps1"
     $UninstallerPath = "$env:TEMP\uninstall-wazuh-agent.ps1"
     $global:UninstallerFiles += $UninstallerPath
     try {
@@ -89,7 +98,7 @@ function Uninstall-WazuhAgent {
 
 # Step 2: Download and Uninstall Wazuh Agent Status with error handling
 function Uninstall-AgentStatus {
-    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/uninstall.ps1"
+    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/$WAZUH_AGENT_STATUS_REPO_REF/scripts/uninstall.ps1"
     $AgentStatusScript = "$env:TEMP\uninstall-agent-status.ps1"
     $global:UninstallerFiles += $AgentStatusScript
     try {
@@ -105,7 +114,7 @@ function Uninstall-AgentStatus {
 
 # Step 3: Download and Uninstall YARA with error handling
 function Uninstall-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/uninstall.ps1"
+    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/uninstall.ps1"
     $YaraScript = "$env:TEMP\uninstall-yara.ps1"
     $global:UninstallerFiles += $YaraScript
     try {
@@ -121,7 +130,7 @@ function Uninstall-Yara {
 
 # Step 4: Download and Uninstall Snort with error handling
 function Uninstall-Snort {
-    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/windows/uninstall.ps1"
+    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/scripts/windows/uninstall.ps1"
     $SnortScript = "$env:TEMP\uninstall-snort.ps1"
     $global:UninstallerFiles += $SnortScript
     try {
@@ -137,7 +146,7 @@ function Uninstall-Snort {
 
 # Step 5: Download and Uninstall Suricata with error handling
 function Uninstall-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/tags/v$WAZUH_SURICATA_VERSION/scripts/uninstall.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/uninstall.ps1"
     $SuricataScript = "$env:TEMP\uninstall-suricata.ps1"
     $global:UninstallerFiles += $SuricataScript
     try {

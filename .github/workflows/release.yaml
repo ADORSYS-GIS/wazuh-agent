@@ -215,7 +215,7 @@ jobs:
 
       - name: Make scripts executable
         run: |
-          chmod +x ./scripts/*.sh
+          chmod +x ./scripts/linux/*.sh ./scripts/macos/*.sh ./scripts/windows/*.ps1 ./scripts/shared/*.sh
           chmod +x ./lib/*.sh 2>/dev/null || true
 
       - name: Test verification library
@@ -239,12 +239,12 @@ jobs:
       - name: Test install script
         run: |
           echo "Debug: WAZUH_AGENT_REPO_REF is $WAZUH_AGENT_REPO_REF"
-          sudo -E ./scripts/install.sh
+          sudo -E ./scripts/linux/install.sh
 
       - name: Test setup-agent script
         run: |
           echo "Debug: WAZUH_AGENT_REPO_REF is $WAZUH_AGENT_REPO_REF"
-          sudo -E ./scripts/setup-agent.sh
+          sudo -E ./scripts/linux/setup-agent.sh
 
   # ============================================
   # Windows Testing
@@ -298,21 +298,21 @@ jobs:
           # Run deps script in dry-run mode if available, otherwise skip heavy installs
           Write-Host "Debug: WAZUH_AGENT_REPO_REF is $env:WAZUH_AGENT_REPO_REF"
           Write-Host "Testing deps.ps1 syntax..."
-          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/deps.ps1 -Raw), [ref]$null)
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/windows/deps.ps1 -Raw), [ref]$null)
           Write-Host "✓ deps.ps1 syntax valid" -ForegroundColor Green
 
       - name: Test install script syntax
         shell: pwsh
         run: |
           Write-Host "Testing install.ps1 syntax..."
-          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/install.ps1 -Raw), [ref]$null)
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/windows/install.ps1 -Raw), [ref]$null)
           Write-Host "✓ install.ps1 syntax valid" -ForegroundColor Green
 
       - name: Test setup-agent script syntax
         shell: pwsh
         run: |
           Write-Host "Testing setup-agent.ps1 syntax..."
-          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/setup-agent.ps1 -Raw), [ref]$null)
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/windows/setup-agent.ps1 -Raw), [ref]$null)
           Write-Host "✓ setup-agent.ps1 syntax valid" -ForegroundColor Green
 
   # ============================================
@@ -330,18 +330,23 @@ jobs:
         run: |
           echo "Checking required files..."
           required_files=(
-            "scripts/setup-agent.sh"
-            "scripts/setup-agent.ps1"
-            "scripts/install.sh"
-            "scripts/install.ps1"
-            "scripts/deps.sh"
-            "scripts/deps.ps1"
-            "scripts/uninstall.sh"
-            "scripts/uninstall.ps1"
-            "scripts/setup-docker.sh"
-            "scripts/setup-docker.ps1"
-            "scripts/utils.sh"
-            "scripts/utils.ps1"
+            "scripts/linux/setup-agent.sh"
+            "scripts/macos/setup-agent.sh"
+            "scripts/windows/setup-agent.ps1"
+            "scripts/linux/install.sh"
+            "scripts/macos/install.sh"
+            "scripts/windows/install.ps1"
+            "scripts/linux/deps.sh"
+            "scripts/macos/deps.sh"
+            "scripts/windows/deps.ps1"
+            "scripts/linux/uninstall.sh"
+            "scripts/macos/uninstall.sh"
+            "scripts/windows/uninstall.ps1"
+            "scripts/linux/setup-docker.sh"
+            "scripts/macos/setup-docker.sh"
+            "scripts/windows/setup-docker.ps1"
+            "scripts/shared/utils.sh"
+            "scripts/windows/utils.ps1"
             "lib/verify.sh"
             "lib/Verify.psm1"
           )
@@ -397,7 +402,7 @@ jobs:
       - name: Generate checksums
         run: |
           echo "Generating SHA256 checksums..."
-          sha256sum install.sh Install.ps1 scripts/*.sh scripts/*.ps1 lib/*.sh lib/*.psm1 > checksums.sha256
+          sha256sum install.sh Install.ps1 scripts/linux/*.sh scripts/macos/*.sh scripts/windows/*.ps1 scripts/shared/*.sh lib/*.sh lib/*.psm1 > checksums.sha256
           echo "=== Checksums ==="
           cat checksums.sha256
 

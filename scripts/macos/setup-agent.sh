@@ -1,14 +1,28 @@
 #!/bin/sh
 
-# Source shared utilities
-: "${WAZUH_AGENT_REPO_REF:=main}"
+set -eu
 
-# Create a secure temporary directory for utilities
-UTILS_TMP=$(mktemp -d)
-trap 'rm -rf "$UTILS_TMP"' EXIT
+# Repository ref
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.1'}
+WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
 
-# Function to calculate SHA256 (cross-platform)
-calculate_sha256() {
+# Try to source local utils.sh first, fallback to downloading
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$SCRIPT_DIR/../shared/utils.sh" ]; then
+    . "$SCRIPT_DIR/../shared/utils.sh"
+else
+    # Create a secure temporary directory for utilities
+    UTILS_TMP=$(mktemp -d)
+    trap 'rm -rf "$UTILS_TMP"' EXIT
+    if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$UTILS_TMP/utils.sh"; then
+        error_message "Failed to download utils.sh"
+        exit 1
+    fi
+    . "$UTILS_TMP/utils.sh"
+fi
+
+# Function to calculate SHA256 (cross-platform bootstrap)
+calculate_sha256_bootstrap() {
     if command -v sha256sum >/dev/null 2>&1; then
         sha256sum "$1" | awk '{print $1}'
     else
@@ -16,29 +30,32 @@ calculate_sha256() {
     fi
 }
 
+if [ -f "$SCRIPT_DIR/../shared/utils.sh" ]; then
+    . "$SCRIPT_DIR/../shared/utils.sh"
+else
+    if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$UTILS_TMP/utils.sh"; then
+        error_message "Failed to download utils.sh"
+        exit 1
+    fi
+    . "$UTILS_TMP/utils.sh"
+fi
+
 # 1. Download checksums
-if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" -o "$UTILS_TMP/checksums.sha256"; then
-    echo "Error: Failed to download checksums.sha256" >&2
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" "$UTILS_TMP/checksums.sha256"; then
+    error_message "Failed to download checksums.sha256"
     exit 1
 fi
 
-# 2. Download utils.sh
-if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o "$UTILS_TMP/utils.sh"; then
-    echo "Error: Failed to download utils.sh" >&2
-    exit 1
+# 2. Verify utils.sh integrity (only if we downloaded it)
+if [ ! -f "$SCRIPT_DIR/../shared/utils.sh" ]; then
+    EXPECTED_HASH=$(grep "scripts/shared/utils.sh" "$UTILS_TMP/checksums.sha256" | awk '{print $1}')
+    ACTUAL_HASH=$(calculate_sha256_bootstrap "$UTILS_TMP/utils.sh")
+
+    if [ -z "$EXPECTED_HASH" ] || [ "$EXPECTED_HASH" != "$ACTUAL_HASH" ]; then
+        echo "Error: Checksum verification failed for utils.sh" >&2
+        exit 1
+    fi
 fi
-
-# 3. Verify utils.sh integrity
-EXPECTED_HASH=$(grep "scripts/utils.sh" "$UTILS_TMP/checksums.sha256" | awk '{print $1}')
-ACTUAL_HASH=$(calculate_sha256 "$UTILS_TMP/utils.sh")
-
-if [ -z "$EXPECTED_HASH" ] || [ "$EXPECTED_HASH" != "$ACTUAL_HASH" ]; then
-    echo "Error: Checksum verification failed for utils.sh" >&2
-    exit 1
-fi
-
-# shellcheck source=/dev/null
-. "$UTILS_TMP/utils.sh"
 
 # ==============================================================================
 # Default Configuration
@@ -50,14 +67,10 @@ WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.14"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.4"}
 WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.2.0"}
 
-# Define the OSSEC base path
-if [ "$(uname)" = "Darwin" ]; then
-    OSSEC_ROOT="/Library/Ossec"
-else
-    OSSEC_ROOT="/var/ossec"
-fi
-OSSEC_PATH="$OSSEC_ROOT/etc"
+# macOS-specific OSSEC configuration path
+OSSEC_PATH="/Library/Ossec/etc"
 OSSEC_CONF_PATH="$OSSEC_PATH/ossec.conf"
+AR_BIN_DIR="/Library/Ossec/active-response/bin"
 
 USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
@@ -65,9 +78,15 @@ GROUP=${GROUP:-"wazuh"}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.2-1'}
 WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.4.1-rc5-user'}
-WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.1'}
-WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
+WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-'test-agent-name'}
+
+# Additional repo ref variables for other components
+WAZUH_CERT_OAUTH2_REPO_REF=${WAZUH_CERT_OAUTH2_REPO_REF:-"refs/tags/v$WOPS_VERSION"}
+WAZUH_YARA_REPO_REF=${WAZUH_YARA_REPO_REF:-"refs/tags/v$WAZUH_YARA_VERSION"}
+WAZUH_SNORT_REPO_REF=${WAZUH_SNORT_REPO_REF:-"refs/tags/v$WAZUH_SNORT_VERSION"}
+WAZUH_SURICATA_REPO_REF=${WAZUH_SURICATA_REPO_REF:-"refs/tags/v$WAZUH_SURICATA_VERSION"}
+WAZUH_TRIVY_REPO_REF=${WAZUH_TRIVY_REPO_REF:-"main"}
+WAZUH_AGENT_STATUS_REPO_REF=${WAZUH_AGENT_STATUS_REPO_REF:-"refs/tags/v$WAZUH_AGENT_STATUS_VERSION"}
 
 # Installation choice variables
 IDS_ENGINE=""
@@ -76,8 +95,11 @@ INSTALL_TRIVY="FALSE"
 
 TMP_FOLDER="$(mktemp -d)"
 
+# Provide a non-interactive default for NIDS selection (default: suricata)
+default_nids="suricata"
+
 # ==============================================================================
-# Helper Functions
+# Cleanup and Helper Functions
 # ==============================================================================
 
 cleanup() {
@@ -90,11 +112,11 @@ trap cleanup EXIT
 
 # Help function to display usage
 help_message() {
-    echo -e "${BOLD}Wazuh Agent Comprehensive Installation Script${NORMAL}"
+    echo -e "${BOLD}Wazuh Agent Comprehensive Installation Script for macOS${NORMAL}"
     echo ""
     echo -e "${BOLD}DESCRIPTION:${NORMAL}"
     echo "  This script automates the full setup of a Wazuh agent and a suite of essential"
-    echo "  security integrations. It installs core components automatically and lets you"
+    echo "  security integrations on macOS. It installs core components automatically and lets you"
     echo "  configure the installation with your choice of optional tools."
     echo ""
     echo -e "  ${BLUE}CORE COMPONENTS (Always Installed):${NORMAL}"
@@ -175,7 +197,10 @@ fi
 uninstall_snort() {
     if command_exists snort; then
         info_message "Uninstalling Snort..."
-        curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/uninstall.sh" > "$TMP_FOLDER/uninstall-snort.sh"
+        if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/uninstall.sh" "$TMP_FOLDER/uninstall-snort.sh"; then
+            error_message "Failed to download uninstall-snort.sh"
+            exit 1
+        fi
         if ! (bash "$TMP_FOLDER/uninstall-snort.sh") 2>&1; then
             error_message "Failed to uninstall 'snort'"
             exit 1
@@ -186,7 +211,10 @@ uninstall_snort() {
 uninstall_suricata() {
     if command_exists suricata; then
         info_message "Uninstalling Suricata..."
-        curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/tags/v$WAZUH_SURICATA_VERSION/scripts/uninstall.sh" > "$TMP_FOLDER/uninstall-suricata.sh"
+        if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh"; then
+            error_message "Failed to download uninstall-suricata.sh"
+            exit 1
+        fi
         if ! (bash "$TMP_FOLDER/uninstall-suricata.sh") 2>&1; then
             error_message "Failed to uninstall 'suricata'"
             exit 1
@@ -198,7 +226,7 @@ uninstall_suricata() {
 # Main Installation Logic
 # ==============================================================================
 
-info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
+info_message "Starting macOS setup. Using temporary directory: \"$TMP_FOLDER\""
 
 # Step -1: Download and verify all core scripts
 info_message "Downloading and verifying core component scripts..."
@@ -208,7 +236,7 @@ cp "$UTILS_TMP/checksums.sha256" "$TMP_FOLDER/checksums.sha256"
 cp "$UTILS_TMP/utils.sh" "$TMP_FOLDER/utils.sh"
 
 for script in "deps.sh" "install.sh"; do
-    if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/$script" -o "$TMP_FOLDER/$script"; then
+    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/$script" "$TMP_FOLDER/$script"; then
         error_message "Failed to download core script: $script"
         exit 1
     fi
@@ -227,17 +255,17 @@ done
 mv "$TMP_FOLDER/deps.sh" "$TMP_FOLDER/install-deps.sh"
 mv "$TMP_FOLDER/install.sh" "$TMP_FOLDER/install-wazuh-agent.sh"
 
-if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" -o "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/${WAZUH_CERT_OAUTH2_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"; then
     error_message "Failed to download install-wazuh-cert-oauth2.sh"
     exit 1
 fi
 
-if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh" -o "$TMP_FOLDER/install-wazuh-agent-status.sh"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-wazuh-agent-status.sh"; then
     error_message "Failed to download install-wazuh-agent-status.sh"
     exit 1
 fi
 
-if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh" -o "$TMP_FOLDER/install-yara.sh"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-yara.sh"; then
     error_message "Failed to download install-yara.sh"
     exit 1
 fi
@@ -258,21 +286,21 @@ fi
 
 # Step 2: Download and install wazuh-cert-oauth2-client
 info_message "Installing wazuh-cert-oauth2-client"
-if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" WAZUH_CERT_OAUTH2_REPO_REF="$WAZUH_CERT_OAUTH2_REPO_REF" bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh" < /dev/null) 2>&1; then
     error_message "Failed to install 'wazuh-cert-oauth2-client'"
     exit 1
 fi
 
 # Step 3: Download and install wazuh-agent-status
 info_message "Installing wazuh-agent-status"
-if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_AGENT_STATUS_VERSION="$WAZUH_AGENT_STATUS_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/install-wazuh-agent-status.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env WAZUH_AGENT_STATUS_VERSION="$WAZUH_AGENT_STATUS_VERSION" WAZUH_AGENT_STATUS_REPO_REF="$WAZUH_AGENT_STATUS_REPO_REF" WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/install-wazuh-agent-status.sh" < /dev/null) 2>&1; then
     error_message "Failed to install 'wazuh-agent-status'"
     exit 1
 fi
 
 # Step 4: Download and install yara
 info_message "Installing yara"
-if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-yara.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" WAZUH_YARA_REPO_REF="$WAZUH_YARA_REPO_REF" bash "$TMP_FOLDER/install-yara.sh" < /dev/null) 2>&1; then
     error_message "Failed to install 'yara'"
     exit 1
 fi
@@ -282,23 +310,23 @@ info_message "Selected IDS engine: $IDS_ENGINE"
 if [ "$IDS_ENGINE" = "suricata" ]; then
     uninstall_snort
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
-    if ! curl -sLf --progress-bar "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/v$WAZUH_SURICATA_VERSION/scripts/install.sh" -o "$TMP_FOLDER/install-suricata.sh"; then
+    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-suricata.sh"; then
         error_message "Failed to download install-suricata.sh"
         exit 1
     fi
     # Pass the selected mode to the suricata install script
-    if ! (bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
+    if ! (maybe_sudo env WAZUH_SURICATA_REPO_REF="$WAZUH_SURICATA_REPO_REF" bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
         error_message "Failed to install 'suricata'"
         exit 1
     fi
 elif [ "$IDS_ENGINE" = "snort" ]; then
     uninstall_suricata
     info_message "Installing Snort..."
-    if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/install.sh" -o "$TMP_FOLDER/install-snort.sh"; then
+    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-snort.sh"; then
         error_message "Failed to download install-snort.sh"
         exit 1
     fi
-    if ! (env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH="$OSSEC_CONF_PATH" bash "$TMP_FOLDER/install-snort.sh" < /dev/null) 2>&1; then
+    if ! (env WAZUH_SNORT_REPO_REF="$WAZUH_SNORT_REPO_REF" OSSEC_CONF_PATH="$OSSEC_CONF_PATH" bash "$TMP_FOLDER/install-snort.sh" < /dev/null) 2>&1; then
         error_message "Failed to install 'snort'"
         exit 1
     fi
@@ -307,11 +335,11 @@ fi
 # Step 6: Install Trivy if the flag is set
 if [ "$INSTALL_TRIVY" = "TRUE" ]; then
     info_message "Installing Trivy..."
-    if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/install.sh" -o "$TMP_FOLDER/install-trivy.sh"; then
+    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/install.sh" "$TMP_FOLDER/install-trivy.sh"; then
         error_message "Failed to download install-trivy.sh"
         exit 1
     fi
-    if ! (env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-trivy.sh" < /dev/null) 2>&1; then
+    if ! (env WAZUH_TRIVY_REPO_REF="$WAZUH_TRIVY_REPO_REF" bash "$TMP_FOLDER/install-trivy.sh" < /dev/null) 2>&1; then
         error_message "Failed to install trivy"
         exit 1
     fi
@@ -320,12 +348,6 @@ fi
 # Step 7: Install USB DLP Active Response scripts
 info_message "Installing USB DLP Active Response scripts..."
 
-# Determine Active Response bin directory based on OS
-if [ "$(uname)" = "Darwin" ]; then
-    AR_BIN_DIR="/Library/Ossec/active-response/bin"
-else
-    AR_BIN_DIR="/var/ossec/active-response/bin"
-fi
 
 # Create directory if it doesn't exist
 maybe_sudo mkdir -p "$AR_BIN_DIR"
@@ -333,36 +355,29 @@ maybe_sudo mkdir -p "$AR_BIN_DIR"
 # Download and install USB DLP scripts
 USB_DLP_BASE_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/files/active-response"
 
-if [ "$(uname)" = "Darwin" ]; then
-    # macOS-specific scripts
-    info_message "Installing macOS USB DLP scripts..."
-    curl -SL -s "$USB_DLP_BASE_URL/disable-usb-storage-macos.sh" -o "$TMP_FOLDER/disable-usb-storage-macos.sh"
-    curl -SL -s "$USB_DLP_BASE_URL/alert-usb-hid.sh" -o "$TMP_FOLDER/alert-usb-hid.sh"
-
-    maybe_sudo cp "$TMP_FOLDER/disable-usb-storage-macos.sh" "$AR_BIN_DIR/"
-    maybe_sudo cp "$TMP_FOLDER/alert-usb-hid.sh" "$AR_BIN_DIR/"
-
-    maybe_sudo chown root:wazuh "$AR_BIN_DIR/disable-usb-storage-macos.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
-    maybe_sudo chmod 750 "$AR_BIN_DIR/disable-usb-storage-macos.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
-else
-    # Linux-specific scripts
-    info_message "Installing Linux USB DLP scripts..."
-    curl -SL -s "$USB_DLP_BASE_URL/disable-usb-storage.sh" -o "$TMP_FOLDER/disable-usb-storage.sh"
-    curl -SL -s "$USB_DLP_BASE_URL/alert-usb-hid.sh" -o "$TMP_FOLDER/alert-usb-hid.sh"
-
-    maybe_sudo cp "$TMP_FOLDER/disable-usb-storage.sh" "$AR_BIN_DIR/"
-    maybe_sudo cp "$TMP_FOLDER/alert-usb-hid.sh" "$AR_BIN_DIR/"
-
-    maybe_sudo chown root:wazuh "$AR_BIN_DIR/disable-usb-storage.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
-    maybe_sudo chmod 750 "$AR_BIN_DIR/disable-usb-storage.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
+# macOS-specific scripts
+info_message "Installing macOS USB DLP scripts..."
+if ! download_file "$USB_DLP_BASE_URL/disable-usb-storage-macos.sh" "$TMP_FOLDER/disable-usb-storage-macos.sh"; then
+    error_message "Failed to download disable-usb-storage-macos.sh"
+    exit 1
 fi
+if ! download_file "$USB_DLP_BASE_URL/alert-usb-hid.sh" "$TMP_FOLDER/alert-usb-hid.sh"; then
+    error_message "Failed to download alert-usb-hid.sh"
+    exit 1
+fi
+
+maybe_sudo cp "$TMP_FOLDER/disable-usb-storage-macos.sh" "$AR_BIN_DIR/"
+maybe_sudo cp "$TMP_FOLDER/alert-usb-hid.sh" "$AR_BIN_DIR/"
+
+maybe_sudo chown root:wazuh "$AR_BIN_DIR/disable-usb-storage-macos.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
+maybe_sudo chmod 750 "$AR_BIN_DIR/disable-usb-storage-macos.sh" "$AR_BIN_DIR/alert-usb-hid.sh"
 
 success_message "USB DLP Active Response scripts installed successfully."
 info_message "Finished USB DLP setup step."
 
 # Step 8: Setup Docker monitoring (only runs if Docker is installed)
 info_message "Setting up Docker monitoring (if Docker is present)..."
-if ! curl -SL -sf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/setup-docker.sh" -o "$TMP_FOLDER/setup-docker.sh"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/setup-docker.sh" "$TMP_FOLDER/setup-docker.sh"; then
     error_message "Failed to download setup-docker.sh"
 else
     if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_PATH="$OSSEC_PATH" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then
@@ -374,7 +389,7 @@ fi
 
 # Step 9: Download version file
 info_message "Downloading version file..."
-if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" -o "$OSSEC_ROOT/version.txt") 2>&1; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_ROOT/version.txt"; then
     error_message "Failed to download version file"
     exit 1
 fi

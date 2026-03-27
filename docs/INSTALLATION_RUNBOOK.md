@@ -39,6 +39,42 @@ The Wazuh Agent installer automatically:
 - Suricata or Snort - Network intrusion detection
 - USB DLP Scripts - USB device control (Active Response)
 
+### Installation Scripts Directory Structure
+
+The installer uses OS-specific directories for better organization:
+
+```
+scripts/
+├── linux/          # Linux-specific scripts
+│   ├── setup-agent.sh
+│   ├── install.sh
+│   ├── uninstall.sh
+│   ├── uninstall-agent.sh
+│   ├── deps.sh
+│   └── setup-docker.sh
+├── macos/          # macOS-specific scripts
+│   ├── setup-agent.sh
+│   ├── install.sh
+│   ├── uninstall.sh
+│   ├── uninstall-agent.sh
+│   ├── deps.sh
+│   └── setup-docker.sh
+├── windows/        # Windows-specific scripts
+│   ├── setup-agent.ps1
+│   ├── install.ps1
+│   ├── uninstall.ps1
+│   ├── uninstall-agent.ps1
+│   ├── deps.ps1
+│   └── setup-docker.ps1
+└── shared/         # Shared utilities
+    └── utils.sh
+```
+
+**Benefits:**
+- **Cleaner Organization**: Each OS has its own dedicated directory
+- **Easier Maintenance**: OS-specific logic is isolated
+- **Better Navigation**: Quickly find scripts for your platform
+
 ---
 
 ## Prerequisites
@@ -189,7 +225,7 @@ The bootstrap installer protects you from tampered or malicious scripts:
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  1. Bootstrap script (install.sh) downloads                    │
+│  1. Bootstrap script (install.sh) detects OS                    │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -200,8 +236,9 @@ The bootstrap installer protects you from tampered or malicious scripts:
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  3. Downloads scripts/setup-agent.sh                           │
-│     (the full installation script)                             │
+│  3. Downloads OS-specific setup script:                        │
+│     - scripts/linux/setup-agent.sh (for Linux)                 │
+│     - scripts/macos/setup-agent.sh (for macOS)                 │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -405,10 +442,16 @@ sudo bash -c 'export WAZUH_MANAGER="wazuh.your-company.com" && curl -fsSL https:
 
 ## Uninstallation
 
-### Linux/macOS
+### Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall-agent.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/linux/uninstall-agent.sh | sudo bash
+```
+
+### macOS
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/macos/uninstall-agent.sh | sudo bash
 ```
 
 Options:

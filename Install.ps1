@@ -170,7 +170,7 @@ InfoMessage "Using temporary directory: $TempDir"
 
 try {
     # Determine URLs
-    $scriptUrl = "$RepoUrl/$Version/scripts/$ScriptName"
+    $scriptUrl = "$RepoUrl/$Version/scripts/windows/$ScriptName"
     $checksumsUrl = "$RepoUrl/$Version/checksums.sha256"
 
     # Download checksums file
@@ -201,7 +201,7 @@ try {
     # Download utils.ps1
     InfoMessage "Downloading utils.ps1..."
     try {
-        Invoke-WebRequest -Uri "$RepoUrl/$Version/scripts/utils.ps1" -OutFile (Join-Path $TempDir "utils.ps1") -ErrorAction Stop
+        Invoke-WebRequest -Uri "$RepoUrl/$Version/scripts/windows/utils.ps1" -OutFile (Join-Path $TempDir "utils.ps1") -ErrorAction Stop
     }
     catch {
         WarningMessage "Could not download utils.ps1: $($_.Exception.Message)"
@@ -216,7 +216,7 @@ try {
         $expectedHash = $null
 
         foreach ($line in $checksumLines) {
-            if ($line -match "scripts/$ScriptName") {
+            if ($line -match "scripts/windows/$ScriptName") {
                 $expectedHash = ($line -split '\s+')[0]
                 break
             }
@@ -235,7 +235,7 @@ try {
             # Verify utils.ps1
             $utilsHash = $null
             foreach ($line in $checksumLines) {
-                if ($line -match "scripts/utils.ps1") {
+                if ($line -match "scripts/windows/utils.ps1") {
                     $utilsHash = ($line -split '\s+')[0]
                     break
                 }

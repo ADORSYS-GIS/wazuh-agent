@@ -46,7 +46,7 @@ $TempDir = $env:TEMP
 $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.msi"
 $MsiPath = Join-Path -Path $TempDir -ChildPath $AgentFileName
 
-$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
+$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF"
 
 $APP_LOGO_URL = "$RepoUrl/assets/wazuh-logo.png"
 $APP_LOGO_PATH = Join-Path -Path $APP_DATA -ChildPath "wazuh-logo.png"

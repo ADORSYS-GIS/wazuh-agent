@@ -146,7 +146,7 @@ main() {
     info_message "Using temporary directory: $TMP_DIR"
 
     # Determine URLs
-    local script_url="${REPO_URL}/${VERSION}/scripts/${SCRIPT_NAME}"
+    local script_url="${REPO_URL}/${VERSION}/scripts/$(uname -s | tr '[:upper:]' '[:lower:]')/${SCRIPT_NAME}"
     local checksums_url="${REPO_URL}/${VERSION}/checksums.sha256"
 
     # Download checksums file
@@ -166,10 +166,17 @@ main() {
         exit 1
     fi
 
-    # Download utils.sh
-    info_message "Downloading utils.sh..."
-    if ! download_file "${REPO_URL}/${VERSION}/scripts/utils.sh" "$TMP_DIR/utils.sh"; then
-        warn_message "Could not download utils.sh. Scripts might fail if not run from a full repository check-out."
+    # Download utils.sh (only if not available locally)
+    info_message "Checking for utils.sh..."
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [ -f "$SCRIPT_DIR/shared/utils.sh" ]; then
+        info_message "Using local utils.sh"
+        cp "$SCRIPT_DIR/shared/utils.sh" "$TMP_DIR/utils.sh"
+    else
+        info_message "Downloading utils.sh..."
+        if ! download_file "${REPO_URL}/${VERSION}/scripts/utils.sh" "$TMP_DIR/utils.sh"; then
+            warn_message "Could not download utils.sh. Scripts might fail if not run from a full repository check-out."
+        fi
     fi
 
     # Verify checksum
@@ -191,7 +198,7 @@ main() {
 
             # Verify utils.sh
             local utils_hash
-            utils_hash=$(grep "scripts/utils.sh" "$TMP_DIR/$CHECKSUMS_FILE" | awk '{print $1}')
+            utils_hash=$(grep "scripts/shared/utils.sh" "$TMP_DIR/$CHECKSUMS_FILE" | awk '{print $1}')
             if [ -n "$utils_hash" ] && [ -f "$TMP_DIR/utils.sh" ]; then
                 if ! verify_checksum "$TMP_DIR/utils.sh" "$utils_hash"; then
                     error_message "Aborting installation due to checksum mismatch for utils.sh"

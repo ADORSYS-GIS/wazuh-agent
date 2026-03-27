@@ -160,20 +160,37 @@ For step-by-step instructions with screenshots:
 
 ---
 
+## Local-First Utility Loading
+
+All scripts use a **local-first approach** for loading shared utilities:
+
+1. **First**: Try to load `scripts/shared/utils.sh` from the local repository
+2. **Fallback**: Download from GitHub if local file is not available
+**For Developers:**
+When working from a full repository checkout, scripts automatically use the local `utils.sh` file, making development faster and more reliable.
+
+---
+
 ## Scripts Overview
 
 | Script | Platform | Description |
 |--------|----------|-------------|
 | `install.sh` | Linux/macOS | **Bootstrap installer** - downloads, verifies, executes |
 | `install.ps1` | Windows | **Bootstrap installer** - downloads, verifies, executes |
-| `scripts/setup-agent.sh` | Linux/macOS | Full agent setup with all components |
-| `scripts/setup-agent.ps1` | Windows | Full agent setup with all components |
-| `scripts/install.sh` | Linux/macOS | Core Wazuh agent installation only |
-| `scripts/install.ps1` | Windows | Core Wazuh agent installation only |
-| `scripts/deps.sh` | Linux/macOS | Dependency installation |
-| `scripts/deps.ps1` | Windows | Dependency installation |
-| `scripts/uninstall-agent.sh` | Linux/macOS | Complete uninstallation |
-| `scripts/uninstall-agent.ps1` | Windows | Complete uninstallation |
+| `scripts/linux/setup-agent.sh` | Linux | Full agent setup with all components |
+| `scripts/macos/setup-agent.sh` | macOS | Full agent setup with all components |
+| `scripts/windows/setup-agent.ps1` | Windows | Full agent setup with all components |
+| `scripts/linux/install.sh` | Linux | Core Wazuh agent installation only |
+| `scripts/macos/install.sh` | macOS | Core Wazuh agent installation only |
+| `scripts/windows/install.ps1` | Windows | Core Wazuh agent installation only |
+| `scripts/linux/deps.sh` | Linux | Dependency installation |
+| `scripts/macos/deps.sh` | macOS | Dependency installation |
+| `scripts/windows/deps.ps1` | Windows | Dependency installation |
+| `scripts/linux/uninstall-agent.sh` | Linux | Complete uninstallation |
+| `scripts/macos/uninstall-agent.sh` | macOS | Complete uninstallation |
+| `scripts/windows/uninstall-agent.ps1` | Windows | Complete uninstallation |
+| `scripts/shared/utils.sh` | Linux/macOS | Shared utility functions |
+| `scripts/shared/utils.ps1` | Windows | Shared utility functions |
 
 ---
 
@@ -235,12 +252,18 @@ sudo bash install.sh
 
 ### Linux/macOS
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall-agent.sh | sudo bash
+# For Linux
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/linux/uninstall-agent.sh | sudo bash
+```
+
+```bash
+# For macOS
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/macos/uninstall-agent.sh | sudo bash
 ```
 
 ### Windows (PowerShell as Admin)
 ```powershell
-irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall-agent.ps1 | iex
+irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/windows/uninstall-agent.ps1 | iex
 ```
 
 ---
