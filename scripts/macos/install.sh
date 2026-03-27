@@ -203,10 +203,7 @@ case $(uname) in
                 info_message "Upgrading Wazuh agent ($INSTALLED_VERSION → $WAZUH_AGENT_VERSION)..."
             fi
             # Start the installation process
-            import_keys
-            enable_repo
             installation
-            disable_repo
         fi
         # Always update config/scripts
         config
