@@ -215,7 +215,7 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 info_message "Downloading and verifying core component scripts..."
 
 for script in "deps.sh" "install.sh" "setup-agent.sh" "setup-docker.sh" "uninstall-agent.sh" "uninstall.sh"; do
-    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/$script" "$TMP_FOLDER/$script"; then
+    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/macos/$script" "$TMP_FOLDER/$script"; then
         error_message "Failed to download core script: $script"
         exit 1
     fi

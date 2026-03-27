@@ -220,7 +220,7 @@ for script in "deps.sh" "install.sh" "setup-agent.sh" "setup-docker.sh" "uninsta
         exit 1
     fi
     
-    EXPECTED_SCRIPT_HASH=$(grep "scripts/macos/$script" "$TMP_FOLDER/checksums.sha256" | awk '{print $1}')
+    EXPECTED_SCRIPT_HASH=$(grep "scripts/linux/$script" "$TMP_FOLDER/checksums.sha256" | awk '{print $1}')
     if [ -n "$EXPECTED_SCRIPT_HASH" ]; then
         if ! verify_checksum "$TMP_FOLDER/$script" "$EXPECTED_SCRIPT_HASH"; then
             exit 1
