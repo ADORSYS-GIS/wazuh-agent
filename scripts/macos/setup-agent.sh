@@ -197,7 +197,7 @@ fi
 uninstall_snort() {
     if command_exists snort; then
         info_message "Uninstalling Snort..."
-        if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/uninstall.sh" "$TMP_FOLDER/uninstall-snort.sh"; then
+        if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/macos/uninstall.sh" "$TMP_FOLDER/uninstall-snort.sh"; then
             error_message "Failed to download uninstall-snort.sh"
             exit 1
         fi
@@ -211,7 +211,7 @@ uninstall_snort() {
 uninstall_suricata() {
     if command_exists suricata; then
         info_message "Uninstalling Suricata..."
-        if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh"; then
+        if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/macos/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh"; then
             error_message "Failed to download uninstall-suricata.sh"
             exit 1
         fi
@@ -255,17 +255,17 @@ done
 mv "$TMP_FOLDER/deps.sh" "$TMP_FOLDER/install-deps.sh"
 mv "$TMP_FOLDER/install.sh" "$TMP_FOLDER/install-wazuh-agent.sh"
 
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/${WAZUH_CERT_OAUTH2_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/${WAZUH_CERT_OAUTH2_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"; then
     error_message "Failed to download install-wazuh-cert-oauth2.sh"
     exit 1
 fi
 
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-wazuh-agent-status.sh"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-wazuh-agent-status.sh"; then
     error_message "Failed to download install-wazuh-agent-status.sh"
     exit 1
 fi
 
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-yara.sh"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-yara.sh"; then
     error_message "Failed to download install-yara.sh"
     exit 1
 fi
@@ -310,7 +310,7 @@ info_message "Selected IDS engine: $IDS_ENGINE"
 if [ "$IDS_ENGINE" = "suricata" ]; then
     uninstall_snort
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
-    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-suricata.sh"; then
+    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-suricata.sh"; then
         error_message "Failed to download install-suricata.sh"
         exit 1
     fi
@@ -322,7 +322,7 @@ if [ "$IDS_ENGINE" = "suricata" ]; then
 elif [ "$IDS_ENGINE" = "snort" ]; then
     uninstall_suricata
     info_message "Installing Snort..."
-    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-snort.sh"; then
+    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-snort.sh"; then
         error_message "Failed to download install-snort.sh"
         exit 1
     fi
@@ -335,7 +335,7 @@ fi
 # Step 6: Install Trivy if the flag is set
 if [ "$INSTALL_TRIVY" = "TRUE" ]; then
     info_message "Installing Trivy..."
-    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/install.sh" "$TMP_FOLDER/install-trivy.sh"; then
+    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-trivy.sh"; then
         error_message "Failed to download install-trivy.sh"
         exit 1
     fi
@@ -377,7 +377,7 @@ info_message "Finished USB DLP setup step."
 
 # Step 8: Setup Docker monitoring (only runs if Docker is installed)
 info_message "Setting up Docker monitoring (if Docker is present)..."
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/setup-docker.sh" "$TMP_FOLDER/setup-docker.sh"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/macos/setup-docker.sh" "$TMP_FOLDER/setup-docker.sh"; then
     error_message "Failed to download setup-docker.sh"
 else
     if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_PATH="$OSSEC_PATH" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then

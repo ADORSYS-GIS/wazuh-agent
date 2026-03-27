@@ -16,6 +16,12 @@ on:
 
 env:
   WAZUH_AGENT_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
+  WAZUH_AGENT_STATUS_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
+  WAZUH_YARA_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
+  WAZUH_SURICATA_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
+  WAZUH_SNORT_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
+  WAZUH_TRIVY_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
+  
 
 jobs:
   # ============================================
