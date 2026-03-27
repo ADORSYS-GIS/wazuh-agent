@@ -32,6 +32,7 @@ calculate_sha256_bootstrap() {
 }
 
 # 1. Download checksums
+info_message "Downloading checksums..."
 if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" "$TMP_FOLDER/checksums.sha256"; then
     error_message "Failed to download checksums.sha256"
     exit 1
@@ -213,13 +214,13 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 # Step -1: Download and verify all core scripts
 info_message "Downloading and verifying core component scripts..."
 
-for script in "deps.sh" "install.sh"; do
+for script in "deps.sh" "install.sh" "setup-agent.sh" "setup-docker.sh" "uninstall-agent.sh" "uninstall.sh"; do
     if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/$script" "$TMP_FOLDER/$script"; then
         error_message "Failed to download core script: $script"
         exit 1
     fi
     
-    EXPECTED_SCRIPT_HASH=$(grep "scripts/$script" "$TMP_FOLDER/checksums.sha256" | awk '{print $1}')
+    EXPECTED_SCRIPT_HASH=$(grep "scripts/macos/$script" "$TMP_FOLDER/checksums.sha256" | awk '{print $1}')
     if [ -n "$EXPECTED_SCRIPT_HASH" ]; then
         if ! verify_checksum "$TMP_FOLDER/$script" "$EXPECTED_SCRIPT_HASH"; then
             exit 1
