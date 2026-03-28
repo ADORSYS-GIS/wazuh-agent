@@ -60,6 +60,7 @@ WOPS_VERSION=${WOPS_VERSION:-"0.4.2"}
 WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.14"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.4"}
 WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.2.0"}
+YARA_INSTALLATION_TYPE=${YARA_INSTALLATION_TYPE:-"desktop"}
 
 # macOS-specific OSSEC configuration path
 OSSEC_PATH="/Library/Ossec/etc"
@@ -281,7 +282,7 @@ fi
 
 # Step 4: Download and install yara
 info_message "Installing yara"
-if ! (maybe_sudo env WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" bash "$TMP_FOLDER/install-yara.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env INSTALLATION_TYPE=$YARA_INSTALLATION_TYPE WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" bash "$TMP_FOLDER/install-yara.sh" < /dev/null) 2>&1; then
     error_message "Failed to install 'yara'"
     exit 1
 fi

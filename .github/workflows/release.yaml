@@ -22,6 +22,8 @@ env:
   WAZUH_SNORT_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
   WAZUH_TRIVY_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
   WAZUH_CERT_OAUTH2_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
+  YARA_INSTALLATION_TYPE: server
+  
   
 
 jobs:
