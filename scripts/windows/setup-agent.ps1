@@ -116,11 +116,11 @@ function Download-CoreScripts {
     $global:InstallerFiles += "$env:TEMP\utils.ps1"
 
     foreach ($script in $CoreScripts) {
-        $url = "$RepoUrl/scripts/$script"
+        $url = "$RepoUrl/scripts/windows/$script"
         $dest = "$env:TEMP\$script"
         $global:InstallerFiles += $dest
 
-        if (-not (Download-And-VerifyFile -Url $url -Destination $dest -ChecksumPattern "scripts/$script" -FileName $script)) {
+        if (-not (Download-And-VerifyFile -Url $url -Destination $dest -ChecksumPattern "scripts/windows/$script" -FileName $script)) {
             exit 1
         }
     }
@@ -152,7 +152,7 @@ function Install-WazuhAgent {
 
 # Step 2: Download and install wazuh-cert-oauth2-client with error handling
 function Install-OAuth2Client {
-    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/$WAZUH_CERT_OAUTH2_REPO_REF/scripts/install.ps1"
+    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/$WAZUH_CERT_OAUTH2_REPO_REF/scripts/windows/install.ps1"
     $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
     $global:InstallerFiles += $OAuth2Script
 
@@ -170,7 +170,7 @@ function Install-OAuth2Client {
 
 # Step 3: Download and install YARA with error handling
 function Install-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/install.ps1"
+    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/windows/install.ps1"
     $YaraScript = "$env:TEMP\install_yara.ps1"
     $global:InstallerFiles += $YaraScript
 
@@ -206,7 +206,7 @@ function Install-Snort {
 
 # Helper functions to uninstall Snort and Suricata
 function Uninstall-Snort {
-    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/scripts/uninstall.ps1"
+    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/scripts/windows/uninstall.ps1"
     $UninstallSnortScript = "$env:TEMP\uninstall_snort.ps1"
     $global:InstallerFiles += $UninstallSnortScript
     $TaskName = "SnortStartup"
@@ -228,7 +228,7 @@ function Uninstall-Snort {
 
 # Step 5: Download and install Suricata with error handling
 function Install-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/install.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/install.ps1"
     $SuricataScript = "$env:TEMP\suricata.ps1"
     $global:InstallerFiles += $SuricataScript
 
@@ -245,7 +245,7 @@ function Install-Suricata {
 }
 
 function Uninstall-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/uninstall.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/uninstall.ps1"
     $UninstallSuricataScript = "$env:TEMP\uninstall_suricata.ps1"
     $global:InstallerFiles += $UninstallSuricataScript
     $TaskName = "SuricataStartup"
@@ -267,7 +267,7 @@ function Uninstall-Suricata {
 
 # Step 6: Download and install Wazuh Agent Status with error handling
 function Install-AgentStatus {
-    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/$WAZUH_AGENT_STATUS_REPO_REF/scripts/install.ps1"
+    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/$WAZUH_AGENT_STATUS_REPO_REF/scripts/windows/install.ps1"
     $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
     $global:InstallerFiles += $AgentStatusScript
 
@@ -364,7 +364,7 @@ function Show-Help {
 
 # Step 8: Setup Docker monitoring (only runs if Docker is installed)
 function Install-DockerListener {
-    $DockerSetupUrl = "$RepoUrl/scripts/setup-docker.ps1"
+    $DockerSetupUrl = "$RepoUrl/scripts/windows/setup-docker.ps1"
     $DockerSetupScript = "$env:TEMP\setup-docker.ps1"
     $global:InstallerFiles += $DockerSetupScript
 
