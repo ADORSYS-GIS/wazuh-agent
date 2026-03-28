@@ -363,7 +363,7 @@ jobs:
             "scripts/macos/setup-docker.sh"
             "scripts/windows/setup-docker.ps1"
             "scripts/shared/utils.sh"
-            "scripts/windows/utils.ps1"
+            "scripts/shared/utils.ps1"
             "lib/verify.sh"
             "lib/Verify.psm1"
           )
