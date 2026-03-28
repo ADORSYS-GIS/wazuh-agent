@@ -45,6 +45,8 @@ if [ ! -f "$SCRIPT_DIR/../shared/utils.sh" ]; then
 
     if [ -z "$EXPECTED_HASH" ] || [ "$EXPECTED_HASH" != "$ACTUAL_HASH" ]; then
         echo "Error: Checksum verification failed for utils.sh" >&2
+        echo "Expected hash: $EXPECTED_HASH" >&2
+        echo "Actual hash: $ACTUAL_HASH" >&2
         exit 1
     fi
 fi
@@ -258,14 +260,14 @@ fi
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
-if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-wazuh-agent.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-wazuh-agent.sh" < /dev/null) 2>&1; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
 
 # Step 2: Download and install wazuh-cert-oauth2-client
 info_message "Installing wazuh-cert-oauth2-client"
-if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" WAZUH_CERT_OAUTH2_REPO_REF="$WAZUH_CERT_OAUTH2_REPO_REF" bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh" < /dev/null) 2>&1; then
     error_message "Failed to install 'wazuh-cert-oauth2-client'"
     exit 1
 fi
@@ -279,7 +281,7 @@ fi
 
 # Step 4: Download and install yara
 info_message "Installing yara"
-if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" WAZUH_YARA_REPO_REF="$WAZUH_YARA_REPO_REF" bash "$TMP_FOLDER/install-yara.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" bash "$TMP_FOLDER/install-yara.sh" < /dev/null) 2>&1; then
     error_message "Failed to install 'yara'"
     exit 1
 fi
@@ -294,7 +296,7 @@ if [ "$IDS_ENGINE" = "suricata" ]; then
         exit 1
     fi
     # Pass the selected mode to the suricata install script
-    if ! (maybe_sudo env WAZUH_SURICATA_REPO_REF="$WAZUH_SURICATA_REPO_REF" bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
+    if ! (maybe_sudo env bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
         error_message "Failed to install 'suricata'"
         exit 1
     fi
@@ -359,7 +361,7 @@ info_message "Setting up Docker monitoring (if Docker is present)..."
 if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/macos/setup-docker.sh" "$TMP_FOLDER/setup-docker.sh"; then
     error_message "Failed to download setup-docker.sh"
 else
-    if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_PATH="$OSSEC_PATH" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then
+    if ! (maybe_sudo env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then
         error_message "Failed to setup Docker monitoring"
     else
         info_message "Docker monitoring setup completed successfully."

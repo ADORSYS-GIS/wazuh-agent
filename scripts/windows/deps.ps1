@@ -8,7 +8,7 @@ New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
 
 try {
     $ChecksumsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
-    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/utils.ps1"
+    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/shared/utils.ps1"
     
     $ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
     $UtilsPath = Join-Path $UtilsTmp "utils.ps1"
@@ -22,7 +22,7 @@ try {
         return (Get-FileHash -Path $FilePath -Algorithm SHA256).Hash.ToLower()
     }
 
-    $ExpectedHash = (Select-String -Path $ChecksumsPath -Pattern "scripts/utils.ps1").Line.Split(" ")[0]
+    $ExpectedHash = (Select-String -Path $ChecksumsPath -Pattern "scripts/shared/utils.ps1").Line.Split(" ")[0]
     $ActualHash = Get-FileChecksum-Bootstrap -FilePath $UtilsPath
 
     if ([string]::IsNullOrWhiteSpace($ExpectedHash) -or ($ActualHash -ne $ExpectedHash.ToLower())) {

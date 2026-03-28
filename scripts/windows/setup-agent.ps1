@@ -13,12 +13,12 @@ New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
 
 try {
     $ChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/checksums.sha256"
-    $UtilsUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/utils.ps1"
+    $UtilsUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/shared/utils.ps1"
     
     Invoke-WebRequest -Uri $ChecksumUrl -OutFile "$UtilsTmp\checksums.sha256" -ErrorAction Stop
     Invoke-WebRequest -Uri $UtilsUrl -OutFile "$UtilsTmp\utils.ps1" -ErrorAction Stop
 
-    $ExpectedHash = (Select-String -Path "$UtilsTmp\checksums.sha256" -Pattern "scripts/utils.ps1").Line.Split(" ")[0]
+    $ExpectedHash = (Select-String -Path "$UtilsTmp\checksums.sha256" -Pattern "scripts/shared/utils.ps1").Line.Split(" ")[0]
     $ActualHash = (Get-FileHash -Path "$UtilsTmp\utils.ps1" -Algorithm SHA256).Hash.ToLower()
 
     if ([string]::IsNullOrWhiteSpace($ExpectedHash) -or $ExpectedHash -ne $ActualHash) {

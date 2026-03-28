@@ -7,7 +7,7 @@ param(
 # Source shared utilities
 if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
 try {
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/utils.ps1" -OutFile "utils.ps1" -ErrorAction Stop
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/shared/utils.ps1" -OutFile "utils.ps1" -ErrorAction Stop
 } catch {
     Write-Error "Failed to download utils.ps1: $($_.Exception.Message)"
     exit 1

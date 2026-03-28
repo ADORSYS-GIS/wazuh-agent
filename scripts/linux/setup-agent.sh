@@ -4,22 +4,16 @@ set -eu
 
 # Repository ref
 WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.1'}
-WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
+WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"main"}
 
 # Create a secure temporary directory for utilities
 TMP_FOLDER="$(mktemp -d)"
-trap 'rm -rf "$TMP_FOLDER"' EXIT
+# trap 'rm -rf "$TMP_FOLDER"' EXIT
 
-# Try to source local utils.sh first, fallback to downloading
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-if [ -f "$SCRIPT_DIR/../shared/utils.sh" ]; then
-    . "$SCRIPT_DIR/../shared/utils.sh"
-else
-    if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$TMP_FOLDER/utils.sh"; then
-        error_message "Failed to download utils.sh"
-        exit 1
-    fi
-    . "$TMP_FOLDER/utils.sh"
+# Download utils.sh from repository
+if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$TMP_FOLDER/utils.sh"; then
+    echo "Failed to download utils.sh"
+    exit 1
 fi
 
 # Function to calculate SHA256 (cross-platform bootstrap)
@@ -32,22 +26,25 @@ calculate_sha256_bootstrap() {
 }
 
 # 1. Download checksums
-info_message "Downloading checksums..."
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" "$TMP_FOLDER/checksums.sha256"; then
-    error_message "Failed to download checksums.sha256"
+echo "Downloading checksums..."
+if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" -o "$TMP_FOLDER/checksums.sha256"; then
+    echo "Failed to download checksums.sha256"
     exit 1
 fi
 
-# 2. Verify utils.sh integrity (only if we downloaded it)
-if [ ! -f "$SCRIPT_DIR/../shared/utils.sh" ]; then
-    EXPECTED_HASH=$(grep "scripts/shared/utils.sh" "$TMP_FOLDER/checksums.sha256" | awk '{print $1}')
-    ACTUAL_HASH=$(calculate_sha256_bootstrap "$TMP_FOLDER/utils.sh")
+# 2. Verify utils.sh integrity BEFORE sourcing it
+EXPECTED_HASH=$(grep "scripts/shared/utils.sh" "$TMP_FOLDER/checksums.sha256" | awk '{print $1}')
+ACTUAL_HASH=$(calculate_sha256_bootstrap "$TMP_FOLDER/utils.sh")
 
-    if [ -z "$EXPECTED_HASH" ] || [ "$EXPECTED_HASH" != "$ACTUAL_HASH" ]; then
-        echo "Error: Checksum verification failed for utils.sh" >&2
-        exit 1
-    fi
+if [ -z "$EXPECTED_HASH" ] || [ "$EXPECTED_HASH" != "$ACTUAL_HASH" ]; then
+    echo "Error: Checksum verification failed for utils.sh" >&2
+    echo "Expected hash: $EXPECTED_HASH" >&2
+    echo "Actual hash: $ACTUAL_HASH" >&2
+    exit 1
 fi
+
+# 3. Source utils.sh only after verification
+. "$TMP_FOLDER/utils.sh"
 
 # ==============================================================================
 # Default Configuration
@@ -58,6 +55,7 @@ WOPS_VERSION=${WOPS_VERSION:-"0.4.2"}
 WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.14"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.4"}
 WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.2.0"}
+YARA_INSTALLATION_TYPE=${YARA_INSTALLATION_TYPE:-""}
 
 # Linux-specific OSSEC configuration path
 OSSEC_PATH="/var/ossec/etc"
@@ -258,14 +256,14 @@ fi
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
-if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-wazuh-agent.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-wazuh-agent.sh" < /dev/null) 2>&1; then
     error_message "Failed to install wazuh-agent"
     exit 1
 fi
 
 # Step 2: Download and install wazuh-cert-oauth2-client
 info_message "Installing wazuh-cert-oauth2-client"
-if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" WAZUH_CERT_OAUTH2_REPO_REF="$WAZUH_CERT_OAUTH2_REPO_REF" bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh" < /dev/null) 2>&1; then
     error_message "Failed to install 'wazuh-cert-oauth2-client'"
     exit 1
 fi
@@ -279,7 +277,7 @@ fi
 
 # Step 4: Download and install yara
 info_message "Installing yara"
-if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" WAZUH_YARA_REPO_REF="$WAZUH_YARA_REPO_REF" bash "$TMP_FOLDER/install-yara.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env INSTALLATION_TYPE=$YARA_INSTALLATION_TYPE WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" bash "$TMP_FOLDER/install-yara.sh" < /dev/null) 2>&1; then
     error_message "Failed to install 'yara'"
     exit 1
 fi
@@ -294,7 +292,7 @@ if [ "$IDS_ENGINE" = "suricata" ]; then
         exit 1
     fi
     # Pass the selected mode to the suricata install script
-    if ! (maybe_sudo env WAZUH_SURICATA_REPO_REF="$WAZUH_SURICATA_REPO_REF" bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
+    if ! (maybe_sudo env bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
         error_message "Failed to install 'suricata'"
         exit 1
     fi
@@ -359,7 +357,7 @@ info_message "Setting up Docker monitoring (if Docker is present)..."
 if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/setup-docker.sh" "$TMP_FOLDER/setup-docker.sh"; then
     error_message "Failed to download setup-docker.sh"
 else
-    if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_PATH="$OSSEC_PATH" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then
+    if ! (maybe_sudo env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then
         error_message "Failed to setup Docker monitoring"
     else
         info_message "Docker monitoring setup completed successfully."
