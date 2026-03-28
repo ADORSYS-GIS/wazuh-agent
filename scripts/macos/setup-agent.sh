@@ -217,7 +217,7 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 # Step -1: Download and verify all core scripts
 info_message "Downloading and verifying core component scripts..."
 
-for script in "deps.sh" "install.sh" "setup-agent.sh" "setup-docker.sh" "uninstall-agent.sh" "uninstall.sh"; do
+for script in "deps.sh" "install.sh" "setup-agent.sh" "setup-docker.sh"; do
     if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/macos/$script" "$TMP_FOLDER/$script"; then
         error_message "Failed to download core script: $script"
         exit 1
@@ -364,7 +364,7 @@ if ! dscl . -list /Groups | grep -q "^wazuh$"; then
 fi
 
 # Download and install USB DLP scripts
-USB_DLP_BASE_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/files/active-response"
+USB_DLP_BASE_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/files/active-response/macos"
 
 # macOS-specific scripts
 info_message "Installing macOS USB DLP scripts..."

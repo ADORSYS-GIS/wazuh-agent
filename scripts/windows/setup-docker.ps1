@@ -140,8 +140,24 @@ $customScriptSource = "$RepoUrl/files/wodles/docker/DockerListener.py"
 InfoMessage "Installing custom Windows DockerListener from $customScriptSource"
 try {
     Invoke-WebRequest -Uri $customScriptSource -OutFile $DOCKER_LISTENER -ErrorAction Stop
+    
+    # Verify DockerListener.py checksum
+    $ExpectedDockerListenerHash = (Select-String -Path $ChecksumsPath -Pattern "files/wodles/docker/DockerListener.py").Line.Split(" ")[0]
+    
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedDockerListenerHash)) {
+        InfoMessage "Verifying DockerListener.py checksum..."
+        $DockerListenerHash = (Get-FileHash -Path $DOCKER_LISTENER -Algorithm SHA256).Hash.ToLower()
+        
+        if ($DockerListenerHash -eq $ExpectedDockerListenerHash.ToLower()) {
+            InfoMessage "DockerListener.py checksum verification passed."
+        } else {
+            throw "Checksum mismatch. Expected: $ExpectedDockerListenerHash, Actual: $DockerListenerHash"
+        }
+    } else {
+        WarningMessage "No checksum found for DockerListener.py, skipping verification"
+    }
 } catch {
-    ErrorMessage "Failed to install custom DockerListener: $($_.Exception.Message)"
+    ErrorMessage "Failed to install or verify custom DockerListener: $($_.Exception.Message)"
     exit 0
 }
 

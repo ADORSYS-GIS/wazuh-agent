@@ -63,6 +63,39 @@ $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 # Global array to track installer files
 $global:InstallerFiles = @()
 
+# Centralized function to download and verify file checksum
+function Download-And-VerifyFile {
+    param(
+        [string]$Url,
+        [string]$Destination,
+        [string]$ChecksumPattern,
+        [string]$FileName = "Unknown file"
+    )
+    
+    try {
+        InfoMessage "Downloading $FileName..."
+        Invoke-WebRequest -Uri $Url -OutFile $Destination -ErrorAction Stop
+        
+        # Verify checksum using the already downloaded checksums file
+        $expectedHash = (Select-String -Path "$UtilsTmp\checksums.sha256" -Pattern $ChecksumPattern).Line.Split(" ")[0]
+        if (-not [string]::IsNullOrWhiteSpace($expectedHash)) {
+            if (-not (Test-Checksum -FilePath $Destination -ExpectedHash $expectedHash)) {
+                throw "$FileName checksum verification failed"
+            }
+            InfoMessage "$FileName checksum verification passed."
+        } else {
+            WarningMessage "No checksum found for $FileName, skipping verification"
+        }
+        
+        InfoMessage "$FileName downloaded and verified successfully."
+        return $true
+    }
+    catch {
+        ErrorMessage "Error downloading/verifying $FileName`: $($_.Exception.Message)"
+        return $false
+    }
+}
+
 # Cleanup function to remove installer files at the end
 function Cleanup-Installers {
     foreach ($file in $global:InstallerFiles) {
@@ -87,22 +120,7 @@ function Download-CoreScripts {
         $dest = "$env:TEMP\$script"
         $global:InstallerFiles += $dest
 
-        try {
-            InfoMessage "Downloading $script..."
-            Invoke-WebRequest -Uri $url -OutFile $dest -ErrorAction Stop
-            
-            # Verify checksum using the already downloaded checksums file
-            $expectedHash = (Select-String -Path "$UtilsTmp\checksums.sha256" -Pattern "scripts/$script").Line.Split(" ")[0]
-            if (-not [string]::IsNullOrWhiteSpace($expectedHash)) {
-                if (-not (Test-Checksum -FilePath $dest -ExpectedHash $expectedHash)) {
-                    exit 1
-                }
-            } else {
-                WarningMessage "No checksum found for $script, skipping verification"
-            }
-        }
-        catch {
-            ErrorMessage "Error downloading ${script}: $($_.Exception.Message)"
+        if (-not (Download-And-VerifyFile -Url $url -Destination $dest -ChecksumPattern "scripts/$script" -FileName $script)) {
             exit 1
         }
     }
@@ -139,9 +157,10 @@ function Install-OAuth2Client {
     $global:InstallerFiles += $OAuth2Script
 
     try {
-        InfoMessage "Downloading and executing wazuh-cert-oauth2-client script..."
-        Invoke-WebRequest -Uri $OAuth2Url -OutFile $OAuth2Script -ErrorAction Stop
-        InfoMessage "wazuh-cert-oauth2-client script downloaded successfully."
+        if (-not (Download-And-VerifyFile -Url $OAuth2Url -Destination $OAuth2Script -ChecksumPattern "scripts/windows/install.ps1" -FileName "wazuh-cert-oauth2-client script")) {
+            throw "Failed to download and verify OAuth2 client script"
+        }
+        
         & powershell.exe -ExecutionPolicy Bypass -File $OAuth2Script -ArgumentList "-LOG_LEVEL", $LOG_LEVEL, "-OSSEC_CONF_PATH", $OSSEC_CONF_PATH, "-APP_NAME", $APP_NAME, "-WOPS_VERSION", $WOPS_VERSION -ErrorAction Stop
     }
     catch {
@@ -156,9 +175,10 @@ function Install-Yara {
     $global:InstallerFiles += $YaraScript
 
     try {
-        InfoMessage "Downloading and executing YARA installation script..."
-        Invoke-WebRequest -Uri $YaraUrl -OutFile $YaraScript -ErrorAction Stop
-        InfoMessage "YARA installation script downloaded successfully."
+        if (-not (Download-And-VerifyFile -Url $YaraUrl -Destination $YaraScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "YARA installation script")) {
+            throw "Failed to download and verify YARA installation script"
+        }
+        
         & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
     }
     catch {
@@ -173,9 +193,10 @@ function Install-Snort {
     $global:InstallerFiles += $SnortScript
 
     try {
-        InfoMessage "Downloading and executing Snort installation script..."
-        Invoke-WebRequest -Uri $SnortUrl -OutFile $SnortScript -ErrorAction Stop
-        InfoMessage "Snort installation script downloaded successfully."
+        if (-not (Download-And-VerifyFile -Url $SnortUrl -Destination $SnortScript -ChecksumPattern "scripts/windows/snort.ps1" -FileName "Snort installation script")) {
+            throw "Failed to download and verify Snort installation script"
+        }
+        
         & powershell.exe -ExecutionPolicy Bypass -File $SnortScript -ErrorAction Stop
     }
     catch {
@@ -193,9 +214,10 @@ function Uninstall-Snort {
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     if ($task) {
         try {
-            InfoMessage "Downloading and executing Snort uninstallation script..."
-            Invoke-WebRequest -Uri $SnortUrl -OutFile $UninstallSnortScript -ErrorAction Stop
-            InfoMessage "Snort uninstallation script downloaded successfully."
+            if (-not (Download-And-VerifyFile -Url $SnortUrl -Destination $UninstallSnortScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Snort uninstallation script")) {
+                throw "Failed to download and verify Snort uninstallation script"
+            }
+            
             & powershell.exe -ExecutionPolicy Bypass -File $UninstallSnortScript -ErrorAction Stop
         }
         catch {
@@ -211,9 +233,10 @@ function Install-Suricata {
     $global:InstallerFiles += $SuricataScript
 
     try {
-        InfoMessage "Snort is installed. Downloading and executing Suricata installation script..."
-        Invoke-WebRequest -Uri $SuricataUrl -OutFile $SuricataScript -ErrorAction Stop
-        InfoMessage "Suricata installation script downloaded successfully."
+        if (-not (Download-And-VerifyFile -Url $SuricataUrl -Destination $SuricataScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "Suricata installation script")) {
+            throw "Failed to download and verify Suricata installation script"
+        }
+        
         & powershell.exe -ExecutionPolicy Bypass -File $SuricataScript -ErrorAction Stop
     }
     catch {
@@ -230,9 +253,10 @@ function Uninstall-Suricata {
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     if ($task) {
         try {
-            InfoMessage "Suricata is installed. Downloading and executing Suricata uninstallation script..."
-            Invoke-WebRequest -Uri $SuricataUrl -OutFile $UninstallSuricataScript -ErrorAction Stop
-            InfoMessage "Suricata uninstallation script downloaded successfully."
+            if (-not (Download-And-VerifyFile -Url $SuricataUrl -Destination $UninstallSuricataScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Suricata uninstallation script")) {
+                throw "Failed to download and verify Suricata uninstallation script"
+            }
+            
             & powershell.exe -ExecutionPolicy Bypass -File $UninstallSuricataScript -ErrorAction Stop
         }
         catch {
@@ -248,9 +272,10 @@ function Install-AgentStatus {
     $global:InstallerFiles += $AgentStatusScript
 
     try {
-        InfoMessage "Downloading and executing Wazuh Agent Status installation script..."
-        Invoke-WebRequest -Uri $AgentStatusUrl -OutFile $AgentStatusScript -ErrorAction Stop
-        InfoMessage "Agent Status installation script downloaded successfully."
+        if (-not (Download-And-VerifyFile -Url $AgentStatusUrl -Destination $AgentStatusScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "Agent Status installation script")) {
+            throw "Failed to download and verify Agent Status installation script"
+        }
+        
         & powershell.exe -ExecutionPolicy Bypass -File $AgentStatusScript -ErrorAction Stop
     }
     catch {
@@ -261,7 +286,7 @@ function Install-AgentStatus {
 # Step 7: Install USB DLP Active Response scripts
 function Install-USBDLPScripts {
     $AR_BIN_DIR = Join-Path -Path $OSSEC_PATH -ChildPath "active-response\bin"
-    $USB_DLP_BASE_URL = "$RepoUrl/files/active-response"
+    $USB_DLP_BASE_URL = "$RepoUrl/files/active-response/windows"
 
     try {
         InfoMessage "Installing USB DLP Active Response scripts..."
@@ -273,13 +298,15 @@ function Install-USBDLPScripts {
 
         # Download USB storage blocking script
         $USBStorageScript = Join-Path -Path $AR_BIN_DIR -ChildPath "disable-usb-storage.ps1"
-        InfoMessage "Downloading disable-usb-storage.ps1..."
-        Invoke-WebRequest -Uri "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -OutFile $USBStorageScript -ErrorAction Stop
+        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -Destination $USBStorageScript -ChecksumPattern "files/active-response/windows/disable-usb-storage.ps1" -FileName "disable-usb-storage.ps1")) {
+            throw "Failed to download and verify USB storage script"
+        }
 
         # Download USB HID alerting script
         $USBHIDScript = Join-Path -Path $AR_BIN_DIR -ChildPath "alert-usb-hid.ps1"
-        InfoMessage "Downloading alert-usb-hid.ps1..."
-        Invoke-WebRequest -Uri "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -OutFile $USBHIDScript -ErrorAction Stop
+        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -Destination $USBHIDScript -ChecksumPattern "files/active-response/windows/alert-usb-hid.ps1" -FileName "alert-usb-hid.ps1")) {
+            throw "Failed to download and verify USB HID script"
+        }
 
         SuccessMessage "USB DLP Active Response scripts installed successfully."
         InfoMessage "  - $USBStorageScript"
