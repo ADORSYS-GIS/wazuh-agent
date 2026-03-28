@@ -178,8 +178,6 @@ case $(uname -s) in
     Darwin*)
         stop_service
         uninstall_agent
-        cleanup_repo
-        cleanup_files
         remove_user_group
 
         # Verify the uninstallation

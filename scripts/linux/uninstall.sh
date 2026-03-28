@@ -54,6 +54,7 @@ OSSEC_PATH="/var/ossec/"
 if [ -f /etc/debian_version ]; then
     PACKAGE_MANAGER="apt"
     REPO_FILE="/etc/apt/sources.list.d/wazuh.list"
+    GPG_KEY_FILE="/usr/share/keyrings/wazuh.gpg"
 elif [ -f /etc/redhat-release ]; then
     PACKAGE_MANAGER="yum"
     REPO_FILE="/etc/yum.repos.d/wazuh.repo"
