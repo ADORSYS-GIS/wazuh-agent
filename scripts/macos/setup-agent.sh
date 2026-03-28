@@ -334,6 +334,35 @@ info_message "Installing USB DLP Active Response scripts..."
 # Create directory if it doesn't exist
 maybe_sudo mkdir -p "$AR_BIN_DIR"
 
+# Function to find next available GID
+get_next_gid() {
+    dscl . -list /Groups PrimaryGroupID \
+        | awk '{print $2}' \
+        | grep -E '^[0-9]+$' \
+        | sort -n \
+        | awk '
+            BEGIN { gid = 1000 }
+            {
+                if ($1 == gid) { gid++ }
+                # if $1 > gid, the slot is free — keep going to confirm
+                # (do NOT exit early; continue scanning)
+            }
+            END { print gid }
+        '
+}
+
+# Ensure wazuh group exists
+if ! dscl . -list /Groups | grep -q "^wazuh$"; then
+    info_message "Creating wazuh group..."
+
+    GID=$(get_next_gid)
+
+    maybe_sudo dscl . -create /Groups/wazuh
+    maybe_sudo dscl . -create /Groups/wazuh PrimaryGroupID "$GID"
+
+    info_message "Assigned GID: $GID"
+fi
+
 # Download and install USB DLP scripts
 USB_DLP_BASE_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/files/active-response"
 
@@ -359,19 +388,25 @@ info_message "Finished USB DLP setup step."
 
 # Step 8: Setup Docker monitoring (only runs if Docker is installed)
 info_message "Setting up Docker monitoring (if Docker is present)..."
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/macos/setup-docker.sh" "$TMP_FOLDER/setup-docker.sh"; then
-    error_message "Failed to download setup-docker.sh"
-else
-    if ! (maybe_sudo env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then
-        error_message "Failed to setup Docker monitoring"
+if command -v docker >/dev/null 2>&1; then
+    # Use local setup-docker.sh script
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    if [ -f "$SCRIPT_DIR/setup-docker.sh" ]; then
+        if ! (maybe_sudo env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$SCRIPT_DIR/setup-docker.sh" < /dev/null) 2>&1; then
+            error_message "Failed to setup Docker monitoring"
+        else
+            info_message "Docker monitoring setup completed successfully."
+        fi
     else
-        info_message "Docker monitoring setup completed successfully."
+        warn_message "Docker setup script not found at $SCRIPT_DIR/setup-docker.sh, skipping Docker monitoring"
     fi
+else
+    info_message "Docker not found, skipping Docker monitoring setup"
 fi
 
 # Step 9: Download version file
 info_message "Downloading version file..."
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_ROOT/version.txt"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_PATH/version.txt"; then
     error_message "Failed to download version file"
     exit 1
 fi

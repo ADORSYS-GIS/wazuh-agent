@@ -329,6 +329,12 @@ info_message "Installing USB DLP Active Response scripts..."
 # Create directory if it doesn't exist
 maybe_sudo mkdir -p "$AR_BIN_DIR"
 
+# Ensure wazuh group exists
+if ! getent group wazuh >/dev/null 2>&1; then
+    info_message "Creating wazuh group..."
+    maybe_sudo groupadd wazuh
+fi
+
 # Download and install USB DLP scripts
 USB_DLP_BASE_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/files/active-response"
 
@@ -366,7 +372,7 @@ fi
 
 # Step 9: Download version file
 info_message "Downloading version file..."
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_ROOT/version.txt"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_PATH/version.txt"; then
     error_message "Failed to download version file"
     exit 1
 fi
