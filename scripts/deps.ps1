@@ -1,48 +1,39 @@
+# Source shared utilities
+if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
+$WAZUH_AGENT_REPO_REF = $env:WAZUH_AGENT_REPO_REF
 
-# Function to log messages with a timestamp
-function Log {
-    param (
-        [string]$Level,
-        [string]$Message,
-        [string]$Color = "White"  # Default color
-    )
-    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
+# Create a secure temporary directory for utilities
+$UtilsTmp = Join-Path $env:TEMP "wazuh-utils-$(Get-Random)"
+New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
+
+try {
+    $ChecksumsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
+    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/utils.ps1"
+    
+    $ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $UtilsPath = Join-Path $UtilsTmp "utils.ps1"
+
+    Invoke-WebRequest -Uri $ChecksumsURL -OutFile $ChecksumsPath -ErrorAction Stop
+    Invoke-WebRequest -Uri $UtilsURL -OutFile $UtilsPath -ErrorAction Stop
+
+    # Verification function (bootstrap)
+    function Get-FileChecksum-Bootstrap {
+        param([string]$FilePath)
+        return (Get-FileHash -Path $FilePath -Algorithm SHA256).Hash.ToLower()
+    }
+
+    $ExpectedHash = (Select-String -Path $ChecksumsPath -Pattern "scripts/utils.ps1").Line.Split(" ")[0]
+    $ActualHash = Get-FileChecksum-Bootstrap -FilePath $UtilsPath
+
+    if ([string]::IsNullOrWhiteSpace($ExpectedHash) -or ($ActualHash -ne $ExpectedHash.ToLower())) {
+        Write-Error "Checksum verification failed for utils.ps1"
+        exit 1
+    }
+
+    . $UtilsPath
 }
-
-# Logging helpers with colors
-function InfoMessage {
-    param ([string]$Message)
-    Log "[INFO]" $Message "White"
-}
-
-function WarnMessage {
-    param ([string]$Message)
-    Log "[WARNING]" $Message "Yellow"
-}
-
-function ErrorMessage {
-    param ([string]$Message)
-    Log "[ERROR]" $Message "Red"
-}
-
-function SuccessMessage {
-    param ([string]$Message)
-    Log "[SUCCESS]" $Message "Green"
-}
-
-function PrintStep {
-    param (
-        [int]$StepNumber,
-        [string]$Message
-    )
-    Log "[STEP]" "Step ${StepNumber}: $Message" "White"
-}
-
-# Exit script with an error message
-function ErrorExit {
-    param ([string]$Message)
-    ErrorMessage $Message
+catch {
+    Write-Error "Failed to initialize utilities: $($_.Exception.Message)"
     exit 1
 }
 
@@ -75,6 +66,42 @@ function Ensure-Dependencies {
         $env:Path += ";C:\Program Files"
         [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
         InfoMessage "jq added to PATH environment variable."
+    }
+}
+
+
+function Install-Python {
+    $PythonUrl = "https://www.python.org/ftp/python/3.12.2/python-3.12.2-amd64.exe"
+    $InstallerPath = "$env:TEMP\python-3.12.2-amd64.exe"
+
+    InfoMessage "Checking if Python 3 is already installed..."
+    $pythonInfo = Get-FunctionalPythonPath
+    if ($pythonInfo) {
+        SuccessMessage "Python 3 $($pythonInfo.Version) detected at $($pythonInfo.Path)"
+        return
+    }
+
+    try {
+        InfoMessage "Python 3 not found. Downloading installer from $PythonUrl..."
+        Invoke-WebRequest -Uri $PythonUrl -OutFile $InstallerPath -ErrorAction Stop
+        
+        InfoMessage "Installing Python 3 (silent)..."
+        # /quiet: Minimal UI
+        # InstallAllUsers=1: Install for all users
+        # PrependPath=1: Add to PATH
+        $process = Start-Process -FilePath $InstallerPath -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait -PassThru
+        
+        if ($process.ExitCode -eq 0) {
+            SuccessMessage "Python 3 installed successfully."
+            # Update current process PATH
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine) + ";" + [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+        } else {
+            ErrorMessage "Python 3 installation failed with exit code $($process.ExitCode)."
+        }
+    } catch {
+        ErrorMessage "Failed to download or install Python 3: $($_.Exception.Message)"
+    } finally {
+        if (Test-Path $InstallerPath) { Remove-Item -Path $InstallerPath }
     }
 }
 
@@ -199,6 +226,7 @@ function IsVCppInstalled {
 
 
 IsVCppInstalled
+Install-Python
 Install-GnuSed
 Ensure-Dependencies
 Install-BurntToastModule

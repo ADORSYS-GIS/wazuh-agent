@@ -47,24 +47,34 @@ $ChecksumsFile = "checksums.sha256"
 # Functions
 # =============================================================================
 
-function Write-LogInfo {
-    param([string]$Message)
-    Write-Host "[INFO] $Message" -ForegroundColor Cyan
+function Log {
+    param (
+        [string]$Level,
+        [string]$Message,
+        [string]$Color = "White"
+    )
+    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
 }
 
-function Write-LogSuccess {
+function InfoMessage {
     param([string]$Message)
-    Write-Host "[SUCCESS] $Message" -ForegroundColor Green
+    Log "[INFO]" $Message "Cyan"
 }
 
-function Write-LogWarning {
+function SuccessMessage {
     param([string]$Message)
-    Write-Host "[WARNING] $Message" -ForegroundColor Yellow
+    Log "[SUCCESS]" $Message "Green"
 }
 
-function Write-LogError {
+function WarningMessage {
     param([string]$Message)
-    Write-Host "[ERROR] $Message" -ForegroundColor Red
+    Log "[WARNING]" $Message "Yellow"
+}
+
+function ErrorMessage {
+    param([string]$Message)
+    Log "[ERROR]" $Message "Red"
 }
 
 function Get-FileChecksum {
@@ -86,16 +96,16 @@ function Test-Checksum {
     $actualHash = Get-FileChecksum -FilePath $FilePath
 
     if ($actualHash -ne $ExpectedHash.ToLower()) {
-        Write-LogError "Checksum verification FAILED!"
-        Write-LogError "  Expected: $ExpectedHash"
-        Write-LogError "  Got:      $actualHash"
-        Write-LogError ""
-        Write-LogError "The downloaded file may have been tampered with."
-        Write-LogError "Please report this to the security team immediately."
+        ErrorMessage "Checksum verification FAILED!"
+        ErrorMessage "  Expected: $ExpectedHash"
+        ErrorMessage "  Got:      $actualHash"
+        ErrorMessage ""
+        ErrorMessage "The downloaded file may have been tampered with."
+        ErrorMessage "Please report this to the security team immediately."
         return $false
     }
 
-    Write-LogSuccess "Checksum verified successfully"
+    SuccessMessage "Checksum verified successfully"
     return $true
 }
 
@@ -140,23 +150,23 @@ if ($Help) {
     exit 0
 }
 
-Write-LogInfo "Wazuh Agent Bootstrap Installer"
-Write-LogInfo "================================"
+InfoMessage "Wazuh Agent Bootstrap Installer"
+InfoMessage "================================"
 Write-Host ""
 
 # Check for WAZUH_MANAGER
 $WazuhManager = $env:WAZUH_MANAGER
 if ([string]::IsNullOrWhiteSpace($WazuhManager) -or $WazuhManager -eq "wazuh.example.com") {
-    Write-LogWarning "WAZUH_MANAGER is not set or using default placeholder"
-    Write-LogWarning "Please set WAZUH_MANAGER environment variable:"
-    Write-LogWarning '  $env:WAZUH_MANAGER = "your-wazuh-manager.com"'
+    WarningMessage "WAZUH_MANAGER is not set or using default placeholder"
+    WarningMessage "Please set WAZUH_MANAGER environment variable:"
+    WarningMessage '  $env:WAZUH_MANAGER = "your-wazuh-manager.com"'
     Write-Host ""
 }
 
 # Create temporary directory
 $TempDir = Join-Path $env:TEMP "wazuh-install-$(Get-Random)"
 New-Item -ItemType Directory -Path $TempDir -Force | Out-Null
-Write-LogInfo "Using temporary directory: $TempDir"
+InfoMessage "Using temporary directory: $TempDir"
 
 try {
     # Determine URLs
@@ -164,33 +174,42 @@ try {
     $checksumsUrl = "$RepoUrl/$Version/checksums.sha256"
 
     # Download checksums file
-    Write-LogInfo "Downloading checksums..."
+    InfoMessage "Downloading checksums..."
     $checksumsPath = Join-Path $TempDir $ChecksumsFile
     try {
         Invoke-WebRequest -Uri $checksumsUrl -OutFile $checksumsPath -ErrorAction Stop
     }
     catch {
-        Write-LogWarning "Could not download checksums file: $($_.Exception.Message)"
+        WarningMessage "Could not download checksums file: $($_.Exception.Message)"
         if (-not $SkipVerify) {
-            Write-LogError "Verification required. Use -SkipVerify to bypass (not recommended)"
+            ErrorMessage "Verification required. Use -SkipVerify to bypass (not recommended)"
             exit 1
         }
     }
 
     # Download setup script
-    Write-LogInfo "Downloading $ScriptName..."
+    InfoMessage "Downloading $ScriptName..."
     $scriptPath = Join-Path $TempDir $ScriptName
     try {
         Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath -ErrorAction Stop
     }
     catch {
-        Write-LogError "Failed to download ${ScriptName}: $($_.Exception.Message)"
+        ErrorMessage "Failed to download ${ScriptName}: $($_.Exception.Message)"
         exit 1
+    }
+
+    # Download utils.ps1
+    InfoMessage "Downloading utils.ps1..."
+    try {
+        Invoke-WebRequest -Uri "$RepoUrl/$Version/scripts/utils.ps1" -OutFile (Join-Path $TempDir "utils.ps1") -ErrorAction Stop
+    }
+    catch {
+        WarningMessage "Could not download utils.ps1: $($_.Exception.Message)"
     }
 
     # Verify checksum
     if ((Test-Path $checksumsPath) -and (-not $SkipVerify)) {
-        Write-LogInfo "Verifying script integrity..."
+        InfoMessage "Verifying script integrity..."
 
         # Read checksums file and find our script
         $checksumLines = Get-Content $checksumsPath
@@ -204,18 +223,33 @@ try {
         }
 
         if ([string]::IsNullOrWhiteSpace($expectedHash)) {
-            Write-LogWarning "No checksum found for $ScriptName in checksums file"
-            Write-LogWarning "Proceeding without verification..."
+            WarningMessage "No checksum found for $ScriptName in checksums file"
+            WarningMessage "Proceeding without verification..."
         }
         else {
             if (-not (Test-Checksum -FilePath $scriptPath -ExpectedHash $expectedHash)) {
-                Write-LogError "Aborting installation due to checksum mismatch"
+                ErrorMessage "Aborting installation due to checksum mismatch for $ScriptName"
                 exit 1
+            }
+
+            # Verify utils.ps1
+            $utilsHash = $null
+            foreach ($line in $checksumLines) {
+                if ($line -match "scripts/utils.ps1") {
+                    $utilsHash = ($line -split '\s+')[0]
+                    break
+                }
+            }
+            if (-not [string]::IsNullOrWhiteSpace($utilsHash) -and (Test-Path (Join-Path $TempDir "utils.ps1"))) {
+                if (-not (Test-Checksum -FilePath (Join-Path $TempDir "utils.ps1") -ExpectedHash $utilsHash)) {
+                    ErrorMessage "Aborting installation due to checksum mismatch for utils.ps1"
+                    exit 1
+                }
             }
         }
     }
     elseif ($SkipVerify) {
-        Write-LogWarning "Skipping verification (-SkipVerify specified)"
+        WarningMessage "Skipping verification (-SkipVerify specified)"
     }
 
     # Build arguments for setup script
@@ -224,7 +258,7 @@ try {
     if ($InstallSnort) { $setupArgs += "-InstallSnort" }
 
     # Execute setup script
-    Write-LogInfo "Executing $ScriptName..."
+    InfoMessage "Executing $ScriptName..."
     Write-Host ""
     Write-Host "==============================================" -ForegroundColor Magenta
     Write-Host ""
@@ -233,9 +267,11 @@ try {
     $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
     if (-not $isAdmin) {
-        Write-LogWarning "Requesting administrator privileges..."
+        WarningMessage "Requesting administrator privileges..."
         $argString = if ($setupArgs.Count -gt 0) { $setupArgs -join ' ' } else { '' }
-        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File `"$scriptPath`" $argString" -Verb RunAs -Wait
+        # Pass WAZUH_AGENT_REPO_REF to the new process
+        $envString = "[System.Environment]::SetEnvironmentVariable('WAZUH_AGENT_REPO_REF', '$($env:WAZUH_AGENT_REPO_REF)', 'Process');"
+        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -Command `"$envString & `"$scriptPath`" $argString`"" -Verb RunAs -Wait
     }
     else {
         & powershell.exe -ExecutionPolicy Bypass -File $scriptPath @setupArgs

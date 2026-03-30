@@ -1,67 +1,47 @@
 #!/bin/sh
 
-# Set shell options
-if [ -n "$BASH_VERSION" ]; then
-    set -euo pipefail
-else
-    set -eu
+# Source shared utilities
+: "${WAZUH_AGENT_REPO_REF:=main}"
+
+# Create a secure temporary directory for utilities
+UTILS_TMP=$(mktemp -d)
+trap 'rm -rf "$UTILS_TMP"' EXIT
+
+# Function to calculate SHA256 (cross-platform bootstrap)
+calculate_sha256_bootstrap() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    else
+        shasum -a 256 "$1" | awk '{print $1}'
+    fi
+}
+
+# 1. Download checksums
+if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" -o "$UTILS_TMP/checksums.sha256"; then
+    echo "Error: Failed to download checksums.sha256" >&2
+    exit 1
 fi
+
+# 2. Download utils.sh
+if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o "$UTILS_TMP/utils.sh"; then
+    echo "Error: Failed to download utils.sh" >&2
+    exit 1
+fi
+
+# 3. Verify utils.sh integrity
+EXPECTED_HASH=$(grep "scripts/utils.sh" "$UTILS_TMP/checksums.sha256" | awk '{print $1}')
+ACTUAL_HASH=$(calculate_sha256_bootstrap "$UTILS_TMP/utils.sh")
+
+if [ -z "$EXPECTED_HASH" ] || [ "$EXPECTED_HASH" != "$ACTUAL_HASH" ]; then
+    echo "Error: Checksum verification failed for utils.sh" >&2
+    exit 1
+fi
+
+# shellcheck source=/dev/null
+. "$UTILS_TMP/utils.sh"
 
 WAZUH_USER=${WAZUH_USER:-'wazuh'}
 WAZUH_GROUP=${WAZUH_GROUP:-'wazuh'}
-
-# Define text formatting
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-NORMAL='\033[0m'
-
-# Function for logging with timestamp
-log() {
-    local LEVEL="$1"
-    shift
-    local MESSAGE="$*"
-    local TIMESTAMP
-    TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-    echo -e "${TIMESTAMP} ${LEVEL} ${MESSAGE}"
-}
-
-# Logging helpers
-info_message() {
-    log "${BLUE}${BOLD}[INFO]${NORMAL}" "$*"
-}
-
-warn_message() {
-    log "${YELLOW}${BOLD}[WARNING]${NORMAL}" "$*"
-}
-
-error_message() {
-    log "${RED}${BOLD}[ERROR]${NORMAL}" "$*"
-}
-
-success_message() {
-    log "${GREEN}${BOLD}[SUCCESS]${NORMAL}" "$*"
-}
-
-print_step() {
-    log "${BLUE}${BOLD}[STEP]${NORMAL}" "$1: $2"
-}
-
-# Check if sudo is available or if the script is run as root
-maybe_sudo() {
-    if [ "$(id -u)" -ne 0 ]; then
-        if command -v sudo >/dev/null 2>&1; then
-            sudo "$@"
-        else
-            error_message "This script requires root privileges. Please run with sudo or as root."
-            exit 1
-        fi
-    else
-        "$@"
-    fi
-}
 
 # Determine OS type and package manager or set for macOS
 if [ "$(uname)" = "Darwin" ]; then

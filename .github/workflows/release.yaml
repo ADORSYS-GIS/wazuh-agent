@@ -14,6 +14,9 @@ on:
       - develop
       - hotfix/**
 
+env:
+  WAZUH_AGENT_REPO_REF: ${{ github.head_ref || github.ref_name }}
+
 jobs:
   # ============================================
   # Release Please - Changelog & Version Management
@@ -235,11 +238,9 @@ jobs:
 
       - name: Test install script
         run: |
-          sudo ./scripts/install.sh
+          sudo -E ./scripts/install.sh
 
       - name: Test setup-agent script
-        env:
-          WAZUH_AGENT_REPO_REF: ${{ github.head_ref && format('refs/heads/{0}', github.head_ref) || github.ref }}
         run: |
           sudo -E ./scripts/setup-agent.sh
 
@@ -293,6 +294,7 @@ jobs:
         shell: pwsh
         run: |
           # Run deps script in dry-run mode if available, otherwise skip heavy installs
+          Write-Host "Debug: WAZUH_AGENT_REPO_REF is $env:WAZUH_AGENT_REPO_REF"
           Write-Host "Testing deps.ps1 syntax..."
           $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/deps.ps1 -Raw), [ref]$null)
           Write-Host "✓ deps.ps1 syntax valid" -ForegroundColor Green
@@ -334,6 +336,10 @@ jobs:
             "scripts/deps.ps1"
             "scripts/uninstall.sh"
             "scripts/uninstall.ps1"
+            "scripts/setup-docker.sh"
+            "scripts/setup-docker.ps1"
+            "scripts/utils.sh"
+            "scripts/utils.ps1"
             "lib/verify.sh"
             "lib/Verify.psm1"
           )
