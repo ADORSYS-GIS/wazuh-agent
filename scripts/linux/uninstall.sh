@@ -72,17 +72,27 @@ stop_service() {
     info_message "Stopping Wazuh service..."
     if [ "$SYSTEMD_RUNNING" = "yes" ]; then
       if ! systemctl disable wazuh-agent || ! systemctl stop wazuh-agent || ! systemctl daemon-reload; then
-          error_message "Failed to stop Wazuh agent service"
-          exit 1
+          warn_message "Failed to stop Wazuh agent service via systemctl. Continuing with manual cleanup."
       fi
     elif maybe_sudo [ -x "$OSSEC_CONTROL_PATH" ]; then
         if ! maybe_sudo "$OSSEC_CONTROL_PATH" stop; then
-          error_message "Failed to stop Wazuh agent service"
-          exit 1
+          warn_message "Failed to stop Wazuh agent service via ossec-control. Continuing with manual cleanup."
         fi
         info_message "Wazuh service stopped successfully"
     else
         warn_message "Wazuh service does not exist, skipping"
+    fi
+
+    # Process cleanup (Prevents 'deluser' failure if other components are still running under the wazuh user)
+    if id -u "$WAZUH_USER" >/dev/null 2>&1; then
+        info_message "Checking for remaining processes owned by $WAZUH_USER..."
+        if pgrep -u "$WAZUH_USER" > /dev/null; then
+            maybe_sudo pkill -u "$WAZUH_USER" || true
+            sleep 2
+            if pgrep -u "$WAZUH_USER" > /dev/null; then
+                maybe_sudo pkill -9 -u "$WAZUH_USER" || true
+            fi
+        fi
     fi
 }
 
