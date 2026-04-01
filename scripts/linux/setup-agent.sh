@@ -179,7 +179,7 @@ fi
 uninstall_snort() {
     if command_exists snort; then
         info_message "Uninstalling Snort..."
-        download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/uninstall.sh" "$TMP_FOLDER/uninstall-snort.sh" "scripts/linux/uninstall.sh" "uninstall-snort.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/checksums.sha256"
+        download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-snort.sh" "scripts/linux/uninstall.sh" "uninstall-snort.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/checksums.sha256"
         if ! (bash "$TMP_FOLDER/uninstall-snort.sh") 2>&1; then
             error_message "Failed to uninstall 'snort'"
             exit 1
@@ -190,7 +190,7 @@ uninstall_snort() {
 uninstall_suricata() {
     if command_exists suricata; then
         info_message "Uninstalling Suricata..."
-        download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh" "scripts/linux/uninstall.sh" "uninstall-suricata.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/checksums.sha256"
+        download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh" "scripts/linux/uninstall.sh" "uninstall-suricata.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/checksums.sha256"
         if ! (bash "$TMP_FOLDER/uninstall-suricata.sh") 2>&1; then
             error_message "Failed to uninstall 'suricata'"
             exit 1

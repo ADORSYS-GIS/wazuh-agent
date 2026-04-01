@@ -157,16 +157,16 @@ config() {
             fi
 
     # Download logo
-    if [ ! -d "$LOCAL_PATH" ]; then
-        info_message "Creating $LOCAL_PATH directory..."
-        mkdir -p "$LOCAL_PATH"
+    if [ ! -d "$LOGO_PATH" ]; then
+        info_message "Creating $LOGO_PATH directory..."
+        mkdir -p "$LOGO_PATH"
         info_message "Directory created successfully."
     else
-        info_message "$LOCAL_PATH directory already exists."
+        info_message "$LOGO_PATH directory already exists."
     fi
     info_message "Downloading logo..."
-    download_and_verify_file "$REPO_URL/assets/wazuh-logo.png" "$LOCAL_PATH/wazuh-logo.png" "assets/wazuh-logo.png" "logo" "$REPO_URL/checksums.sha256"
-    maybe_sudo chmod +r "$LOCAL_PATH/wazuh-logo.png"
+    download_and_verify_file "$REPO_URL/assets/wazuh-logo.png" "$LOGO_PATH/wazuh-logo.png" "assets/wazuh-logo.png" "logo" "$REPO_URL/checksums.sha256"
+    maybe_sudo chmod +r "$LOGO_PATH/wazuh-logo.png"
     info_message "Logo downloaded successfully."
 }
 
@@ -203,10 +203,10 @@ validate_installation() {
     info_message "active-response logs are configured to be monitored."
 
     # Check if the logo file exists
-    if maybe_sudo [ ! -f "$LOCAL_PATH/wazuh-logo.png" ]; then
+    if maybe_sudo [ ! -f "$LOGO_PATH/wazuh-logo.png" ]; then
         warn_message "Logo file has not been downloaded."
     fi
-    info_message "Logo file exists at $LOCAL_PATH/wazuh-logo.png."
+    info_message "Logo file exists at $LOGO_PATH/wazuh-logo.png."
 
   success_message "Installation and configuration validated successfully."
 }
