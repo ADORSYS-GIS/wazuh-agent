@@ -419,7 +419,7 @@ jobs:
       - name: Generate checksums
         run: |
           echo "Generating SHA256 checksums..."
-          find scripts lib assets files -type f -exec sha256sum {} + > checksums.sha256
+          find scripts lib assets files version.txt -type f -exec sha256sum {} + > checksums.sha256
           echo "=== Checksums ==="
           cat checksums.sha256
 

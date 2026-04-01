@@ -304,12 +304,8 @@ function DownloadVersionFile {
         WarningMessage "ossec-agent folder does not exist. Skipping."
     }
     else {
-        try {
-            Invoke-WebRequest -Uri $VERSION_FILE_URL -OutFile $VERSION_FILE_PATH -ErrorAction Stop
-        } catch {
-            ErrorMessage "Failed to download version file: $($_.Exception.Message)"
-        } finally {
-            InfoMessage "Version file downloaded successfully"
+        if (-not (Download-And-VerifyFile -Url "$VERSION_FILE_URL" -Destination $VERSION_FILE_PATH -ChecksumPattern "version.txt" -FileName "version.txt")) {
+            throw "Failed to download and verify version file"
         }
     }
 }
