@@ -221,11 +221,11 @@ done
 mv "$TMP_FOLDER/deps.sh" "$TMP_FOLDER/install-deps.sh"
 mv "$TMP_FOLDER/install.sh" "$TMP_FOLDER/install-wazuh-agent.sh"
 
-download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/${WAZUH_CERT_OAUTH2_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-wazuh-cert-oauth2.sh" "scripts/linux/install.sh" "install-wazuh-cert-oauth2.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/${WAZUH_CERT_OAUTH2_REPO_REF}/checksums.sha256"
+download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/${WAZUH_CERT_OAUTH2_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-wazuh-cert-oauth2.sh" "scripts/linux/install.sh" "install-wazuh-cert-oauth2.sh" "" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/${WAZUH_CERT_OAUTH2_REPO_REF}/checksums.sha256"
 
-download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-wazuh-agent-status.sh" "scripts/linux/install.sh" "install-wazuh-agent-status.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/checksums.sha256"
+download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-wazuh-agent-status.sh" "scripts/linux/install.sh" "install-wazuh-agent-status.sh" "" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/checksums.sha256"
 
-download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-yara.sh" "scripts/linux/install.sh" "install-yara.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/checksums.sha256"
+download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-yara.sh" "scripts/linux/install.sh" "install-yara.sh" "" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/checksums.sha256"
 
 # Step 0: Install dependencies
 info_message "Installing dependencies"
