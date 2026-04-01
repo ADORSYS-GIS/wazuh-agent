@@ -169,9 +169,20 @@ download_and_verify_file() {
     local pattern="$3"
     local name="${4:-Unknown file}"
     local checksum_file="${5:-${CHECKSUMS_FILE:-}}"
+    local checksum_url="${6:-}"
     
     if ! download_file "$url" "$dest"; then
         error_exit "Failed to download $name from $url"
+    fi
+    
+    # If a direct checksum URL is provided, download it and use it as the source of truth
+    if [ -n "$checksum_url" ]; then
+        local temp_checksum_file
+        temp_checksum_file=$(mktemp)
+        if ! download_file "$checksum_url" "$temp_checksum_file"; then
+            error_exit "Failed to download external checksum file from $checksum_url"
+        fi
+        checksum_file="$temp_checksum_file"
     fi
     
     if [ -f "$checksum_file" ]; then
@@ -185,6 +196,11 @@ download_and_verify_file() {
             info_message "$name checksum verification passed."
         else
             error_exit "No checksum found for $name in $checksum_file using pattern $pattern"
+        fi
+        
+        # Cleanup temporary checksum file if it was downloaded from a URL
+        if [ -n "$checksum_url" ] && [ -f "$checksum_file" ]; then
+            rm -f "$checksum_file"
         fi
     else
         error_exit "Checksum file not found at $checksum_file, cannot verify $name"

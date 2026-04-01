@@ -125,8 +125,10 @@ function Install-OAuth2Client {
     $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
     $global:InstallerFiles += $OAuth2Script
 
+    $OAuth2ChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/$WAZUH_CERT_OAUTH2_REPO_REF/checksums.sha256"
+
     try {
-        if (-not (Download-And-VerifyFile -Url $OAuth2Url -Destination $OAuth2Script -ChecksumPattern "scripts/windows/install.ps1" -FileName "wazuh-cert-oauth2-client script")) {
+        if (-not (Download-And-VerifyFile -Url $OAuth2Url -Destination $OAuth2Script -ChecksumPattern "scripts/windows/install.ps1" -FileName "wazuh-cert-oauth2-client script" -ChecksumUrl $OAuth2ChecksumUrl)) {
             throw "Failed to download and verify OAuth2 client script"
         }
         
@@ -143,8 +145,10 @@ function Install-Yara {
     $YaraScript = "$env:TEMP\install_yara.ps1"
     $global:InstallerFiles += $YaraScript
 
+    $YaraChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/checksums.sha256"
+
     try {
-        if (-not (Download-And-VerifyFile -Url $YaraUrl -Destination $YaraScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "YARA installation script")) {
+        if (-not (Download-And-VerifyFile -Url $YaraUrl -Destination $YaraScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "YARA installation script" -ChecksumUrl $YaraChecksumUrl)) {
             throw "Failed to download and verify YARA installation script"
         }
         
@@ -161,8 +165,10 @@ function Install-Snort {
     $SnortScript = "$env:TEMP\snort.ps1"
     $global:InstallerFiles += $SnortScript
 
+    $SnortChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/checksums.sha256"
+
     try {
-        if (-not (Download-And-VerifyFile -Url $SnortUrl -Destination $SnortScript -ChecksumPattern "scripts/windows/snort.ps1" -FileName "Snort installation script")) {
+        if (-not (Download-And-VerifyFile -Url $SnortUrl -Destination $SnortScript -ChecksumPattern "scripts/windows/snort.ps1" -FileName "Snort installation script" -ChecksumUrl $SnortChecksumUrl)) {
             throw "Failed to download and verify Snort installation script"
         }
         
@@ -183,7 +189,8 @@ function Uninstall-Snort {
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     if ($task) {
         try {
-            if (-not (Download-And-VerifyFile -Url $SnortUrl -Destination $UninstallSnortScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Snort uninstallation script")) {
+            $SnortChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/checksums.sha256"
+            if (-not (Download-And-VerifyFile -Url $SnortUrl -Destination $UninstallSnortScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Snort uninstallation script" -ChecksumUrl $SnortChecksumUrl)) {
                 throw "Failed to download and verify Snort uninstallation script"
             }
             
@@ -201,8 +208,10 @@ function Install-Suricata {
     $SuricataScript = "$env:TEMP\suricata.ps1"
     $global:InstallerFiles += $SuricataScript
 
+    $SuricataChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/checksums.sha256"
+
     try {
-        if (-not (Download-And-VerifyFile -Url $SuricataUrl -Destination $SuricataScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "Suricata installation script")) {
+        if (-not (Download-And-VerifyFile -Url $SuricataUrl -Destination $SuricataScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "Suricata installation script" -ChecksumUrl $SuricataChecksumUrl)) {
             throw "Failed to download and verify Suricata installation script"
         }
         
@@ -222,7 +231,8 @@ function Uninstall-Suricata {
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     if ($task) {
         try {
-            if (-not (Download-And-VerifyFile -Url $SuricataUrl -Destination $UninstallSuricataScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Suricata uninstallation script")) {
+            $SuricataChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/checksums.sha256"
+            if (-not (Download-And-VerifyFile -Url $SuricataUrl -Destination $UninstallSuricataScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Suricata uninstallation script" -ChecksumUrl $SuricataChecksumUrl)) {
                 throw "Failed to download and verify Suricata uninstallation script"
             }
             
@@ -240,8 +250,10 @@ function Install-AgentStatus {
     $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
     $global:InstallerFiles += $AgentStatusScript
 
+    $AgentStatusChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/$WAZUH_AGENT_STATUS_REPO_REF/checksums.sha256"
+
     try {
-        if (-not (Download-And-VerifyFile -Url $AgentStatusUrl -Destination $AgentStatusScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "Agent Status installation script")) {
+        if (-not (Download-And-VerifyFile -Url $AgentStatusUrl -Destination $AgentStatusScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "Agent Status installation script" -ChecksumUrl $AgentStatusChecksumUrl)) {
             throw "Failed to download and verify Agent Status installation script"
         }
         

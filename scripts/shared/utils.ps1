@@ -142,11 +142,21 @@ function Download-And-VerifyFile {
         [string]$Destination,
         [string]$ChecksumPattern,
         [string]$FileName = "Unknown file",
-        [string]$ChecksumFile = $global:ChecksumsPath
+        [string]$ChecksumFile = $global:ChecksumsPath,
+        [string]$ChecksumUrl = $null
     )
     
     if (-not (Download-File -Url $Url -Destination $Destination)) {
         ErrorExit "Failed to download $FileName from $Url"
+    }
+    
+    # If a direct checksum URL is provided, download it and use it as the source of truth
+    if (-not [string]::IsNullOrWhiteSpace($ChecksumUrl)) {
+        $tempChecksumFile = Join-Path ([System.IO.Path]::GetTempPath()) "checksums-$([System.Guid]::NewGuid().ToString()).sha256"
+        if (-not (Download-File -Url $ChecksumUrl -Destination $tempChecksumFile)) {
+            ErrorExit "Failed to download external checksum file from $ChecksumUrl"
+        }
+        $ChecksumFile = $tempChecksumFile
     }
     
     if (-not [string]::IsNullOrWhiteSpace($ChecksumFile) -and (Test-Path -Path $ChecksumFile)) {
@@ -158,6 +168,11 @@ function Download-And-VerifyFile {
             InfoMessage "$FileName checksum verification passed."
         } else {
             ErrorExit "No checksum found for $FileName in $ChecksumFile using pattern $ChecksumPattern"
+        }
+        
+        # Cleanup temporary checksum file if it was downloaded from a URL
+        if (-not [string]::IsNullOrWhiteSpace($ChecksumUrl) -and (Test-Path -Path $ChecksumFile)) {
+            Remove-Item -Path $ChecksumFile -Force -ErrorAction SilentlyContinue
         }
     } else {
         ErrorExit "Checksum file not found at $ChecksumFile, cannot verify $FileName"
