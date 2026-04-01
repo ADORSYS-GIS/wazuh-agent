@@ -43,11 +43,14 @@ $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$AgentVersion
 $TempFile = New-TemporaryFile
 
 function Uninstall-Agent {
-
-
-
     # Download the Wazuh agent MSI package
-    Download-And-VerifyFile -Url $DownloadUrl -Destination $TempFile -ChecksumPattern "wazuh-agent-$AgentVersion.msi" -FileName "Wazuh agent version $AgentVersion"
+    InfoMessage "Downloading Wazuh agent version $AgentVersion..."
+    try {
+        Invoke-WebRequest -Uri $DownloadUrl -OutFile $TempFile -ErrorAction Stop
+    } catch {
+        ErrorMessage "Failed to download Wazuh agent: $($_.Exception.Message)"
+        return
+    }
 
     $MsiArguments = @(
         "/x $TempFile"
