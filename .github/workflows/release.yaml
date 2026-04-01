@@ -6,11 +6,25 @@ on:
       - main
       - develop
       - hotfix/**
+    paths-ignore:         
+      - '**.md'
+      - 'docs/**'
+      - 'README.md'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '*.md'  
   pull_request:
     branches:
       - main
       - develop
       - hotfix/**
+    paths-ignore:         
+      - '**.md'
+      - 'docs/**'
+      - 'README.md'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '*.md'  
 
 jobs:
   # ============================================
