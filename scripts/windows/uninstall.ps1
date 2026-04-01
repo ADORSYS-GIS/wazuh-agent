@@ -47,13 +47,7 @@ function Uninstall-Agent {
 
 
     # Download the Wazuh agent MSI package
-    InfoMessage "Downloading Wazuh agent version $AgentVersion..."
-    try {
-        Invoke-WebRequest -Uri $DownloadUrl -OutFile $TempFile -ErrorAction Stop
-    } catch {
-        ErrorMessage "Failed to download Wazuh agent: $($_.Exception.Message)"
-        return
-    }
+    Download-And-VerifyFile -Url $DownloadUrl -Destination $TempFile -ChecksumPattern "wazuh-agent-$AgentVersion.msi" -FileName "Wazuh agent version $AgentVersion" -ChecksumFile $ChecksumsPath
 
     $MsiArguments = @(
         "/x $TempFile"

@@ -127,34 +127,16 @@ info_message "Starting uninstallation. Using temporary directory: \"$TMP_FOLDER\
 
 # Step 0: Download all uninstall scripts
 info_message "Downloading all uninstall scripts..."
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-wazuh-agent.sh"; then
-    error_message "Failed to download uninstall-wazuh-agent.sh"
-    exit 1
-fi
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-wazuh-agent-status.sh"; then
-    error_message "Failed to download uninstall-wazuh-agent-status.sh"
-    exit 1
-fi
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-yara.sh"; then
-    error_message "Failed to download uninstall-yara.sh"
-    exit 1
-fi
+download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-wazuh-agent.sh" "scripts/linux/uninstall.sh" "Wazuh agent uninstall script" "$UTILS_TMP/checksums.sha256"
+download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-wazuh-agent-status.sh" "scripts/linux/uninstall.sh" "Wazuh Agent Status uninstall script"
+download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-yara.sh" "scripts/linux/uninstall.sh" "Yara uninstall script"
 
 # Always download both NIDS uninstallers
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh"; then
-    error_message "Failed to download uninstall-suricata.sh"
-    exit 1
-fi
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-snort.sh"; then
-    error_message "Failed to download uninstall-snort.sh"
-    exit 1
-fi
+download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh" "scripts/linux/uninstall.sh" "Suricata uninstall script"
+download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-snort.sh" "scripts/linux/uninstall.sh" "Snort uninstall script"
 
 if [ "$UNINSTALL_TRIVY" = "TRUE" ]; then
-    if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-trivy.sh"; then
-        error_message "Failed to download uninstall-trivy.sh"
-        exit 1
-    fi
+    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-trivy.sh" "scripts/linux/uninstall.sh" "Trivy uninstall script"
 fi
 
 # Step 1: Uninstall Wazuh agent

@@ -114,20 +114,11 @@ function Install-Agent {
 }
 
 function Config {
-    InfoMessage "Downloading app logo..."
-
     if (!(Test-Path -Path $APP_DATA)) {
         New-Item -ItemType Directory -Path $APP_DATA -Force | Out-Null
     }
 
-    try {
-        Invoke-WebRequest -Uri $APP_LOGO_URL -OutFile $APP_LOGO_PATH -ErrorAction Stop
-    } catch {
-        ErrorMessage "Failed to download App logo: $($_.Exception.Message)"
-        return
-    } finally {
-        InfoMessage "App logo downloaded successfully"
-    }
+    Download-And-VerifyFile -Url $APP_LOGO_URL -Destination $APP_LOGO_PATH -ChecksumPattern "assets/wazuh-logo.png" -FileName "App logo" -ChecksumFile $ChecksumsPath
 }
 
 function Cleanup {

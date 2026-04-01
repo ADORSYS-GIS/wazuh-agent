@@ -164,7 +164,7 @@ config() {
         info_message "$LOCAL_PATH directory already exists."
     fi
     info_message "Downloading logo..."
-    maybe_sudo curl -SL --progress-bar "$REPO_URL/assets/wazuh-logo.png" -o "$LOCAL_PATH/wazuh-logo.png"
+    download_and_verify_file "$REPO_URL/assets/wazuh-logo.png" "$LOCAL_PATH/wazuh-logo.png" "assets/wazuh-logo.png" "logo" "$UTILS_TMP/checksums.sha256"
     maybe_sudo chmod +r "$LOCAL_PATH/wazuh-logo.png"
     info_message "Logo downloaded successfully."
 }

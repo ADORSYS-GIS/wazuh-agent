@@ -63,38 +63,6 @@ $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 # Global array to track installer files
 $global:InstallerFiles = @()
 
-# Centralized function to download and verify file checksum
-function Download-And-VerifyFile {
-    param(
-        [string]$Url,
-        [string]$Destination,
-        [string]$ChecksumPattern,
-        [string]$FileName = "Unknown file"
-    )
-    
-    try {
-        InfoMessage "Downloading $FileName..."
-        Invoke-WebRequest -Uri $Url -OutFile $Destination -ErrorAction Stop
-        
-        # Verify checksum using the already downloaded checksums file
-        $expectedHash = (Select-String -Path "$UtilsTmp\checksums.sha256" -Pattern $ChecksumPattern).Line.Split(" ")[0]
-        if (-not [string]::IsNullOrWhiteSpace($expectedHash)) {
-            if (-not (Test-Checksum -FilePath $Destination -ExpectedHash $expectedHash)) {
-                throw "$FileName checksum verification failed"
-            }
-            InfoMessage "$FileName checksum verification passed."
-        } else {
-            WarningMessage "No checksum found for $FileName, skipping verification"
-        }
-        
-        InfoMessage "$FileName downloaded and verified successfully."
-        return $true
-    }
-    catch {
-        ErrorMessage "Error downloading/verifying $FileName`: $($_.Exception.Message)"
-        return $false
-    }
-}
 
 # Cleanup function to remove installer files at the end
 function Cleanup-Installers {
@@ -120,7 +88,7 @@ function Download-CoreScripts {
         $dest = "$env:TEMP\$script"
         $global:InstallerFiles += $dest
 
-        if (-not (Download-And-VerifyFile -Url $url -Destination $dest -ChecksumPattern "scripts/windows/$script" -FileName $script)) {
+        if (-not (Download-And-VerifyFile -Url $url -Destination $dest -ChecksumPattern "scripts/windows/$script" -FileName $script -ChecksumFile $ChecksumsPath)) {
             exit 1
         }
     }
@@ -298,13 +266,13 @@ function Install-USBDLPScripts {
 
         # Download USB storage blocking script
         $USBStorageScript = Join-Path -Path $AR_BIN_DIR -ChildPath "disable-usb-storage.ps1"
-        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -Destination $USBStorageScript -ChecksumPattern "files/active-response/windows/disable-usb-storage.ps1" -FileName "disable-usb-storage.ps1")) {
+        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -Destination $USBStorageScript -ChecksumPattern "files/active-response/windows/disable-usb-storage.ps1" -FileName "disable-usb-storage.ps1" -ChecksumFile $ChecksumsPath)) {
             throw "Failed to download and verify USB storage script"
         }
 
         # Download USB HID alerting script
         $USBHIDScript = Join-Path -Path $AR_BIN_DIR -ChildPath "alert-usb-hid.ps1"
-        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -Destination $USBHIDScript -ChecksumPattern "files/active-response/windows/alert-usb-hid.ps1" -FileName "alert-usb-hid.ps1")) {
+        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -Destination $USBHIDScript -ChecksumPattern "files/active-response/windows/alert-usb-hid.ps1" -FileName "alert-usb-hid.ps1" -ChecksumFile $ChecksumsPath)) {
             throw "Failed to download and verify USB HID script"
         }
 

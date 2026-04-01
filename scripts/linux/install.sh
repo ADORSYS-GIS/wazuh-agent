@@ -35,6 +35,8 @@ ACTUAL_HASH=$(calculate_sha256_bootstrap "$UTILS_TMP/utils.sh")
 
 if [ -z "$EXPECTED_HASH" ] || [ "$EXPECTED_HASH" != "$ACTUAL_HASH" ]; then
     echo "Error: Checksum verification failed for utils.sh" >&2
+    echo "Expected hash: $EXPECTED_HASH" >&2
+    echo "Actual hash: $ACTUAL_HASH" >&2
     exit 1
 fi
 
@@ -257,10 +259,7 @@ config() {
         info_message "$LOGO_PATH directory already exists."
     fi
     info_message "Downloading logo..."
-    if ! download_file "$REPO_URL/assets/wazuh-logo.png" "$LOGO_PATH/wazuh-logo.png"; then
-        error_message "Failed to download logo"
-        exit 1
-    fi
+    download_and_verify_file "$REPO_URL/assets/wazuh-logo.png" "assets/wazuh-logo.png" "assets/wazuh-logo.png" "logo" "$UTILS_TMP/checksums.sha256"
     maybe_sudo chmod +r "$LOGO_PATH/wazuh-logo.png"
     info_message "Logo downloaded successfully."
 }

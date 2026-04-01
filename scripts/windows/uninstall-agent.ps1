@@ -6,13 +6,40 @@ param(
 
 # Source shared utilities
 if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
+# Create a secure temporary directory for utilities
+$UtilsTmp = Join-Path $env:TEMP "wazuh-utils-$(Get-Random)"
+New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
+
 try {
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/shared/utils.ps1" -OutFile "utils.ps1" -ErrorAction Stop
-} catch {
-    Write-Error "Failed to download utils.ps1: $($_.Exception.Message)"
+    $ChecksumsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/checksums.sha256"
+    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/shared/utils.ps1"
+    
+    $ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $UtilsPath = Join-Path $UtilsTmp "utils.ps1"
+
+    Invoke-WebRequest -Uri $ChecksumsURL -OutFile $ChecksumsPath -ErrorAction Stop
+    Invoke-WebRequest -Uri $UtilsURL -OutFile $UtilsPath -ErrorAction Stop
+
+    # Verification function (bootstrap)
+    function Get-FileChecksum-Bootstrap {
+        param([string]$FilePath)
+        return (Get-FileHash -Path $FilePath -Algorithm SHA256).Hash.ToLower()
+    }
+
+    $ExpectedHash = (Select-String -Path $ChecksumsPath -Pattern "scripts/shared/utils.ps1").Line.Split(" ")[0]
+    $ActualHash = Get-FileChecksum-Bootstrap -FilePath $UtilsPath
+
+    if ([string]::IsNullOrWhiteSpace($ExpectedHash) -or ($ActualHash -ne $ExpectedHash.ToLower())) {
+        Write-Error "Checksum verification failed for utils.ps1"
+        exit 1
+    }
+
+    . $UtilsPath
+}
+catch {
+    Write-Error "Failed to initialize utilities: $($_.Exception.Message)"
     exit 1
 }
-. ./utils.ps1
 
 # Set strict mode for script execution
 Set-StrictMode -Version Latest
@@ -86,9 +113,7 @@ function Uninstall-WazuhAgent {
     $UninstallerPath = "$env:TEMP\uninstall-wazuh-agent.ps1"
     $global:UninstallerFiles += $UninstallerPath
     try {
-        InfoMessage "Downloading and executing Wazuh agent uninstall script..."
-        Invoke-WebRequest -Uri $UninstallerURL -OutFile $UninstallerPath -ErrorAction Stop
-        InfoMessage "Wazuh agent uninstall script downloaded successfully."
+        Download-And-VerifyFile -Url $UninstallerURL -Destination $UninstallerPath -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Wazuh agent uninstall script" -ChecksumFile $ChecksumsPath
         & powershell.exe -ExecutionPolicy Bypass -File $UninstallerPath -ErrorAction Stop
     }
     catch {
@@ -102,9 +127,7 @@ function Uninstall-AgentStatus {
     $AgentStatusScript = "$env:TEMP\uninstall-agent-status.ps1"
     $global:UninstallerFiles += $AgentStatusScript
     try {
-        InfoMessage "Downloading and executing Wazuh Agent Status uninstall script..."
-        Invoke-WebRequest -Uri $AgentStatusUrl -OutFile $AgentStatusScript -ErrorAction Stop
-        InfoMessage "Agent Status Uninstallation script downloaded successfully."
+        Download-And-VerifyFile -Url $AgentStatusUrl -Destination $AgentStatusScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Wazuh Agent Status uninstall script"
         & powershell.exe -ExecutionPolicy Bypass -File $AgentStatusScript -ErrorAction Stop
     }
     catch {
@@ -118,9 +141,7 @@ function Uninstall-Yara {
     $YaraScript = "$env:TEMP\uninstall-yara.ps1"
     $global:UninstallerFiles += $YaraScript
     try {
-        InfoMessage "Downloading and executing YARA uninstall script..."
-        Invoke-WebRequest -Uri $YaraUrl -OutFile $YaraScript -ErrorAction Stop
-        InfoMessage "YARA Uninstallation script downloaded successfully."
+        Download-And-VerifyFile -Url $YaraUrl -Destination $YaraScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "YARA uninstall script"
         & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
     }
     catch {
@@ -134,9 +155,7 @@ function Uninstall-Snort {
     $SnortScript = "$env:TEMP\uninstall-snort.ps1"
     $global:UninstallerFiles += $SnortScript
     try {
-        InfoMessage "Downloading and executing Snort uninstall script..."
-        Invoke-WebRequest -Uri $SnortUrl -OutFile $SnortScript -ErrorAction Stop
-        InfoMessage "Snort Uninstallation script downloaded successfully."
+        Download-And-VerifyFile -Url $SnortUrl -Destination $SnortScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Snort uninstall script"
         & powershell.exe -ExecutionPolicy Bypass -File $SnortScript -ErrorAction Stop
     }
     catch {
@@ -150,9 +169,7 @@ function Uninstall-Suricata {
     $SuricataScript = "$env:TEMP\uninstall-suricata.ps1"
     $global:UninstallerFiles += $SuricataScript
     try {
-        InfoMessage "Downloading and executing Suricata uninstall script..."
-        Invoke-WebRequest -Uri $SuricataUrl -OutFile $SuricataScript -ErrorAction Stop
-        InfoMessage "Suricata Uninstallation script downloaded successfully."
+        Download-And-VerifyFile -Url $SuricataUrl -Destination $SuricataScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Suricata uninstall script"
         & powershell.exe -ExecutionPolicy Bypass -File $SuricataScript -ErrorAction Stop
     }
     catch {

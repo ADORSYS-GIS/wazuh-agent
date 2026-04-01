@@ -162,3 +162,37 @@ download_file() {
     error_message "Failed to download $url after $max_retries attempts"
     return 1
 }
+
+# Download and verify file checksum
+# Usage: download_and_verify_file <url> <destination> <checksum_pattern> [file_name] [checksum_file]
+download_and_verify_file() {
+    local url="$1"
+    local dest="$2"
+    local pattern="$3"
+    local name="${4:-Unknown file}"
+    local checksum_file="${5:-}"
+    
+    if ! download_file "$url" "$dest"; then
+        error_exit "Failed to download $name from $url"
+    fi
+    
+    if [ -f "$checksum_file" ]; then
+        local expected
+        expected=$(grep "$pattern" "$checksum_file" | awk '{print $1}')
+        
+        if [ -n "$expected" ]; then
+            if ! verify_checksum "$dest" "$expected"; then
+                error_exit "$name checksum verification failed"
+            fi
+            info_message "$name checksum verification passed."
+        else
+            warn_message "No checksum found for $name in $checksum_file using pattern $pattern, skipping verification"
+        fi
+    else
+        warn_message "Checksum file not found at $checksum_file, skipping verification for $name"
+    fi
+    
+    success_message "$name downloaded and verified successfully."
+    return 0
+}
+

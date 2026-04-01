@@ -93,3 +93,76 @@ function Test-Checksum {
     }
     return $true
 }
+
+function Download-File {
+    param(
+        [string]$Url,
+        [string]$Destination,
+        [int]$MaxRetries = 3
+    )
+    
+    $retryCount = 0
+    $success = $false
+    
+    while ($retryCount -lt $MaxRetries -and -not $success) {
+        $retryCount++
+        try {
+            # Ensure destination directory exists
+            $destDir = Split-Path -Path $Destination
+            if (-not (Test-Path -Path $destDir)) {
+                New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+            }
+            
+            Invoke-WebRequest -Uri $Url -OutFile $Destination -ErrorAction Stop
+            
+            # Verify file is not empty
+            if ((Get-Item $Destination).Length -gt 0) {
+                $success = $true
+            } else {
+                WarningMessage "Downloaded file is empty, retrying... (attempt $retryCount/$MaxRetries)"
+                Remove-Item -Path $Destination -Force
+            }
+        }
+        catch {
+            if ($retryCount -lt $MaxRetries) {
+                WarningMessage "Failed to download $Url, retrying... (attempt $retryCount/$MaxRetries): $($_.Exception.Message)"
+                Start-Sleep -Seconds 2
+            } else {
+                ErrorMessage "Failed to download $Url after $MaxRetries attempts: $($_.Exception.Message)"
+            }
+        }
+    }
+    
+    return $success
+}
+
+function Download-And-VerifyFile {
+    param(
+        [string]$Url,
+        [string]$Destination,
+        [string]$ChecksumPattern,
+        [string]$FileName = "Unknown file",
+        [string]$ChecksumFile = ""
+    )
+    
+    if (-not (Download-File -Url $Url -Destination $Destination)) {
+        ErrorExit "Failed to download $FileName from $Url"
+    }
+    
+    if (-not [string]::IsNullOrWhiteSpace($ChecksumFile) -and (Test-Path -Path $ChecksumFile)) {
+        $expectedHash = (Select-String -Path $ChecksumFile -Pattern $ChecksumPattern).Line.Split(" ")[0]
+        if (-not [string]::IsNullOrWhiteSpace($expectedHash)) {
+            if (-not (Test-Checksum -FilePath $Destination -ExpectedHash $expectedHash)) {
+                ErrorExit "$FileName checksum verification failed"
+            }
+            InfoMessage "$FileName checksum verification passed."
+        } else {
+            WarningMessage "No checksum found for $FileName in $ChecksumFile using pattern $ChecksumPattern, skipping verification"
+        }
+    } else {
+        WarningMessage "Checksum file not found at $ChecksumFile, skipping verification for $FileName"
+    }
+    
+    SuccessMessage "$FileName downloaded and verified successfully."
+    return $true
+}
