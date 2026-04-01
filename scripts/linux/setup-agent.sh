@@ -267,7 +267,7 @@ info_message "Selected IDS engine: $IDS_ENGINE"
 if [ "$IDS_ENGINE" = "suricata" ]; then
     uninstall_snort
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
-    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-suricata.sh" "scripts/linux/install.sh" "install-suricata.sh" "" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/checksums.sha256"
+    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-suricata.sh" "scripts/linux/install.sh" "install-suricata.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/checksums.sha256"
     # Pass the selected mode to the suricata install script
     if ! (maybe_sudo env bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
         error_message "Failed to install 'suricata'"
@@ -276,7 +276,7 @@ if [ "$IDS_ENGINE" = "suricata" ]; then
 elif [ "$IDS_ENGINE" = "snort" ]; then
     uninstall_suricata
     info_message "Installing Snort..."
-    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-snort.sh" "scripts/linux/install.sh" "install-snort.sh" "" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/checksums.sha256"
+    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-snort.sh" "scripts/linux/install.sh" "install-snort.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/checksums.sha256"
     if ! (env WAZUH_SNORT_REPO_REF="$WAZUH_SNORT_REPO_REF" OSSEC_CONF_PATH="$OSSEC_CONF_PATH" bash "$TMP_FOLDER/install-snort.sh" < /dev/null) 2>&1; then
         error_message "Failed to install 'snort'"
         exit 1
@@ -286,7 +286,7 @@ fi
 # Step 6: Install Trivy if the flag is set
 if [ "$INSTALL_TRIVY" = "TRUE" ]; then
     info_message "Installing Trivy..."
-    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-trivy.sh" "scripts/linux/install.sh" "install-trivy.sh" "" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/checksums.sha256"
+    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-trivy.sh" "scripts/linux/install.sh" "install-trivy.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/checksums.sha256"
     if ! (env WAZUH_TRIVY_REPO_REF="$WAZUH_TRIVY_REPO_REF" bash "$TMP_FOLDER/install-trivy.sh" < /dev/null) 2>&1; then
         error_message "Failed to install trivy"
         exit 1
@@ -329,7 +329,7 @@ info_message "Finished USB DLP setup step."
 
 # Step 8: Setup Docker monitoring (only runs if Docker is installed)
 info_message "Setting up Docker monitoring (if Docker is present)..."
-if ! download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/setup-docker.sh" "$TMP_FOLDER/setup-docker.sh" "scripts/linux/setup-docker.sh" "setup-docker.sh"; then
+if ! download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/setup-docker.sh" "$TMP_FOLDER/setup-docker.sh" "scripts/linux/setup-docker.sh" "setup-docker.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256"; then
     warn_message "Skipping Docker monitoring setup due to download failure"
 else
     if ! (maybe_sudo env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then
@@ -341,7 +341,7 @@ fi
 
 # Step 9: Download version file
 info_message "Downloading version file..."
-download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_PATH/version.txt" "version.txt" "version file"
+download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_PATH/version.txt" "version.txt" "version file" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
 info_message "Version file downloaded successfully."
 
 success_message "Wazuh setup has been completed successfully."

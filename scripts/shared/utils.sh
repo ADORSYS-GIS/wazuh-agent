@@ -168,8 +168,8 @@ download_and_verify_file() {
     local dest="$2"
     local pattern="$3"
     local name="${4:-Unknown file}"
-    local checksum_file="${5:-${CHECKSUMS_FILE:-}}"
-    local checksum_url="${6:-}"
+    local checksum_url="${5:-}"
+    local checksum_file="${6:-${CHECKSUMS_FILE:-}}"
     
     if ! download_file "$url" "$dest"; then
         error_exit "Failed to download $name from $url"

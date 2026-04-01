@@ -165,7 +165,7 @@ config() {
         info_message "$LOCAL_PATH directory already exists."
     fi
     info_message "Downloading logo..."
-    download_and_verify_file "$REPO_URL/assets/wazuh-logo.png" "$LOCAL_PATH/wazuh-logo.png" "assets/wazuh-logo.png" "logo"
+    download_and_verify_file "$REPO_URL/assets/wazuh-logo.png" "$LOCAL_PATH/wazuh-logo.png" "assets/wazuh-logo.png" "logo" "$REPO_URL/checksums.sha256"
     maybe_sudo chmod +r "$LOCAL_PATH/wazuh-logo.png"
     info_message "Logo downloaded successfully."
 }

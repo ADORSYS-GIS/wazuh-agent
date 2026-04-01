@@ -219,7 +219,7 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 info_message "Downloading and verifying core component scripts..."
 
 for script in "deps.sh" "install.sh" "setup-agent.sh" "setup-docker.sh"; do
-    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/macos/$script" "$TMP_FOLDER/$script" "scripts/macos/$script" "$script"
+    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/macos/$script" "$TMP_FOLDER/$script" "scripts/macos/$script" "$script" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256"
 done
 
 # Map filenames for later use
@@ -272,7 +272,7 @@ info_message "Selected IDS engine: $IDS_ENGINE"
 if [ "$IDS_ENGINE" = "suricata" ]; then
     uninstall_snort
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
-    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-suricata.sh" "scripts/macos/install.sh" "install-suricata.sh" "" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/checksums.sha256"
+    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-suricata.sh" "scripts/macos/install.sh" "install-suricata.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/checksums.sha256"
     # Pass the selected mode to the suricata install script
     if ! (maybe_sudo env bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
         error_message "Failed to install 'suricata'"
@@ -281,7 +281,7 @@ if [ "$IDS_ENGINE" = "suricata" ]; then
 elif [ "$IDS_ENGINE" = "snort" ]; then
     uninstall_suricata
     info_message "Installing Snort..."
-    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-snort.sh" "scripts/macos/install.sh" "install-snort.sh" "" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/checksums.sha256"
+    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-snort.sh" "scripts/macos/install.sh" "install-snort.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/checksums.sha256"
     if ! (env WAZUH_SNORT_REPO_REF="$WAZUH_SNORT_REPO_REF" OSSEC_CONF_PATH="$OSSEC_CONF_PATH" bash "$TMP_FOLDER/install-snort.sh" < /dev/null) 2>&1; then
         error_message "Failed to install 'snort'"
         exit 1
@@ -291,7 +291,7 @@ fi
 # Step 6: Install Trivy if the flag is set
 if [ "$INSTALL_TRIVY" = "TRUE" ]; then
     info_message "Installing Trivy..."
-    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-trivy.sh" "scripts/macos/install.sh" "install-trivy.sh" "" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/checksums.sha256"
+    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-trivy.sh" "scripts/macos/install.sh" "install-trivy.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/checksums.sha256"
     if ! (env WAZUH_TRIVY_REPO_REF="$WAZUH_TRIVY_REPO_REF" bash "$TMP_FOLDER/install-trivy.sh" < /dev/null) 2>&1; then
         error_message "Failed to install trivy"
         exit 1
