@@ -116,7 +116,7 @@ function Install-BurntToastModule {
             InfoMessage "NuGet provider is already installed."
         }
         else {
-            WarnMessage "NuGet provider not found. Installing NuGet provider..."
+            WarningMessage "NuGet provider not found. Installing NuGet provider..."
             Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false -ErrorAction Stop
             InfoMessage "NuGet provider installed successfully."
         }
@@ -163,7 +163,7 @@ function Install-GnuSed {
             return
         }
     } catch {
-        WarnMessage "GNU sed is not installed. Proceeding with download and installation..." 
+        WarningMessage "GNU sed is not installed. Proceeding with download and installation..." 
     }
 
     try {
@@ -188,7 +188,7 @@ function Install-GnuSed {
         InfoMessage "Checking if sed is in the PATH..."
         $currentPath = [Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
         if ($currentPath -notlike "*$DefaultInstallPath*") {
-            WarnMessage "Adding GNU sed to the system PATH..." 
+            WarningMessage "Adding GNU sed to the system PATH..." 
             
             $env:Path += ";C:\Program Files (x86)\GnuWin32\bin"
             [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
@@ -216,7 +216,7 @@ function IsVCppInstalled {
             return $true
         }
     }
-    WarnMessage "Visual C++ Redistributable is not installed. Installing Visual C++ Redistributable..." 
+    WarningMessage "Visual C++ Redistributable is not installed. Installing Visual C++ Redistributable..." 
     Invoke-WebRequest -Uri "https://aka.ms/vs/16/release/vc_redist.x64.exe" -OutFile "$env:TEMP\vc_redist.x64.exe"
     Start-Process -FilePath "$env:TEMP\vc_redist.x64.exe" -ArgumentList "/quiet /install" -Wait
     Remove-Item -Path "$env:TEMP\vc_redist.x64.exe"

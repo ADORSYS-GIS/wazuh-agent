@@ -118,7 +118,7 @@ function Config {
         New-Item -ItemType Directory -Path $APP_DATA -Force | Out-Null
     }
 
-    Download-And-VerifyFile -Url $APP_LOGO_URL -Destination $APP_LOGO_PATH -ChecksumPattern "assets/wazuh-logo.png" -FileName "App logo"
+    Download-And-VerifyFile -Url $APP_LOGO_URL -Destination $APP_LOGO_PATH -ChecksumPattern "assets/wazuh-logo.png" -FileName "App logo" -ChecksumUrl "$RepoUrl/checksums.sha256"
 }
 
 function Cleanup {

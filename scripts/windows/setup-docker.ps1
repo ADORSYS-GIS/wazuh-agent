@@ -138,7 +138,7 @@ if (-not (Test-Path $DOCKER_WODLE_DIR)) {
 
 $customScriptSource = "$RepoUrl/files/wodles/docker/DockerListener.py"
 InfoMessage "Installing custom Windows DockerListener from $customScriptSource"
-Download-And-VerifyFile -Url $customScriptSource -Destination $DOCKER_LISTENER -ChecksumPattern "files/wodles/docker/DockerListener.py" -FileName "DockerListener.py"
+Download-And-VerifyFile -Url $customScriptSource -Destination $DOCKER_LISTENER -ChecksumPattern "files/wodles/docker/DockerListener.py" -FileName "DockerListener.py" -ChecksumUrl "$RepoUrl/checksums.sha256"
 
 # 6. Configure Wazuh Agent to monitor the Docker events log
 $dockerLogPath = "C:\Program Files (x86)\ossec-agent\logs\docker_events.log"

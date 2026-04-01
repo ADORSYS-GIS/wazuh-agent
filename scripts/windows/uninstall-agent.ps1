@@ -113,7 +113,7 @@ function Uninstall-WazuhAgent {
     $UninstallerPath = "$env:TEMP\uninstall-wazuh-agent.ps1"
     $global:UninstallerFiles += $UninstallerPath
     try {
-        Download-And-VerifyFile -Url $UninstallerURL -Destination $UninstallerPath -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Wazuh agent uninstall script"
+        Download-And-VerifyFile -Url $UninstallerURL -Destination $UninstallerPath -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Wazuh agent uninstall script" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
         & powershell.exe -ExecutionPolicy Bypass -File $UninstallerPath -ErrorAction Stop
     }
     catch {
@@ -127,7 +127,7 @@ function Uninstall-AgentStatus {
     $AgentStatusScript = "$env:TEMP\uninstall-agent-status.ps1"
     $global:UninstallerFiles += $AgentStatusScript
     try {
-        Download-And-VerifyFile -Url $AgentStatusUrl -Destination $AgentStatusScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Wazuh Agent Status uninstall script"
+        Download-And-VerifyFile -Url $AgentStatusUrl -Destination $AgentStatusScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Wazuh Agent Status uninstall script" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/$WAZUH_AGENT_STATUS_REPO_REF/checksums.sha256"
         & powershell.exe -ExecutionPolicy Bypass -File $AgentStatusScript -ErrorAction Stop
     }
     catch {
@@ -141,7 +141,7 @@ function Uninstall-Yara {
     $YaraScript = "$env:TEMP\uninstall-yara.ps1"
     $global:UninstallerFiles += $YaraScript
     try {
-        Download-And-VerifyFile -Url $YaraUrl -Destination $YaraScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "YARA uninstall script"
+        Download-And-VerifyFile -Url $YaraUrl -Destination $YaraScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "YARA uninstall script" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/checksums.sha256"
         & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
     }
     catch {
@@ -155,7 +155,7 @@ function Uninstall-Snort {
     $SnortScript = "$env:TEMP\uninstall-snort.ps1"
     $global:UninstallerFiles += $SnortScript
     try {
-        Download-And-VerifyFile -Url $SnortUrl -Destination $SnortScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Snort uninstall script"
+        Download-And-VerifyFile -Url $SnortUrl -Destination $SnortScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Snort uninstall script" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/checksums.sha256"
         & powershell.exe -ExecutionPolicy Bypass -File $SnortScript -ErrorAction Stop
     }
     catch {
@@ -169,7 +169,7 @@ function Uninstall-Suricata {
     $SuricataScript = "$env:TEMP\uninstall-suricata.ps1"
     $global:UninstallerFiles += $SuricataScript
     try {
-        Download-And-VerifyFile -Url $SuricataUrl -Destination $SuricataScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Suricata uninstall script"
+        Download-And-VerifyFile -Url $SuricataUrl -Destination $SuricataScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Suricata uninstall script" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/checksums.sha256"
         & powershell.exe -ExecutionPolicy Bypass -File $SuricataScript -ErrorAction Stop
     }
     catch {

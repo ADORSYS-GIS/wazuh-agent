@@ -89,7 +89,7 @@ function Download-CoreScripts {
         $dest = "$env:TEMP\$script"
         $global:InstallerFiles += $dest
 
-        if (-not (Download-And-VerifyFile -Url $url -Destination $dest -ChecksumPattern "scripts/windows/$script" -FileName $script)) {
+        if (-not (Download-And-VerifyFile -Url $url -Destination $dest -ChecksumPattern "scripts/windows/$script" -FileName $script -ChecksumUrl "$RepoUrl/checksums.sha256")) {
             exit 1
         }
     }
@@ -279,13 +279,13 @@ function Install-USBDLPScripts {
 
         # Download USB storage blocking script
         $USBStorageScript = Join-Path -Path $AR_BIN_DIR -ChildPath "disable-usb-storage.ps1"
-        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -Destination $USBStorageScript -ChecksumPattern "files/active-response/windows/disable-usb-storage.ps1" -FileName "disable-usb-storage.ps1")) {
+        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -Destination $USBStorageScript -ChecksumPattern "files/active-response/windows/disable-usb-storage.ps1" -FileName "disable-usb-storage.ps1" -ChecksumUrl "$RepoUrl/checksums.sha256")) {
             throw "Failed to download and verify USB storage script"
         }
 
         # Download USB HID alerting script
         $USBHIDScript = Join-Path -Path $AR_BIN_DIR -ChildPath "alert-usb-hid.ps1"
-        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -Destination $USBHIDScript -ChecksumPattern "files/active-response/windows/alert-usb-hid.ps1" -FileName "alert-usb-hid.ps1")) {
+        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -Destination $USBHIDScript -ChecksumPattern "files/active-response/windows/alert-usb-hid.ps1" -FileName "alert-usb-hid.ps1" -ChecksumUrl "$RepoUrl/checksums.sha256")) {
             throw "Failed to download and verify USB HID script"
         }
 
@@ -304,7 +304,7 @@ function DownloadVersionFile {
         WarningMessage "ossec-agent folder does not exist. Skipping."
     }
     else {
-        if (-not (Download-And-VerifyFile -Url "$VERSION_FILE_URL" -Destination $VERSION_FILE_PATH -ChecksumPattern "version.txt" -FileName "version.txt")) {
+        if (-not (Download-And-VerifyFile -Url "$VERSION_FILE_URL" -Destination $VERSION_FILE_PATH -ChecksumPattern "version.txt" -FileName "version.txt" -ChecksumUrl "$RepoUrl/checksums.sha256")) {
             throw "Failed to download and verify version file"
         }
     }

@@ -105,7 +105,7 @@ function Remove-WazuhService {
             ErrorMessage "Failed to remove Wazuh Service: $($_.Exception.Message)"
         }
     } else {
-        WarnMessage "Wazuh Service is not installed or not found"
+        WarningMessage "Wazuh Service is not installed or not found"
     }
 }
 
@@ -139,7 +139,7 @@ function Cleanup-Files {
             ErrorMessage "Failed to Cleanup Files: $($_.Exception.Message)"
         }
     } else {
-        WarnMessage "Wazuh path does not exist. No files to remove."
+        WarningMessage "Wazuh path does not exist. No files to remove."
     }
 }
 
