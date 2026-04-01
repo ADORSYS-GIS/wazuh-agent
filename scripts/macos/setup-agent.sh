@@ -339,10 +339,10 @@ USB_DLP_BASE_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZ
 
 # macOS-specific scripts
 info_message "Installing macOS USB DLP scripts..."
-if ! download_and_verify_file "$USB_DLP_BASE_URL/disable-usb-storage.sh" "$TMP_FOLDER/disable-usb-storage.sh" "files/active-response/macos/disable-usb-storage.sh" "disable-usb-storage.sh"; then
+if ! download_and_verify_file "$USB_DLP_BASE_URL/disable-usb-storage.sh" "$TMP_FOLDER/disable-usb-storage.sh" "files/active-response/macos/disable-usb-storage.sh" "disable-usb-storage.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"; then
     exit 1
 fi
-if ! download_and_verify_file "$USB_DLP_BASE_URL/alert-usb-hid.sh" "$TMP_FOLDER/alert-usb-hid.sh" "files/active-response/macos/alert-usb-hid.sh" "alert-usb-hid.sh"; then
+if ! download_and_verify_file "$USB_DLP_BASE_URL/alert-usb-hid.sh" "$TMP_FOLDER/alert-usb-hid.sh" "files/active-response/macos/alert-usb-hid.sh" "alert-usb-hid.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"; then
     exit 1
 fi
 
