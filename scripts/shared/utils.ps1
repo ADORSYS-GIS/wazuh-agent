@@ -148,7 +148,7 @@ function Download-And-VerifyFile {
     
     if (-not (Download-File -Url $Url -Destination $Destination)) {
         ErrorExit "Failed to download $FileName from $Url"
-    fi
+    }
     
     # If a direct checksum URL is provided, download it and use it as the source of truth
     if (-not [string]::IsNullOrWhiteSpace($ChecksumUrl)) {

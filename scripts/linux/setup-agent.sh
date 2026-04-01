@@ -8,7 +8,7 @@ WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"main"}
 
 # Create a secure temporary directory for utilities
 TMP_FOLDER="$(mktemp -d)"
-# trap 'rm -rf "$TMP_FOLDER"' EXIT
+trap 'rm -rf "$TMP_FOLDER"' EXIT
 
 # Download utils.sh from repository
 if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$TMP_FOLDER/utils.sh"; then

@@ -8,8 +8,7 @@ WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERS
 
 # Download utils.sh from repository
 UTILS_TMP=$(mktemp -d)
-# trap 'rm -rf "$UTILS_TMP"' EXIT
-echo "Temp directory: $UTILS_TMP"
+trap 'rm -rf "$UTILS_TMP"' EXIT
 if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$UTILS_TMP/utils.sh"; then
     echo "Failed to download utils.sh"
     exit 1
