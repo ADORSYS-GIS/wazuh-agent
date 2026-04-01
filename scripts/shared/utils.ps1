@@ -142,7 +142,7 @@ function Download-And-VerifyFile {
         [string]$Destination,
         [string]$ChecksumPattern,
         [string]$FileName = "Unknown file",
-        [string]$ChecksumFile = ""
+        [string]$ChecksumFile = $global:ChecksumsPath
     )
     
     if (-not (Download-File -Url $Url -Destination $Destination)) {
@@ -157,10 +157,10 @@ function Download-And-VerifyFile {
             }
             InfoMessage "$FileName checksum verification passed."
         } else {
-            WarningMessage "No checksum found for $FileName in $ChecksumFile using pattern $ChecksumPattern, skipping verification"
+            ErrorExit "No checksum found for $FileName in $ChecksumFile using pattern $ChecksumPattern"
         }
     } else {
-        WarningMessage "Checksum file not found at $ChecksumFile, skipping verification for $FileName"
+        ErrorExit "Checksum file not found at $ChecksumFile, cannot verify $FileName"
     }
     
     SuccessMessage "$FileName downloaded and verified successfully."

@@ -10,7 +10,7 @@ try {
     $ChecksumsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
     $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/shared/utils.ps1"
     
-    $ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $global:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
     $UtilsPath = Join-Path $UtilsTmp "utils.ps1"
 
     Invoke-WebRequest -Uri $ChecksumsURL -OutFile $ChecksumsPath -ErrorAction Stop
@@ -47,7 +47,7 @@ function Uninstall-Agent {
 
 
     # Download the Wazuh agent MSI package
-    Download-And-VerifyFile -Url $DownloadUrl -Destination $TempFile -ChecksumPattern "wazuh-agent-$AgentVersion.msi" -FileName "Wazuh agent version $AgentVersion" -ChecksumFile $ChecksumsPath
+    Download-And-VerifyFile -Url $DownloadUrl -Destination $TempFile -ChecksumPattern "wazuh-agent-$AgentVersion.msi" -FileName "Wazuh agent version $AgentVersion"
 
     $MsiArguments = @(
         "/x $TempFile"

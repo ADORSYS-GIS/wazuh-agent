@@ -163,14 +163,12 @@ download_file() {
     return 1
 }
 
-# Download and verify file checksum
-# Usage: download_and_verify_file <url> <destination> <checksum_pattern> [file_name] [checksum_file]
 download_and_verify_file() {
     local url="$1"
     local dest="$2"
     local pattern="$3"
     local name="${4:-Unknown file}"
-    local checksum_file="${5:-}"
+    local checksum_file="${5:-${CHECKSUMS_FILE:-}}"
     
     if ! download_file "$url" "$dest"; then
         error_exit "Failed to download $name from $url"
@@ -186,10 +184,10 @@ download_and_verify_file() {
             fi
             info_message "$name checksum verification passed."
         else
-            warn_message "No checksum found for $name in $checksum_file using pattern $pattern, skipping verification"
+            error_exit "No checksum found for $name in $checksum_file using pattern $pattern"
         fi
     else
-        warn_message "Checksum file not found at $checksum_file, skipping verification for $name"
+        error_exit "Checksum file not found at $checksum_file, cannot verify $name"
     fi
     
     success_message "$name downloaded and verified successfully."

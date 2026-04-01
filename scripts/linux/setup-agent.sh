@@ -31,6 +31,7 @@ if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGE
     echo "Failed to download checksums.sha256"
     exit 1
 fi
+CHECKSUMS_FILE="$TMP_FOLDER/checksums.sha256"
 
 # 2. Verify utils.sh integrity BEFORE sourcing it
 EXPECTED_HASH=$(grep "scripts/shared/utils.sh" "$TMP_FOLDER/checksums.sha256" | awk '{print $1}')
@@ -213,7 +214,7 @@ info_message "Starting setup. Using temporary directory: \"$TMP_FOLDER\""
 info_message "Downloading and verifying core component scripts..."
 
 for script in "deps.sh" "install.sh" "setup-agent.sh" "setup-docker.sh"; do
-    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/$script" "$TMP_FOLDER/$script" "scripts/linux/$script" "$script" "$TMP_FOLDER/checksums.sha256"
+    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/$script" "$TMP_FOLDER/$script" "scripts/linux/$script" "$script"
 done
 
 # Map filenames for later use
@@ -310,10 +311,10 @@ USB_DLP_BASE_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZ
 
 # Linux-specific scripts
 info_message "Installing Linux USB DLP scripts..."
-if ! download_and_verify_file "$USB_DLP_BASE_URL/disable-usb-storage.sh" "$TMP_FOLDER/disable-usb-storage.sh" "files/active-response/linux/disable-usb-storage.sh" "disable-usb-storage.sh" "$TMP_FOLDER/checksums.sha256"; then
+if ! download_and_verify_file "$USB_DLP_BASE_URL/disable-usb-storage.sh" "$TMP_FOLDER/disable-usb-storage.sh" "files/active-response/linux/disable-usb-storage.sh" "disable-usb-storage.sh"; then
     exit 1
 fi
-if ! download_and_verify_file "$USB_DLP_BASE_URL/alert-usb-hid.sh" "$TMP_FOLDER/alert-usb-hid.sh" "files/active-response/linux/alert-usb-hid.sh" "alert-usb-hid.sh" "$TMP_FOLDER/checksums.sha256"; then
+if ! download_and_verify_file "$USB_DLP_BASE_URL/alert-usb-hid.sh" "$TMP_FOLDER/alert-usb-hid.sh" "files/active-response/linux/alert-usb-hid.sh" "alert-usb-hid.sh"; then
     exit 1
 fi
 
@@ -328,7 +329,7 @@ info_message "Finished USB DLP setup step."
 
 # Step 8: Setup Docker monitoring (only runs if Docker is installed)
 info_message "Setting up Docker monitoring (if Docker is present)..."
-if ! download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/setup-docker.sh" "$TMP_FOLDER/setup-docker.sh" "scripts/linux/setup-docker.sh" "setup-docker.sh" "$TMP_FOLDER/checksums.sha256"; then
+if ! download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/setup-docker.sh" "$TMP_FOLDER/setup-docker.sh" "scripts/linux/setup-docker.sh" "setup-docker.sh"; then
     warn_message "Skipping Docker monitoring setup due to download failure"
 else
     if ! (maybe_sudo env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then
@@ -340,7 +341,7 @@ fi
 
 # Step 9: Download version file
 info_message "Downloading version file..."
-download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_PATH/version.txt" "version.txt" "version file" "$TMP_FOLDER/checksums.sha256"
+download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_PATH/version.txt" "version.txt" "version file"
 info_message "Version file downloaded successfully."
 
 success_message "Wazuh setup has been completed successfully."

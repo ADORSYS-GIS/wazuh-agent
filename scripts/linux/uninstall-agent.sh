@@ -29,6 +29,7 @@ if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGE
     echo "Failed to download checksums.sha256"
     exit 1
 fi
+CHECKSUMS_FILE="$UTILS_TMP/checksums.sha256"
 
 EXPECTED_HASH=$(grep "scripts/shared/utils.sh" "$UTILS_TMP/checksums.sha256" | awk '{print $1}')
 ACTUAL_HASH=$(calculate_sha256_bootstrap "$UTILS_TMP/utils.sh")
@@ -127,7 +128,7 @@ info_message "Starting uninstallation. Using temporary directory: \"$TMP_FOLDER\
 
 # Step 0: Download all uninstall scripts
 info_message "Downloading all uninstall scripts..."
-download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-wazuh-agent.sh" "scripts/linux/uninstall.sh" "Wazuh agent uninstall script" "$UTILS_TMP/checksums.sha256"
+download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-wazuh-agent.sh" "scripts/linux/uninstall.sh" "Wazuh agent uninstall script"
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-wazuh-agent-status.sh" "scripts/linux/uninstall.sh" "Wazuh Agent Status uninstall script"
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-yara.sh" "scripts/linux/uninstall.sh" "Yara uninstall script"
 

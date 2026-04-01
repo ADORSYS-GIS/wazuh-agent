@@ -14,7 +14,7 @@ try {
     $ChecksumsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/checksums.sha256"
     $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/shared/utils.ps1"
     
-    $ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $global:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
     $UtilsPath = Join-Path $UtilsTmp "utils.ps1"
 
     Invoke-WebRequest -Uri $ChecksumsURL -OutFile $ChecksumsPath -ErrorAction Stop
@@ -113,7 +113,7 @@ function Uninstall-WazuhAgent {
     $UninstallerPath = "$env:TEMP\uninstall-wazuh-agent.ps1"
     $global:UninstallerFiles += $UninstallerPath
     try {
-        Download-And-VerifyFile -Url $UninstallerURL -Destination $UninstallerPath -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Wazuh agent uninstall script" -ChecksumFile $ChecksumsPath
+        Download-And-VerifyFile -Url $UninstallerURL -Destination $UninstallerPath -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Wazuh agent uninstall script"
         & powershell.exe -ExecutionPolicy Bypass -File $UninstallerPath -ErrorAction Stop
     }
     catch {

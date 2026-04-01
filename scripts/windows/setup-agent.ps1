@@ -14,7 +14,7 @@ New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
 try {
     $ChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/checksums.sha256"
     $UtilsUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/shared/utils.ps1"
-    $ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $global:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
     
     Invoke-WebRequest -Uri $ChecksumUrl -OutFile $ChecksumsPath -ErrorAction Stop
     Invoke-WebRequest -Uri $UtilsUrl -OutFile "$UtilsTmp\utils.ps1" -ErrorAction Stop
@@ -89,7 +89,7 @@ function Download-CoreScripts {
         $dest = "$env:TEMP\$script"
         $global:InstallerFiles += $dest
 
-        if (-not (Download-And-VerifyFile -Url $url -Destination $dest -ChecksumPattern "scripts/windows/$script" -FileName $script -ChecksumFile $ChecksumsPath)) {
+        if (-not (Download-And-VerifyFile -Url $url -Destination $dest -ChecksumPattern "scripts/windows/$script" -FileName $script)) {
             exit 1
         }
     }
@@ -267,13 +267,13 @@ function Install-USBDLPScripts {
 
         # Download USB storage blocking script
         $USBStorageScript = Join-Path -Path $AR_BIN_DIR -ChildPath "disable-usb-storage.ps1"
-        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -Destination $USBStorageScript -ChecksumPattern "files/active-response/windows/disable-usb-storage.ps1" -FileName "disable-usb-storage.ps1" -ChecksumFile $ChecksumsPath)) {
+        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -Destination $USBStorageScript -ChecksumPattern "files/active-response/windows/disable-usb-storage.ps1" -FileName "disable-usb-storage.ps1")) {
             throw "Failed to download and verify USB storage script"
         }
 
         # Download USB HID alerting script
         $USBHIDScript = Join-Path -Path $AR_BIN_DIR -ChildPath "alert-usb-hid.ps1"
-        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -Destination $USBHIDScript -ChecksumPattern "files/active-response/windows/alert-usb-hid.ps1" -FileName "alert-usb-hid.ps1" -ChecksumFile $ChecksumsPath)) {
+        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -Destination $USBHIDScript -ChecksumPattern "files/active-response/windows/alert-usb-hid.ps1" -FileName "alert-usb-hid.ps1")) {
             throw "Failed to download and verify USB HID script"
         }
 

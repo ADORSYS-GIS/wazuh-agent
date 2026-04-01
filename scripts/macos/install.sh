@@ -29,6 +29,7 @@ if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGE
     echo "Failed to download checksums.sha256"
     exit 1
 fi
+CHECKSUMS_FILE="$UTILS_TMP/checksums.sha256"
 
 EXPECTED_HASH=$(grep "scripts/shared/utils.sh" "$UTILS_TMP/checksums.sha256" | awk '{print $1}')
 ACTUAL_HASH=$(calculate_sha256_bootstrap "$UTILS_TMP/utils.sh")
@@ -164,7 +165,7 @@ config() {
         info_message "$LOCAL_PATH directory already exists."
     fi
     info_message "Downloading logo..."
-    download_and_verify_file "$REPO_URL/assets/wazuh-logo.png" "$LOCAL_PATH/wazuh-logo.png" "assets/wazuh-logo.png" "logo" "$UTILS_TMP/checksums.sha256"
+    download_and_verify_file "$REPO_URL/assets/wazuh-logo.png" "$LOCAL_PATH/wazuh-logo.png" "assets/wazuh-logo.png" "logo"
     maybe_sudo chmod +r "$LOCAL_PATH/wazuh-logo.png"
     info_message "Logo downloaded successfully."
 }
