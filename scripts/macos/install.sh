@@ -52,7 +52,7 @@ WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.2-1'}
 # macOS-specific paths
 OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
 OSSEC_LOG_PATH="/Library/Ossec/logs"
-LOCAL_PATH="/Library/Application Support/Ossec"
+LOGO_PATH="/Library/Application Support/Ossec"
 WAZUH_CONTROL_PATH="/Library/Ossec/bin/wazuh-control"
 
 ## WAZUH_MANAGER is required
