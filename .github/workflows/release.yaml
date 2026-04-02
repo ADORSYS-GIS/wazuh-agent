@@ -26,6 +26,10 @@ on:
       - '.github/ISSUE_TEMPLATE/**'
       - '*.md'  
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ============================================
   # Release Please - Changelog & Version Management
