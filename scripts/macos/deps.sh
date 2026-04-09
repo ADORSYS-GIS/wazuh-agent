@@ -59,8 +59,7 @@ case "$OS_NAME" in
         brew_command install jq gsed bash python3
         ;;
     *)
-        error_message "Unsupported operating system: $OS_NAME"
-        exit 1
+        error_exit "Unsupported operating system: $OS_NAME"
         ;;
 esac
 

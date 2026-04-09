@@ -55,8 +55,7 @@ WAZUH_CONTROL_PATH="/var/ossec/bin/wazuh-control"
 
 ## WAZUH_MANAGER is required
 if [ -z "$WAZUH_MANAGER" ]; then
-    error_message "WAZUH_MANAGER is required"
-    exit 1
+    error_exit "WAZUH_MANAGER is required"
 fi
 
 # Determine Linux distribution and package manager
@@ -72,8 +71,7 @@ elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     PACKAGE_MANAGER="zypper"
     REPO_FILE="/etc/zypp/repos.d/wazuh.repo"
 else
-    error_message "Unsupported Linux distribution"
-    exit 1
+    error_exit "Unsupported Linux distribution"
 fi
 
 import_keys() {
@@ -215,14 +213,12 @@ config() {
         info_message "Configuring Wazuh agent with manager address $WAZUH_MANAGER in $OSSEC_CONF_PATH"
         # First remove <address till address>
         maybe_sudo sed_inplace '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
-            error_message "Error occurred during old manager address removal."
-            exit 1
+            error_exit "Error occurred during old manager address removal."
         }
 
         maybe_sudo sed_inplace "/<server=*/ a\
         <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
-            error_message "Error occurred during insertion of latest manager address."
-            exit 1
+            error_exit "Error occurred during insertion of latest manager address."
         }
     fi
   
@@ -231,8 +227,7 @@ config() {
         info_message "Removing manager_address block from $OSSEC_CONF_PATH"
         # Remove <manager_address> till </manager_address>
         sed_inplace '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
-            error_message "Error occurred during old manager address removal."
-            exit 1
+            error_exit "Error occurred during old manager address removal."
         }
     fi
   
@@ -270,27 +265,23 @@ start_agent() {
   SYSTEMD_RUNNING=$(ps -C systemd > /dev/null 2>&1 && echo "yes" || echo "no")
   if [ "$SYSTEMD_RUNNING" = "yes" ]; then
       if ! systemctl daemon-reload || ! systemctl enable wazuh-agent || ! systemctl start wazuh-agent; then
-          error_message "Failed to start Wazuh agent service"
-          exit 1
+          error_exit "Failed to start Wazuh agent service"
       fi
   elif [ -f /etc/init.d/wazuh-agent ]; then
       if [ "$PACKAGE_MANAGER" = "yum" ]; then
           chkconfig --add wazuh-agent
           if ! service wazuh-agent start; then
-              error_message "Failed to start Wazuh agent service"
-              exit 1
+              error_exit "Failed to start Wazuh agent service"
           fi
       elif [ "$PACKAGE_MANAGER" = "apt" ]; then
           update-rc.d wazuh-agent defaults 95 10
           if ! service wazuh-agent start; then
-              error_message "Failed to start Wazuh agent service"
-              exit 1
+              error_exit "Failed to start Wazuh agent service"
           fi
       fi
   elif maybe_sudo [ -x "$OSSEC_CONTROL_PATH" ]; then
       if ! $WAZUH_CONTROL_PATH start; then
-          error_message "Failed to start Wazuh agent service"
-          exit 1
+          error_exit "Failed to start Wazuh agent service"
       fi
   fi
   info_message "Wazuh agent started successfully."

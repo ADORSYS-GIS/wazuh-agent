@@ -39,8 +39,7 @@ maybe_sudo() {
         if command_exists sudo; then
             sudo "$@"
         else
-            error_message "This script requires root privileges. Please run with sudo or as root."
-            exit 1
+            error_exit "This script requires root privileges. Please run with sudo or as root."
         fi
     else
         "$@"
@@ -106,90 +105,98 @@ sed_inplace() {
 download_file() {
     local url="$1"
     local dest="$2"
-    local max_retries="${3:-3}"
+    local description="${3:-file}"
+    local max_retries="${4:-3}"
     local retry_count=0
-    
-    # Validate arguments
-    if [ -z "$url" ] || [ -z "$dest" ]; then
-        error_message "Usage: download_file <url> <destination> [max_retries]"
-        return 1
+
+    info_message "Downloading $description..."
+
+    if [[ -z "$url" ]] || [[ -z "$dest" ]]; then
+        error_exit "Usage: download_file <url> <destination> [description] [max_retries]"
     fi
     
     # Create destination directory if it doesn't exist
     local dest_dir
     dest_dir=$(dirname "$dest")
     if [ ! -d "$dest_dir" ]; then
-        mkdir -p "$dest_dir" || {
-            error_message "Failed to create destination directory: $dest_dir"
-            return 1
+        maybe_sudo mkdir -p "$dest_dir" || {
+            error_exit "Failed to create destination directory: $dest_dir"
         }
     fi
-    
-    # Attempt download with retries
-    while [ $retry_count -lt "$max_retries" ]; do
-        retry_count=$((retry_count + 1))
-        
+
+    while [[ "$retry_count" -lt "$max_retries" ]]; do
         if command_exists curl; then
-            # Use curl with better error handling and progress
-            if curl -fsSL --connect-timeout 30 --max-time 300 "$url" -o "$dest" 2>/dev/null; then
-                # Verify we got a non-empty file
-                if [ -s "$dest" ]; then
+            # If running as root, we can use -o directly. Otherwise, we might need sudo tee.
+            if [ "$(id -u)" -eq 0 ]; then
+                if curl -fsSL --retry 3 --retry-delay 2 "$url" -o "$dest"; then
+                    success_message "$description downloaded successfully"
                     return 0
-                else
-                    warn_message "Downloaded file is empty, retrying... (attempt $retry_count/$max_retries)"
-                    rm -f "$dest"
+                fi
+            else
+                if curl -fsSL --retry 3 --retry-delay 2 "$url" | maybe_sudo tee "$dest" > /dev/null; then
+                    success_message "$description downloaded successfully"
+                    return 0
                 fi
             fi
         elif command_exists wget; then
-            # Use wget as fallback
-            if wget -q --timeout=30 --tries=1 "$url" -O "$dest" 2>/dev/null; then
-                if [ -s "$dest" ]; then
+            if [ "$(id -u)" -eq 0 ]; then
+                if wget -q --tries=3 --wait=2 -O "$dest" "$url"; then
+                    success_message "$description downloaded successfully"
                     return 0
-                else
-                    warn_message "Downloaded file is empty, retrying... (attempt $retry_count/$max_retries)"
-                    rm -f "$dest"
+                fi
+            else
+                if wget -q --tries=3 --wait=2 -O - "$url" | maybe_sudo tee "$dest" > /dev/null; then
+                    success_message "$description downloaded successfully"
+                    return 0
                 fi
             fi
         else
-            error_message "Neither curl nor wget is available. Please install one of them."
+            error_message "Neither curl nor wget is available"
             return 1
         fi
-        
-        # Small delay before retry
+        retry_count=$((retry_count + 1))
+        warn_message "Download failed, retrying (${retry_count}/${max_retries})..."
         sleep 2
     done
-    
-    error_message "Failed to download $url after $max_retries attempts"
+
+    error_message "Failed to download $description from $url after ${max_retries} attempts"
     return 1
 }
 
+# Download a file and verify its checksum against a checksums file.
+# The checksums file (e.g. checksums.sha256) must follow the format:
+#   <sha256hash>  <filename>
+# where each line is: hash, two spaces (or a tab), then the filename.
+# Example:
+#   d41d8cd98f00b204e9800998ecf8427e  setup-agent.sh
 download_and_verify_file() {
     local url="$1"
     local dest="$2"
     local pattern="$3"
     local name="${4:-Unknown file}"
-    local checksum_url="${5:-}"
+    # Expected checksum file format: "sha256  filename" or "sha256 filename"
+    local checksum_url="${5:-${CHECKSUMS_URL:-}}"
     local checksum_file="${6:-${CHECKSUMS_FILE:-}}"
-    
-    if ! download_file "$url" "$dest"; then
+
+    if ! download_file "$url" "$dest" "$name"; then
         error_exit "Failed to download $name from $url"
     fi
-    
-    # If a direct checksum URL is provided, download it and use it as the source of truth
-    if [ -n "$checksum_url" ]; then
+
+    if [[ -n "$checksum_url" ]]; then
         local temp_checksum_file
         temp_checksum_file=$(mktemp)
-        if ! download_file "$checksum_url" "$temp_checksum_file"; then
+        if ! download_file "$checksum_url" "$temp_checksum_file" "checksum file for $name"; then
             error_exit "Failed to download external checksum file from $checksum_url"
         fi
         checksum_file="$temp_checksum_file"
     fi
-    
-    if [ -f "$checksum_file" ]; then
+
+    if [[ -f "$checksum_file" ]]; then
         local expected
-        expected=$(grep "$pattern" "$checksum_file" | awk '{print $1}')
-        
-        if [ -n "$expected" ]; then
+        expected=$(grep -E "[[:space:]]${pattern}$" "$checksum_file" | awk '{print $1}')
+
+        if [[ -n "$expected" ]]; then        expected=$(grep "$pattern" "$checksum_file" | awk '{print $1}')
+
             if ! verify_checksum "$dest" "$expected"; then
                 error_exit "$name checksum verification failed"
             fi
@@ -197,15 +204,15 @@ download_and_verify_file() {
         else
             error_exit "No checksum found for $name in $checksum_file using pattern $pattern"
         fi
-        
+
         # Cleanup temporary checksum file if it was downloaded from a URL
-        if [ -n "$checksum_url" ] && [ -f "$checksum_file" ]; then
+        if [[ -n "$checksum_url" ]] && [[ -f "$checksum_file" ]]; then
             rm -f "$checksum_file"
         fi
     else
         error_exit "Checksum file not found at $checksum_file, cannot verify $name"
     fi
-    
+
     success_message "$name downloaded and verified successfully."
     return 0
 }

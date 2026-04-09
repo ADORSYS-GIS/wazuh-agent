@@ -8,14 +8,14 @@ The installer now uses macOS-specific scripts located in the `scripts/macos/` di
 
 ```
 scripts/macos/
-├── setup-agent.sh      # Full setup for Linux
+├── setup-agent.sh      # Full setup for macOS
 ├── install.sh          # Core installation
 ├── uninstall.sh        # Core uninstallation
 ├── uninstall-agent.sh  # Complete uninstallation
 └── deps.sh             # Dependencies
 ```
 
-You can use either the bootstrap installer (recommended) or run the Linux-specific scripts directly.
+You can use either the bootstrap installer (recommended) or run the macOS-specific scripts directly.
 
 ## Prerequisites
 
@@ -86,19 +86,19 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/instal
 **Direct macOS Script - Default (Suricata IDS mode):**
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash
+./scripts/macos/setup-agent.sh
 ```
 
 **Direct macOS Script - With Suricata in IPS mode:**
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -s ips
+./scripts/macos/setup-agent.sh -s ips
 ```
 
 **Direct macOS Script - With Snort instead of Suricata:**
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -n
+./scripts/macos/setup-agent.sh -n
 ```
 
 **Show all options:**

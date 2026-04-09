@@ -73,8 +73,7 @@ info_message "Docker detected. Setting up Docker listener environment..."
 PYTHON_BIN=$(get_functional_python)
 
 if [ -z "$PYTHON_BIN" ]; then
-    error_message "Python 3 is not installed. Please install Python 3."
-    exit 0
+    error_exit "Python 3 is not installed. Please install Python 3."
 fi
 
 python_version=$($PYTHON_BIN -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
@@ -98,14 +97,12 @@ fi
 PIP="$VENV_DIR/bin/pip"
 info_message "Upgrading pip..."
 if ! maybe_sudo "$PIP" install --upgrade pip >/dev/null 2>&1; then
-    error_message "Failed to upgrade pip in virtual environment."
-    exit 1
+    error_exit "Failed to upgrade pip in virtual environment."
 fi
 
 info_message "Installing Docker Python library..."
 if ! maybe_sudo "$PIP" install --upgrade "docker>=7.0.0" >/dev/null 2>&1; then
-    error_message "Failed to install Docker Python library."
-    exit 1
+    error_exit "Failed to install Docker Python library."
 fi
 
 if [ -f "$DOCKER_LISTENER" ]; then

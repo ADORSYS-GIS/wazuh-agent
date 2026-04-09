@@ -60,13 +60,11 @@ case "$OS_NAME" in
             info_message "Detected Alpine Linux system"
             maybe_sudo apk add --no-cache curl jq python3 py3-pip
         else
-            error_message "Unsupported Linux distribution"
-            exit 1
+            error_exit "Unsupported Linux distribution"
         fi
         ;;
     *)
-        error_message "Unsupported operating system: $OS_NAME"
-        exit 1
+        error_exit "Unsupported operating system: $OS_NAME"
         ;;
 esac
 

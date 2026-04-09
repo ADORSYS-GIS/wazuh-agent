@@ -143,38 +143,33 @@ fi
 # Step 1: Uninstall Wazuh agent
 print_step 1 "Uninstalling Wazuh agent..."
 if ! (maybe_sudo bash "$TMP_FOLDER/uninstall-wazuh-agent.sh") 2>&1; then
-    error_message "Failed to uninstall wazuh-agent"
-    exit 1
+    error_exit "Failed to uninstall wazuh-agent"
 fi
 
 # Step 2: Uninstall wazuh-agent-status
 print_step 2 "Uninstalling wazuh-agent-status..."
 if ! (bash "$TMP_FOLDER/uninstall-wazuh-agent-status.sh") 2>&1; then
-    error_message "Failed to uninstall 'wazuh-agent-status'"
-    exit 1
+    error_exit "Failed to uninstall 'wazuh-agent-status'"
 fi
 
 # Step 3: Uninstall yara
 print_step 3 "Uninstalling yara..."
 if ! (bash "$TMP_FOLDER/uninstall-yara.sh") 2>&1; then
-    error_message "Failed to uninstall 'yara'"
-    exit 1
+    error_exit "Failed to uninstall 'yara'"
 fi
 
 # Step 4: Uninstall IDS engines if present
 if command_exists suricata; then
     print_step 4 "Uninstalling suricata..."
     if ! (bash "$TMP_FOLDER/uninstall-suricata.sh") 2>&1; then
-        error_message "Failed to uninstall 'suricata'"
-        exit 1
+        error_exit "Failed to uninstall 'suricata'"
     fi
 fi
 
 if command_exists snort; then
     print_step 4 "Uninstalling snort..."
     if ! (bash "$TMP_FOLDER/uninstall-snort.sh") 2>&1; then
-        error_message "Failed to uninstall 'snort'"
-        exit 1
+        error_exit "Failed to uninstall 'snort'"
     fi
 fi
 
@@ -182,8 +177,7 @@ fi
 if [ "$UNINSTALL_TRIVY" = "TRUE" ]; then
     print_step 5 "Uninstalling trivy..."
     if ! (bash "$TMP_FOLDER/uninstall-trivy.sh") 2>&1; then
-        error_message "Failed to uninstall 'trivy'"
-        exit 1
+        error_exit "Failed to uninstall 'trivy'"
     fi
 fi
 

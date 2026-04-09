@@ -71,8 +71,7 @@ info_message "Docker detected. Setting up Docker listener environment..."
 PYTHON_BIN=$(get_functional_python)
 
 if [ -z "$PYTHON_BIN" ]; then
-    error_message "Python 3 is not installed. Please install Python 3."
-    exit 0
+    error_exit "Python 3 is not installed. Please install Python 3."
 fi
 
 python_version=$($PYTHON_BIN -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")

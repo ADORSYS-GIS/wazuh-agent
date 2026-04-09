@@ -57,8 +57,7 @@ WAZUH_CONTROL_PATH="/Library/Ossec/bin/wazuh-control"
 
 ## WAZUH_MANAGER is required
 if [ -z "$WAZUH_MANAGER" ]; then
-    error_message "WAZUH_MANAGER is required"
-    exit 1
+    error_exit "WAZUH_MANAGER is required"
 fi
 
 installation() {
@@ -74,8 +73,7 @@ installation() {
           # Apple Silicon chip
           PKG_NAME="wazuh-agent-$WAZUH_AGENT_VERSION.arm64.pkg"
       else
-          error_message "Unsupported architecture: $ARCH"
-          exit 1
+          error_exit "Unsupported architecture: $ARCH"
       fi
 
       PKG_URL="$BASE_URL/$PKG_NAME"
@@ -120,14 +118,12 @@ config() {
         info_message "Configuring Wazuh agent with manager address $WAZUH_MANAGER in $OSSEC_CONF_PATH"
         # First remove <address till address>
         maybe_sudo sed_inplace '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
-            error_message "Error occurred during old manager address removal."
-            exit 1
+            error_error "Error occurred during old manager address removal."
         }
 
         maybe_sudo sed_inplace "/<server=*/ a\
         <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
-            error_message "Error occurred during insertion of latest manager address."
-            exit 1
+            error_error "Error occurred during insertion of latest manager address."
         }
     fi
   
@@ -136,8 +132,7 @@ config() {
         info_message "Removing manager_address block from $OSSEC_CONF_PATH"
         # Remove <manager_address> till </manager_address>
         maybe_sudo sed_inplace '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
-            error_message "Error occurred during old manager address removal."
-            exit 1
+            error_error "Error occurred during old manager address removal."
         }
     fi
   

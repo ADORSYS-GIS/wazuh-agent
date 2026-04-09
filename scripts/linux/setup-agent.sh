@@ -181,8 +181,7 @@ uninstall_snort() {
         info_message "Uninstalling Snort..."
         download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-snort.sh" "scripts/linux/uninstall.sh" "uninstall-snort.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/checksums.sha256"
         if ! (bash "$TMP_FOLDER/uninstall-snort.sh") 2>&1; then
-            error_message "Failed to uninstall 'snort'"
-            exit 1
+            error_exit "Failed to uninstall 'snort'"
         fi
     fi
 }
@@ -192,8 +191,7 @@ uninstall_suricata() {
         info_message "Uninstalling Suricata..."
         download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh" "scripts/linux/uninstall.sh" "uninstall-suricata.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/checksums.sha256"
         if ! (bash "$TMP_FOLDER/uninstall-suricata.sh") 2>&1; then
-            error_message "Failed to uninstall 'suricata'"
-            exit 1
+            error_exit "Failed to uninstall 'suricata'"
         fi
     fi
 }
@@ -224,36 +222,31 @@ download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-ya
 # Step 0: Install dependencies
 info_message "Installing dependencies"
 if ! (env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-deps.sh" < /dev/null) 2>&1; then
-    error_message "Failed to install dependencies"
-    exit 1
+    error_exit "Failed to install dependencies"
 fi
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
 if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-wazuh-agent.sh" < /dev/null) 2>&1; then
-    error_message "Failed to install wazuh-agent"
-    exit 1
+    error_exit "Failed to install wazuh-agent"
 fi
 
 # Step 2: Download and install wazuh-cert-oauth2-client
 info_message "Installing wazuh-cert-oauth2-client"
 if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh" < /dev/null) 2>&1; then
-    error_message "Failed to install 'wazuh-cert-oauth2-client'"
-    exit 1
+    error_exit "Failed to install 'wazuh-cert-oauth2-client'"
 fi
 
 # Step 3: Download and install wazuh-agent-status
 info_message "Installing wazuh-agent-status"
 if ! (maybe_sudo env WAZUH_AGENT_STATUS_VERSION="$WAZUH_AGENT_STATUS_VERSION" WAZUH_AGENT_STATUS_REPO_REF="$WAZUH_AGENT_STATUS_REPO_REF" WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/install-wazuh-agent-status.sh" < /dev/null) 2>&1; then
-    error_message "Failed to install 'wazuh-agent-status'"
-    exit 1
+    error_exit "Failed to install 'wazuh-agent-status'"
 fi
 
 # Step 4: Download and install yara
 info_message "Installing yara"
 if ! (maybe_sudo env INSTALLATION_TYPE=$YARA_INSTALLATION_TYPE WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" bash "$TMP_FOLDER/install-yara.sh" < /dev/null) 2>&1; then
-    error_message "Failed to install 'yara'"
-    exit 1
+    error_exit "Failed to install 'yara'"
 fi
 
 # Step 5: Install the selected IDS Engine (Snort or Suricata)
@@ -264,16 +257,14 @@ if [ "$IDS_ENGINE" = "suricata" ]; then
     download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-suricata.sh" "scripts/linux/install.sh" "install-suricata.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/checksums.sha256"
     # Pass the selected mode to the suricata install script
     if ! (maybe_sudo env bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
-        error_message "Failed to install 'suricata'"
-        exit 1
+        error_exit "Failed to install 'suricata'"
     fi
 elif [ "$IDS_ENGINE" = "snort" ]; then
     uninstall_suricata
     info_message "Installing Snort..."
     download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-snort.sh" "scripts/linux/install.sh" "install-snort.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/checksums.sha256"
     if ! (env WAZUH_SNORT_REPO_REF="$WAZUH_SNORT_REPO_REF" OSSEC_CONF_PATH="$OSSEC_CONF_PATH" bash "$TMP_FOLDER/install-snort.sh" < /dev/null) 2>&1; then
-        error_message "Failed to install 'snort'"
-        exit 1
+        error_exit "Failed to install 'snort'"
     fi
 fi
 
@@ -282,8 +273,7 @@ if [ "$INSTALL_TRIVY" = "TRUE" ]; then
     info_message "Installing Trivy..."
     download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-trivy.sh" "scripts/linux/install.sh" "install-trivy.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/checksums.sha256"
     if ! (env WAZUH_TRIVY_REPO_REF="$WAZUH_TRIVY_REPO_REF" bash "$TMP_FOLDER/install-trivy.sh" < /dev/null) 2>&1; then
-        error_message "Failed to install trivy"
-        exit 1
+        error_exit "Failed to install trivy"
     fi
 fi
 

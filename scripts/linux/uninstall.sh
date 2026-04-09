@@ -62,8 +62,7 @@ elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     PACKAGE_MANAGER="zypper"
     REPO_FILE="/etc/zypp/repos.d/wazuh.repo"
 else
-    error_message "Unsupported Linux distribution"
-    exit 1
+    error_exit "Unsupported Linux distribution"
 fi
 
 # Stop Wazuh service if running
@@ -123,22 +122,18 @@ uninstall_agent() {
         
         if [ "$PACKAGE_MANAGER" = "apt" ]; then
             if ! maybe_sudo apt remove --purge wazuh-agent -y; then
-                error_message "Failed to remove Wazuh agent package"
-                exit 1
+                error_exit "Failed to remove Wazuh agent package"
             fi
             if ! maybe_sudo apt autoremove -y; then
-                error_message "Failed to autoremove Wazuh agent dependencies"
-                exit 1
+                error_exit "Failed to autoremove Wazuh agent dependencies"
             fi
         elif [ "$PACKAGE_MANAGER" = "yum" ]; then
             if ! maybe_sudo yum remove -y wazuh-agent; then
-                error_message "Failed to remove Wazuh agent package"
-                exit 1
+                error_exit "Failed to remove Wazuh agent package"
             fi
         elif [ "$PACKAGE_MANAGER" = "zypper" ]; then
             if ! maybe_sudo zypper remove -y wazuh-agent; then
-                error_message "Failed to remove Wazuh agent package"
-                exit 1
+                error_exit "Failed to remove Wazuh agent package"
             fi
         fi
         
@@ -153,15 +148,13 @@ cleanup_repo() {
     info_message "Removing repository and GPG key"
     if [ -f "$REPO_FILE" ]; then
         if ! maybe_sudo rm -f "$REPO_FILE"; then
-            error_message "Failed to remove repository file"
-            exit 1
+            error_error "Failed to remove repository file"
         fi
     fi
 
     if [ "$PACKAGE_MANAGER" = "apt" ] && [ -f "$GPG_KEY_FILE" ]; then
         if ! maybe_sudo rm -f "$GPG_KEY_FILE"; then
-            error_message "Failed to remove GPG key"
-            exit 1
+            error_error "Failed to remove GPG key"
         fi
     fi
     info_message "Repository and GPG key removed successfully."
@@ -171,8 +164,7 @@ cleanup_repo() {
 cleanup_files() { 
     info_message "Cleaning up remaining Wazuh files"
     if ! maybe_sudo rm -rf /var/ossec; then
-        error_message "Failed to remove Wazuh directory"
-        exit 1
+        error_error "Failed to remove Wazuh directory"
     fi
     info_message "Linux cleanup completed."
 }
@@ -210,8 +202,7 @@ verify_uninstallation() {
     fi
     
     if [ "$verification_failed" = true ]; then
-        error_message "Uninstallation verification failed - some components were not removed"
-        return 1
+        error_error "Uninstallation verification failed - some components were not removed"
     else
         success_message "Uninstallation verification passed - all components removed successfully"
         return 0
@@ -232,8 +223,7 @@ case $(uname) in
             success_message "Wazuh agent uninstallation completed successfully."
             info_message "You can now reinstall Wazuh agent without conflicts."
         else
-            error_message "Uninstallation completed with issues. Manual cleanup may be required."
-            exit 1
+            error_error "Uninstallation completed with issues. Manual cleanup may be required."
         fi
         ;;
     *)
