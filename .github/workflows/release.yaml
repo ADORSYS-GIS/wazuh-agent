@@ -249,18 +249,18 @@ jobs:
         run: |
           echo "Debug: WAZUH_AGENT_REPO_REF is $WAZUH_AGENT_REPO_REF"
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            sudo -E ./scripts/linux/install.sh
+            sudo -E bash ./scripts/linux/install.sh
           else
-            sudo -E ./scripts/macos/install.sh
+            sudo -E bash ./scripts/macos/install.sh
           fi
 
       - name: Test setup-agent script
         run: |
           echo "Debug: WAZUH_AGENT_REPO_REF is $WAZUH_AGENT_REPO_REF"
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            sudo -E ./scripts/linux/setup-agent.sh
+            sudo -E bash ./scripts/linux/setup-agent.sh
           else
-            sudo -E ./scripts/macos/setup-agent.sh
+            sudo -E bash ./scripts/macos/setup-agent.sh
           fi
 
   # ============================================
