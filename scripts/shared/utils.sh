@@ -195,8 +195,7 @@ download_and_verify_file() {
         local expected
         expected=$(grep -E "[[:space:]]${pattern}$" "$checksum_file" | awk '{print $1}')
 
-        if [[ -n "$expected" ]]; then        expected=$(grep "$pattern" "$checksum_file" | awk '{print $1}')
-
+        if [[ -n "$expected" ]]; then
             if ! verify_checksum "$dest" "$expected"; then
                 error_exit "$name checksum verification failed"
             fi
