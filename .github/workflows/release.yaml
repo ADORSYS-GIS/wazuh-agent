@@ -24,6 +24,7 @@ env:
   WAZUH_CERT_OAUTH2_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
   YARA_INSTALLATION_TYPE: server
   WOPS_VERSION: "0.4.2-rc.1"
+  WAZUH_AGENT_STATUS_VERSION: "v0.4.2.rc1"
 
 jobs:
   # ============================================
