@@ -239,7 +239,7 @@ fi
 
 # Step 3: Download and install wazuh-agent-status
 info_message "Installing wazuh-agent-status"
-if ! (maybe_sudo env WAZUH_AGENT_STATUS_VERSION="$WAZUH_AGENT_STATUS_VERSION" WAZUH_AGENT_STATUS_REPO_REF="$WAZUH_AGENT_STATUS_REPO_REF" WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/install-wazuh-agent-status.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env APP_VERSION="$WAZUH_AGENT_STATUS_VERSION" WAZUH_AGENT_STATUS_REPO_REF="$WAZUH_AGENT_STATUS_REPO_REF" WAZUH_MANAGER="$WAZUH_MANAGER" bash "$TMP_FOLDER/install-wazuh-agent-status.sh" < /dev/null) 2>&1; then
     error_exit "Failed to install 'wazuh-agent-status'"
 fi
 
