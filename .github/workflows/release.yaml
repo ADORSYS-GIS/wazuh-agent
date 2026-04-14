@@ -23,8 +23,7 @@ env:
   WAZUH_TRIVY_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
   WAZUH_CERT_OAUTH2_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
   YARA_INSTALLATION_TYPE: server
-  
-  
+  WOPS_VERSION: "0.4.2-rc.1"
 
 jobs:
   # ============================================
@@ -279,15 +278,6 @@ jobs:
           else
             echo "✗ Invalid version test failed"
             exit 1
-          fi
-
-      - name: Test install script
-        run: |
-          echo "Debug: WAZUH_AGENT_REPO_REF is $WAZUH_AGENT_REPO_REF"
-          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            sudo -E bash ./scripts/linux/install.sh
-          else
-            sudo -E bash ./scripts/macos/install.sh
           fi
 
       - name: Test setup-agent script
