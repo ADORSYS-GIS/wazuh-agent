@@ -28,6 +28,42 @@ env:
 
 jobs:
   # ============================================
+  # Update Changelog and Checksums
+  # ============================================
+  update-changelog-and-checksums:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: "0"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Configure git user
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Generate script checksums
+        run: |
+          find scripts lib assets files version.txt -type f -exec sha256sum {} + > checksums.sha256
+          cat checksums.sha256
+
+      - name: Commit and push checksums
+        run: |
+          if [[ -n $(git status --porcelain checksums.sha256) ]]; then
+            git add checksums.sha256
+            git commit -m "chore: update checksums [skip ci]"
+            git push origin ${{ github.head_ref || github.ref_name }}
+          else
+            echo "No checksum changes to commit"
+          fi
+
+  # ============================================
   # Release Please - Changelog & Version Management
   # ============================================
   release-please:
@@ -201,7 +237,7 @@ jobs:
   test-unix:
     name: Test Unix (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: [lint]
+    needs: [update-changelog-and-checksums, lint]
     strategy:
       fail-fast: false
       matrix:
@@ -269,7 +305,7 @@ jobs:
   test-windows:
     name: Test Windows
     runs-on: windows-latest
-    needs: [lint]
+    needs: [update-changelog-and-checksums, lint]
 
     steps:
       - name: Checkout repository
@@ -415,13 +451,6 @@ jobs:
           else
             echo "name=${{ needs.manual-tag-release.outputs.tag_name }}" >> $GITHUB_OUTPUT
           fi
-
-      - name: Generate checksums
-        run: |
-          echo "Generating SHA256 checksums..."
-          find scripts lib assets files version.txt -type f -exec sha256sum {} + > checksums.sha256
-          echo "=== Checksums ==="
-          cat checksums.sha256
 
       - name: Upload checksums to release
         uses: softprops/action-gh-release@v1
