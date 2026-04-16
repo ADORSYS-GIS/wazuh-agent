@@ -6,25 +6,17 @@ on:
       - main
       - develop
       - hotfix/**
-    paths-ignore:         
+    paths-ignore: &paths-ignore        
       - '**.md'
       - 'docs/**'
-      - 'README.md'
       - 'LICENSE'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '*.md'  
+      - '.github/ISSUE_TEMPLATE/**'  
   pull_request:
     branches:
       - main
       - develop
       - hotfix/**
-    paths-ignore:         
-      - '**.md'
-      - 'docs/**'
-      - 'README.md'
-      - 'LICENSE'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '*.md'  
+    paths-ignore: *paths-ignore         
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
