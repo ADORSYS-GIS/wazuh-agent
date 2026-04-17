@@ -1,18 +1,16 @@
 name: CI/CD Pipeline
 
-paths-ignore: &paths-ignore
-  - '**.md'
-  - 'docs/**'
-  - 'LICENSE'
-  - '.github/ISSUE_TEMPLATE/**'
-
 on:
   push:
     branches:
       - main
       - develop
       - hotfix/**
-    paths-ignore: *paths-ignore        
+    paths-ignore: &paths-ignore
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'        
       
   pull_request:
     branches:
