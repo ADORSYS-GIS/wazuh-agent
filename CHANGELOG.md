@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1](https://github.com/ADORSYS-GIS/wazuh-agent/compare/v1.8.0...v1.8.1) (2026-04-20)
+
+
+### Bug Fixes
+
+* update workflow to ignore additional paths in release triggers ([#174](https://github.com/ADORSYS-GIS/wazuh-agent/issues/174)) ([11df41f](https://github.com/ADORSYS-GIS/wazuh-agent/commit/11df41fd26b10f52b3995a4626d77fc3deadb72f))
+
 ## [Unreleased]
 
 ### Added
