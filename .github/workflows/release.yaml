@@ -6,11 +6,22 @@ on:
       - main
       - develop
       - hotfix/**
+    paths-ignore: &paths-ignore
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'        
+      
   pull_request:
     branches:
       - main
       - develop
       - hotfix/**
+    paths-ignore: *paths-ignore         
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # ============================================
