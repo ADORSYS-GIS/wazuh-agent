@@ -2,6 +2,21 @@
 
 This guide walks you through the process of enrolling a Windows system with the Wazuh Manager. By following these steps, you will install and configure necessary components, ensuring secure communication between the Wazuh Agent and the Wazuh Manager.
 
+## Windows-Specific Scripts
+
+The installer now uses Windows-specific scripts located in the `scripts/windows/` directory:
+
+```
+scripts/windows/
+├── setup-agent.ps1     # Full setup for Windows
+├── install.ps1         # Core installation
+├── uninstall.ps1       # Core uninstallation
+├── deps.ps1            # Dependencies
+└── uninstall-agent.ps1 # Complete uninstallation
+```
+
+You can use either the bootstrap installer (recommended) or run the Windows-specific scripts directly.
+
 ## Prerequisites
 
 - **Internet Connectivity:** Verify that the system is connected to the internet.
@@ -19,9 +34,9 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 When prompted, respond with A [Yes to All], to enable the execution policy.
 
-### Step 1: Download and Run the Verified Installer
+### Method 1: Bootstrap Installer (Recommended)
 
-The installer automatically verifies script integrity using SHA256 checksums before execution.
+The installer downloads and executes the Windows-specific setup script.
 
 ```powershell
 # Set your Wazuh Manager address
@@ -32,30 +47,65 @@ irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1 |
 ```
 
 **What happens:**
-1. Downloads the checksums file
-2. Downloads the setup script
-3. Verifies the SHA256 checksum matches
-4. Only executes if verification passes
+1. Downloads the Windows-specific setup script (`scripts/windows/setup-agent.ps1`)
+2. Verifies the SHA256 checksum matches
+3. Only executes if verification passes
 
-#### Alternative: Download and Run with Options
+### Method 2: Direct Windows Script Usage
 
+You can also run the Windows-specific scripts directly:
+
+```powershell
+# Set your Wazuh Manager address
+$env:WAZUH_MANAGER = "wazuh.your-company.com"
+
+# Run the Windows-specific setup script directly
+.\scripts\windows\setup-agent.ps1
+```
+
+#### Installation Options
+
+**Bootstrap Installer - Default (Suricata):**
+```powershell
+$env:WAZUH_MANAGER = "wazuh.your-company.com"
+irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1 | iex
+```
+
+**Bootstrap Installer - With Suricata:**
 ```powershell
 $env:WAZUH_MANAGER = "wazuh.your-company.com"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1" -OutFile "$env:TEMP\install.ps1"
 & "$env:TEMP\install.ps1" -InstallSuricata
 ```
 
-**With Snort instead of Suricata:**
+**Bootstrap Installer - With Snort:**
 ```powershell
 $env:WAZUH_MANAGER = "wazuh.your-company.com"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1" -OutFile "$env:TEMP\install.ps1"
 & "$env:TEMP\install.ps1" -InstallSnort
 ```
 
+**Direct Windows Script - Default:**
+```powershell
+$env:WAZUH_MANAGER = "wazuh.your-company.com"
+.\scripts\windows\setup-agent.ps1
+```
+
+**Direct Windows Script - With Suricata:**
+```powershell
+$env:WAZUH_MANAGER = "wazuh.your-company.com"
+.\scripts\windows\setup-agent.ps1 -InstallSuricata
+```
+
+**Direct Windows Script - With Snort:**
+```powershell
+$env:WAZUH_MANAGER = "wazuh.your-company.com"
+.\scripts\windows\setup-agent.ps1 -InstallSnort
+```
+
 **Show all options:**
 ```powershell
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1" -OutFile "$env:TEMP\install.ps1"
-& "$env:TEMP\install.ps1" -Help
+.\scripts\windows\setup-agent.ps1 -Help
 ```
 
 ### Step 2: GNU Sed Installation

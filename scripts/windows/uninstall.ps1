@@ -8,9 +8,9 @@ New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
 
 try {
     $ChecksumsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
-    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/utils.ps1"
+    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/shared/utils.ps1"
     
-    $ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $global:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
     $UtilsPath = Join-Path $UtilsTmp "utils.ps1"
 
     Invoke-WebRequest -Uri $ChecksumsURL -OutFile $ChecksumsPath -ErrorAction Stop
@@ -22,7 +22,7 @@ try {
         return (Get-FileHash -Path $FilePath -Algorithm SHA256).Hash.ToLower()
     }
 
-    $ExpectedHash = (Select-String -Path $ChecksumsPath -Pattern "scripts/utils.ps1").Line.Split(" ")[0]
+    $ExpectedHash = (Select-String -Path $ChecksumsPath -Pattern "scripts/shared/utils.ps1").Line.Split(" ")[0]
     $ActualHash = Get-FileChecksum-Bootstrap -FilePath $UtilsPath
 
     if ([string]::IsNullOrWhiteSpace($ExpectedHash) -or ($ActualHash -ne $ExpectedHash.ToLower())) {
@@ -43,9 +43,6 @@ $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$AgentVersion
 $TempFile = New-TemporaryFile
 
 function Uninstall-Agent {
-
-
-
     # Download the Wazuh agent MSI package
     InfoMessage "Downloading Wazuh agent version $AgentVersion..."
     try {
@@ -108,7 +105,7 @@ function Remove-WazuhService {
             ErrorMessage "Failed to remove Wazuh Service: $($_.Exception.Message)"
         }
     } else {
-        WarnMessage "Wazuh Service is not installed or not found"
+        WarningMessage "Wazuh Service is not installed or not found"
     }
 }
 
@@ -142,7 +139,7 @@ function Cleanup-Files {
             ErrorMessage "Failed to Cleanup Files: $($_.Exception.Message)"
         }
     } else {
-        WarnMessage "Wazuh path does not exist. No files to remove."
+        WarningMessage "Wazuh path does not exist. No files to remove."
     }
 }
 

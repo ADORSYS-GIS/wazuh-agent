@@ -1,11 +1,19 @@
 #!/bin/sh
 
-# Source shared utilities
-: "${WAZUH_AGENT_REPO_REF:=main}"
+set -eu
 
+# Repository ref
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.1'}
+WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
+
+# Download utils.sh from repository
 # Create a secure temporary directory for utilities
 UTILS_TMP=$(mktemp -d)
 trap 'rm -rf "$UTILS_TMP"' EXIT
+if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$UTILS_TMP/utils.sh"; then
+    echo "Failed to download utils.sh"
+    exit 1
+fi
 
 # Function to calculate SHA256 (cross-platform bootstrap)
 calculate_sha256_bootstrap() {
@@ -17,27 +25,23 @@ calculate_sha256_bootstrap() {
 }
 
 # 1. Download checksums
-if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" -o "$UTILS_TMP/checksums.sha256"; then
+if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" -o "$UTILS_TMP/checksums.sha256"; then
     echo "Error: Failed to download checksums.sha256" >&2
     exit 1
 fi
 
-# 2. Download utils.sh
-if ! curl -sSLf "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/utils.sh" -o "$UTILS_TMP/utils.sh"; then
-    echo "Error: Failed to download utils.sh" >&2
-    exit 1
-fi
-
-# 3. Verify utils.sh integrity
-EXPECTED_HASH=$(grep "scripts/utils.sh" "$UTILS_TMP/checksums.sha256" | awk '{print $1}')
+# 2. Verify utils.sh integrity BEFORE sourcing it
+EXPECTED_HASH=$(grep "scripts/shared/utils.sh" "$UTILS_TMP/checksums.sha256" | awk '{print $1}')
 ACTUAL_HASH=$(calculate_sha256_bootstrap "$UTILS_TMP/utils.sh")
 
 if [ -z "$EXPECTED_HASH" ] || [ "$EXPECTED_HASH" != "$ACTUAL_HASH" ]; then
     echo "Error: Checksum verification failed for utils.sh" >&2
+    echo "Expected hash: $EXPECTED_HASH" >&2
+    echo "Actual hash: $ACTUAL_HASH" >&2
     exit 1
 fi
 
-# shellcheck source=/dev/null
+# 3. Source utils.sh only after verification
 . "$UTILS_TMP/utils.sh"
 
 # ==============================================================================
@@ -45,9 +49,7 @@ fi
 # ==============================================================================
 WAZUH_USER="${WAZUH_USER:-wazuh}"
 VENV_DIR="${VENV_DIR:-/opt/wazuh-docker-env}"
-
-# Detect OS
-OS_TYPE="$(uname -s)"
+DOCKER_LISTENER="/var/ossec/wodles/docker/DockerListener"
 
 # ==============================================================================
 # Main
@@ -60,15 +62,9 @@ if ! command_exists docker; then
 fi
 
 if ! maybe_sudo docker info >/dev/null 2>&1; then
-    # On macOS, Docker info might fail as root if the socket isn't linked correctly
-    # or if the user doesn't have the DOCKER_HOST set. We check the socket as a fallback.
-    if [ "$OS_TYPE" = "Darwin" ] && [ -S "/var/run/docker.sock" ]; then
-        info_message "Docker command failed info check, but socket found. Proceeding on macOS."
-    else
-        warn_message "Docker command found, but daemon is not responding. Please ensure Docker Desktop is running."
-        warn_message "Skipping Docker monitoring setup."
-        exit 0
-    fi
+    warn_message "Docker command found, but daemon is not responding. Please ensure Docker is running."
+    warn_message "Skipping Docker monitoring setup."
+    exit 0
 fi
 
 info_message "Docker detected. Setting up Docker listener environment..."
@@ -77,8 +73,7 @@ info_message "Docker detected. Setting up Docker listener environment..."
 PYTHON_BIN=$(get_functional_python)
 
 if [ -z "$PYTHON_BIN" ]; then
-    error_message "Python 3 is not installed. Please install Python 3."
-    exit 0
+    error_exit "Python 3 is not installed. Please install Python 3."
 fi
 
 python_version=$($PYTHON_BIN -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
@@ -102,21 +97,12 @@ fi
 PIP="$VENV_DIR/bin/pip"
 info_message "Upgrading pip..."
 if ! maybe_sudo "$PIP" install --upgrade pip >/dev/null 2>&1; then
-    error_message "Failed to upgrade pip in virtual environment."
-    exit 1
+    error_exit "Failed to upgrade pip in virtual environment."
 fi
 
 info_message "Installing Docker Python library..."
 if ! maybe_sudo "$PIP" install --upgrade "docker>=7.0.0" >/dev/null 2>&1; then
-    error_message "Failed to install Docker Python library."
-    exit 1
-fi
-
-# 5. Update DockerListener shebang
-if [ "$OS_TYPE" = "Darwin" ]; then
-    DOCKER_LISTENER="/Library/Ossec/wodles/docker/DockerListener"
-else
-    DOCKER_LISTENER="/var/ossec/wodles/docker/DockerListener"
+    error_exit "Failed to install Docker Python library."
 fi
 
 if [ -f "$DOCKER_LISTENER" ]; then

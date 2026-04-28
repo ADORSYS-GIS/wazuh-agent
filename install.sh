@@ -53,6 +53,7 @@ info_message() { log "${BLUE}${BOLD}[INFO]${NC}" "$*"; }
 warn_message() { log "${YELLOW}${BOLD}[WARNING]${NC}" "$*"; }
 error_message() { log "${RED}${BOLD}[ERROR]${NC}" "$*"; }
 success_message() { log "${GREEN}${BOLD}[SUCCESS]${NC}" "$*"; }
+error_exit() { error_message "$*"; exit 1; }
 
 # Detect OS type
 detect_os() {
@@ -61,7 +62,7 @@ detect_os() {
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "linux"
     else
-        echo "unknown"
+        error_exit "Unsupported operating system. Only linux and macos are supported."
     fi
 }
 
@@ -146,7 +147,9 @@ main() {
     info_message "Using temporary directory: $TMP_DIR"
 
     # Determine URLs
-    local script_url="${REPO_URL}/${VERSION}/scripts/${SCRIPT_NAME}"
+    local os_type
+    os_type=$(detect_os)
+    local script_url="${REPO_URL}/${VERSION}/scripts/${os_type}/${SCRIPT_NAME}"
     local checksums_url="${REPO_URL}/${VERSION}/checksums.sha256"
 
     # Download checksums file
@@ -154,48 +157,52 @@ main() {
     if ! download_file "$checksums_url" "$TMP_DIR/$CHECKSUMS_FILE"; then
         warn_message "Could not download checksums file"
         if [ "$SKIP_VERIFY" != "true" ]; then
-            error_message "Verification required. Set SKIP_VERIFY=true to bypass (not recommended)"
-            exit 1
+            error_exit "Verification required. Set SKIP_VERIFY=true to bypass (not recommended)"
         fi
     fi
 
     # Download setup script
     info_message "Downloading ${SCRIPT_NAME}..."
     if ! download_file "$script_url" "$TMP_DIR/$SCRIPT_NAME"; then
-        error_message "Failed to download ${SCRIPT_NAME}"
-        exit 1
+        error_exit "Failed to download ${SCRIPT_NAME}"
     fi
 
-    # Download utils.sh
-    info_message "Downloading utils.sh..."
-    if ! download_file "${REPO_URL}/${VERSION}/scripts/utils.sh" "$TMP_DIR/utils.sh"; then
-        warn_message "Could not download utils.sh. Scripts might fail if not run from a full repository check-out."
+    # Download utils.sh (only if not available locally)
+    info_message "Checking for utils.sh..."
+    local SCRIPT_DIR
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [ -f "$SCRIPT_DIR/scripts/shared/utils.sh" ]; then
+        info_message "Using local utils.sh"
+        cp "$SCRIPT_DIR/scripts/shared/utils.sh" "$TMP_DIR/utils.sh"
+    else
+        info_message "Downloading utils.sh..."
+        if ! download_file "${REPO_URL}/${VERSION}/scripts/shared/utils.sh" "$TMP_DIR/utils.sh"; then
+            warn_message "Could not download utils.sh. Scripts might fail if not run from a full repository check-out."
+        fi
     fi
 
     # Verify checksum
     if [ -f "$TMP_DIR/$CHECKSUMS_FILE" ] && [ "$SKIP_VERIFY" != "true" ]; then
         info_message "Verifying script integrity..."
 
-        # Extract expected checksum for setup-agent.sh
+        # Extract expected checksum for setup-agent.sh (anchored match to avoid partial filename matches)
         local expected_hash
-        expected_hash=$(grep "scripts/${SCRIPT_NAME}" "$TMP_DIR/$CHECKSUMS_FILE" | awk '{print $1}')
+        expected_hash=$(grep -E "[[:space:]]scripts/${os_type}/${SCRIPT_NAME}$" "$TMP_DIR/$CHECKSUMS_FILE" | awk '{print $1}')
 
         if [ -z "$expected_hash" ]; then
             warn_message "No checksum found for ${SCRIPT_NAME} in checksums file"
             warn_message "Proceeding without verification..."
         else
             if ! verify_checksum "$TMP_DIR/$SCRIPT_NAME" "$expected_hash"; then
-                error_message "Aborting installation due to checksum mismatch for ${SCRIPT_NAME}"
-                exit 1
+                error_exit "Aborting installation due to checksum mismatch for ${SCRIPT_NAME}"
             fi
 
-            # Verify utils.sh
+            # Verify utils.sh (anchored match)
             local utils_hash
-            utils_hash=$(grep "scripts/utils.sh" "$TMP_DIR/$CHECKSUMS_FILE" | awk '{print $1}')
+            utils_hash=$(grep -E "[[:space:]]scripts/shared/utils\.sh$" "$TMP_DIR/$CHECKSUMS_FILE" | awk '{print $1}')
             if [ -n "$utils_hash" ] && [ -f "$TMP_DIR/utils.sh" ]; then
                 if ! verify_checksum "$TMP_DIR/utils.sh" "$utils_hash"; then
-                    error_message "Aborting installation due to checksum mismatch for utils.sh"
-                    exit 1
+                    error_exit "Aborting installation due to checksum mismatch for utils.sh"
                 fi
             fi
         fi
@@ -217,8 +224,7 @@ main() {
         if command -v sudo >/dev/null 2>&1; then
             sudo -E bash "$TMP_DIR/$SCRIPT_NAME" "$@"
         else
-            error_message "This script requires root privileges. Please run with sudo."
-            exit 1
+            error_exit "This script requires root privileges. Please run with sudo."
         fi
     else
         bash "$TMP_DIR/$SCRIPT_NAME" "$@"

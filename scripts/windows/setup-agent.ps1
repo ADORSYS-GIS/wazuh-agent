@@ -13,12 +13,13 @@ New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
 
 try {
     $ChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/checksums.sha256"
-    $UtilsUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/utils.ps1"
+    $UtilsUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/shared/utils.ps1"
+    $global:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
     
-    Invoke-WebRequest -Uri $ChecksumUrl -OutFile "$UtilsTmp\checksums.sha256" -ErrorAction Stop
+    Invoke-WebRequest -Uri $ChecksumUrl -OutFile $ChecksumsPath -ErrorAction Stop
     Invoke-WebRequest -Uri $UtilsUrl -OutFile "$UtilsTmp\utils.ps1" -ErrorAction Stop
 
-    $ExpectedHash = (Select-String -Path "$UtilsTmp\checksums.sha256" -Pattern "scripts/utils.ps1").Line.Split(" ")[0]
+    $ExpectedHash = (Select-String -Path $ChecksumsPath -Pattern "scripts/shared/utils.ps1").Line.Split(" ")[0]
     $ActualHash = (Get-FileHash -Path "$UtilsTmp\utils.ps1" -Algorithm SHA256).Hash.ToLower()
 
     if ([string]::IsNullOrWhiteSpace($ExpectedHash) -or $ExpectedHash -ne $ActualHash) {
@@ -48,12 +49,21 @@ $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.2" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.0" }
 $WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.9.0-rc.1" }
 $WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
+
+# Additional repo ref variables for other components
+$WAZUH_CERT_OAUTH2_REPO_REF = if ($env:WAZUH_CERT_OAUTH2_REPO_REF) { $env:WAZUH_CERT_OAUTH2_REPO_REF } else { "refs/tags/v$WOPS_VERSION" }
+$WAZUH_YARA_REPO_REF = if ($env:WAZUH_YARA_REPO_REF) { $env:WAZUH_YARA_REPO_REF } else { "refs/tags/v$WAZUH_YARA_VERSION" }
+$WAZUH_SNORT_REPO_REF = if ($env:WAZUH_SNORT_REPO_REF) { $env:WAZUH_SNORT_REPO_REF } else { "refs/tags/v$WAZUH_SNORT_VERSION" }
+$WAZUH_SURICATA_REPO_REF = if ($env:WAZUH_SURICATA_REPO_REF) { $env:WAZUH_SURICATA_REPO_REF } else { "refs/tags/v$WAZUH_SURICATA_VERSION" }
+$WAZUH_TRIVY_REPO_REF = if ($env:WAZUH_TRIVY_REPO_REF) { $env:WAZUH_TRIVY_REPO_REF } else { "main" }
+$WAZUH_AGENT_STATUS_REPO_REF = if ($env:WAZUH_AGENT_STATUS_REPO_REF) { $env:WAZUH_AGENT_STATUS_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_STATUS_VERSION" }
 $RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF"
 $VERSION_FILE_URL = "$RepoUrl/version.txt"
 $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 
 # Global array to track installer files
 $global:InstallerFiles = @()
+
 
 # Cleanup function to remove installer files at the end
 function Cleanup-Installers {
@@ -75,26 +85,11 @@ function Download-CoreScripts {
     $global:InstallerFiles += "$env:TEMP\utils.ps1"
 
     foreach ($script in $CoreScripts) {
-        $url = "$RepoUrl/scripts/$script"
+        $url = "$RepoUrl/scripts/windows/$script"
         $dest = "$env:TEMP\$script"
         $global:InstallerFiles += $dest
 
-        try {
-            InfoMessage "Downloading $script..."
-            Invoke-WebRequest -Uri $url -OutFile $dest -ErrorAction Stop
-            
-            # Verify checksum using the already downloaded checksums file
-            $expectedHash = (Select-String -Path "$UtilsTmp\checksums.sha256" -Pattern "scripts/$script").Line.Split(" ")[0]
-            if (-not [string]::IsNullOrWhiteSpace($expectedHash)) {
-                if (-not (Test-Checksum -FilePath $dest -ExpectedHash $expectedHash)) {
-                    exit 1
-                }
-            } else {
-                WarningMessage "No checksum found for $script, skipping verification"
-            }
-        }
-        catch {
-            ErrorMessage "Error downloading ${script}: $($_.Exception.Message)"
+        if (-not (Download-And-VerifyFile -Url $url -Destination $dest -ChecksumPattern "scripts/windows/$script" -FileName $script -ChecksumUrl "$RepoUrl/checksums.sha256")) {
             exit 1
         }
     }
@@ -126,14 +121,17 @@ function Install-WazuhAgent {
 
 # Step 2: Download and install wazuh-cert-oauth2-client with error handling
 function Install-OAuth2Client {
-    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.ps1"
+    $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/$WAZUH_CERT_OAUTH2_REPO_REF/scripts/windows/install.ps1"
     $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
     $global:InstallerFiles += $OAuth2Script
 
+    $OAuth2ChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/$WAZUH_CERT_OAUTH2_REPO_REF/checksums.sha256"
+
     try {
-        InfoMessage "Downloading and executing wazuh-cert-oauth2-client script..."
-        Invoke-WebRequest -Uri $OAuth2Url -OutFile $OAuth2Script -ErrorAction Stop
-        InfoMessage "wazuh-cert-oauth2-client script downloaded successfully."
+        if (-not (Download-And-VerifyFile -Url $OAuth2Url -Destination $OAuth2Script -ChecksumPattern "scripts/windows/install.ps1" -FileName "wazuh-cert-oauth2-client script" -ChecksumUrl $OAuth2ChecksumUrl)) {
+            throw "Failed to download and verify OAuth2 client script"
+        }
+        
         & powershell.exe -ExecutionPolicy Bypass -File $OAuth2Script -ArgumentList "-LOG_LEVEL", $LOG_LEVEL, "-OSSEC_CONF_PATH", $OSSEC_CONF_PATH, "-APP_NAME", $APP_NAME, "-WOPS_VERSION", $WOPS_VERSION -ErrorAction Stop
     }
     catch {
@@ -143,14 +141,17 @@ function Install-OAuth2Client {
 
 # Step 3: Download and install YARA with error handling
 function Install-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.ps1"
+    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/windows/install.ps1"
     $YaraScript = "$env:TEMP\install_yara.ps1"
     $global:InstallerFiles += $YaraScript
 
+    $YaraChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/checksums.sha256"
+
     try {
-        InfoMessage "Downloading and executing YARA installation script..."
-        Invoke-WebRequest -Uri $YaraUrl -OutFile $YaraScript -ErrorAction Stop
-        InfoMessage "YARA installation script downloaded successfully."
+        if (-not (Download-And-VerifyFile -Url $YaraUrl -Destination $YaraScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "YARA installation script" -ChecksumUrl $YaraChecksumUrl)) {
+            throw "Failed to download and verify YARA installation script"
+        }
+        
         & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
     }
     catch {
@@ -160,14 +161,17 @@ function Install-Yara {
 
 # Step 4: Download and install Snort with error handling
 function Install-Snort {
-    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/windows/snort.ps1"
+    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/scripts/windows/snort.ps1"
     $SnortScript = "$env:TEMP\snort.ps1"
     $global:InstallerFiles += $SnortScript
 
+    $SnortChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/checksums.sha256"
+
     try {
-        InfoMessage "Downloading and executing Snort installation script..."
-        Invoke-WebRequest -Uri $SnortUrl -OutFile $SnortScript -ErrorAction Stop
-        InfoMessage "Snort installation script downloaded successfully."
+        if (-not (Download-And-VerifyFile -Url $SnortUrl -Destination $SnortScript -ChecksumPattern "scripts/windows/snort.ps1" -FileName "Snort installation script" -ChecksumUrl $SnortChecksumUrl)) {
+            throw "Failed to download and verify Snort installation script"
+        }
+        
         & powershell.exe -ExecutionPolicy Bypass -File $SnortScript -ErrorAction Stop
     }
     catch {
@@ -177,7 +181,7 @@ function Install-Snort {
 
 # Helper functions to uninstall Snort and Suricata
 function Uninstall-Snort {
-    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/uninstall.ps1"
+    $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/scripts/windows/uninstall.ps1"
     $UninstallSnortScript = "$env:TEMP\uninstall_snort.ps1"
     $global:InstallerFiles += $UninstallSnortScript
     $TaskName = "SnortStartup"
@@ -185,9 +189,11 @@ function Uninstall-Snort {
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     if ($task) {
         try {
-            InfoMessage "Downloading and executing Snort uninstallation script..."
-            Invoke-WebRequest -Uri $SnortUrl -OutFile $UninstallSnortScript -ErrorAction Stop
-            InfoMessage "Snort uninstallation script downloaded successfully."
+            $SnortChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/checksums.sha256"
+            if (-not (Download-And-VerifyFile -Url $SnortUrl -Destination $UninstallSnortScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Snort uninstallation script" -ChecksumUrl $SnortChecksumUrl)) {
+                throw "Failed to download and verify Snort uninstallation script"
+            }
+            
             & powershell.exe -ExecutionPolicy Bypass -File $UninstallSnortScript -ErrorAction Stop
         }
         catch {
@@ -198,14 +204,17 @@ function Uninstall-Snort {
 
 # Step 5: Download and install Suricata with error handling
 function Install-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/tags/v$WAZUH_SURICATA_VERSION/scripts/install.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/install.ps1"
     $SuricataScript = "$env:TEMP\suricata.ps1"
     $global:InstallerFiles += $SuricataScript
 
+    $SuricataChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/checksums.sha256"
+
     try {
-        InfoMessage "Snort is installed. Downloading and executing Suricata installation script..."
-        Invoke-WebRequest -Uri $SuricataUrl -OutFile $SuricataScript -ErrorAction Stop
-        InfoMessage "Suricata installation script downloaded successfully."
+        if (-not (Download-And-VerifyFile -Url $SuricataUrl -Destination $SuricataScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "Suricata installation script" -ChecksumUrl $SuricataChecksumUrl)) {
+            throw "Failed to download and verify Suricata installation script"
+        }
+        
         & powershell.exe -ExecutionPolicy Bypass -File $SuricataScript -ErrorAction Stop
     }
     catch {
@@ -214,7 +223,7 @@ function Install-Suricata {
 }
 
 function Uninstall-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/tags/v$WAZUH_SURICATA_VERSION/scripts/uninstall.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/uninstall.ps1"
     $UninstallSuricataScript = "$env:TEMP\uninstall_suricata.ps1"
     $global:InstallerFiles += $UninstallSuricataScript
     $TaskName = "SuricataStartup"
@@ -222,9 +231,11 @@ function Uninstall-Suricata {
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     if ($task) {
         try {
-            InfoMessage "Suricata is installed. Downloading and executing Suricata uninstallation script..."
-            Invoke-WebRequest -Uri $SuricataUrl -OutFile $UninstallSuricataScript -ErrorAction Stop
-            InfoMessage "Suricata uninstallation script downloaded successfully."
+            $SuricataChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/checksums.sha256"
+            if (-not (Download-And-VerifyFile -Url $SuricataUrl -Destination $UninstallSuricataScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Suricata uninstallation script" -ChecksumUrl $SuricataChecksumUrl)) {
+                throw "Failed to download and verify Suricata uninstallation script"
+            }
+            
             & powershell.exe -ExecutionPolicy Bypass -File $UninstallSuricataScript -ErrorAction Stop
         }
         catch {
@@ -235,14 +246,17 @@ function Uninstall-Suricata {
 
 # Step 6: Download and install Wazuh Agent Status with error handling
 function Install-AgentStatus {
-    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.ps1"
+    $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/$WAZUH_AGENT_STATUS_REPO_REF/scripts/windows/install.ps1"
     $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
     $global:InstallerFiles += $AgentStatusScript
 
+    $AgentStatusChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/$WAZUH_AGENT_STATUS_REPO_REF/checksums.sha256"
+
     try {
-        InfoMessage "Downloading and executing Wazuh Agent Status installation script..."
-        Invoke-WebRequest -Uri $AgentStatusUrl -OutFile $AgentStatusScript -ErrorAction Stop
-        InfoMessage "Agent Status installation script downloaded successfully."
+        if (-not (Download-And-VerifyFile -Url $AgentStatusUrl -Destination $AgentStatusScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "Agent Status installation script" -ChecksumUrl $AgentStatusChecksumUrl)) {
+            throw "Failed to download and verify Agent Status installation script"
+        }
+        
         & powershell.exe -ExecutionPolicy Bypass -File $AgentStatusScript -ErrorAction Stop
     }
     catch {
@@ -253,7 +267,7 @@ function Install-AgentStatus {
 # Step 7: Install USB DLP Active Response scripts
 function Install-USBDLPScripts {
     $AR_BIN_DIR = Join-Path -Path $OSSEC_PATH -ChildPath "active-response\bin"
-    $USB_DLP_BASE_URL = "$RepoUrl/files/active-response"
+    $USB_DLP_BASE_URL = "$RepoUrl/files/active-response/windows"
 
     try {
         InfoMessage "Installing USB DLP Active Response scripts..."
@@ -265,13 +279,15 @@ function Install-USBDLPScripts {
 
         # Download USB storage blocking script
         $USBStorageScript = Join-Path -Path $AR_BIN_DIR -ChildPath "disable-usb-storage.ps1"
-        InfoMessage "Downloading disable-usb-storage.ps1..."
-        Invoke-WebRequest -Uri "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -OutFile $USBStorageScript -ErrorAction Stop
+        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/disable-usb-storage.ps1" -Destination $USBStorageScript -ChecksumPattern "files/active-response/windows/disable-usb-storage.ps1" -FileName "disable-usb-storage.ps1" -ChecksumUrl "$RepoUrl/checksums.sha256")) {
+            throw "Failed to download and verify USB storage script"
+        }
 
         # Download USB HID alerting script
         $USBHIDScript = Join-Path -Path $AR_BIN_DIR -ChildPath "alert-usb-hid.ps1"
-        InfoMessage "Downloading alert-usb-hid.ps1..."
-        Invoke-WebRequest -Uri "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -OutFile $USBHIDScript -ErrorAction Stop
+        if (-not (Download-And-VerifyFile -Url "$USB_DLP_BASE_URL/alert-usb-hid.ps1" -Destination $USBHIDScript -ChecksumPattern "files/active-response/windows/alert-usb-hid.ps1" -FileName "alert-usb-hid.ps1" -ChecksumUrl "$RepoUrl/checksums.sha256")) {
+            throw "Failed to download and verify USB HID script"
+        }
 
         SuccessMessage "USB DLP Active Response scripts installed successfully."
         InfoMessage "  - $USBStorageScript"
@@ -288,12 +304,8 @@ function DownloadVersionFile {
         WarningMessage "ossec-agent folder does not exist. Skipping."
     }
     else {
-        try {
-            Invoke-WebRequest -Uri $VERSION_FILE_URL -OutFile $VERSION_FILE_PATH -ErrorAction Stop
-        } catch {
-            ErrorMessage "Failed to download version file: $($_.Exception.Message)"
-        } finally {
-            InfoMessage "Version file downloaded successfully"
+        if (-not (Download-And-VerifyFile -Url "$VERSION_FILE_URL" -Destination $VERSION_FILE_PATH -ChecksumPattern "version.txt" -FileName "version.txt" -ChecksumUrl "$RepoUrl/checksums.sha256")) {
+            throw "Failed to download and verify version file"
         }
     }
 }
@@ -329,7 +341,7 @@ function Show-Help {
 
 # Step 8: Setup Docker monitoring (only runs if Docker is installed)
 function Install-DockerListener {
-    $DockerSetupUrl = "$RepoUrl/scripts/setup-docker.ps1"
+    $DockerSetupUrl = "$RepoUrl/scripts/windows/setup-docker.ps1"
     $DockerSetupScript = "$env:TEMP\setup-docker.ps1"
     $global:InstallerFiles += $DockerSetupScript
 

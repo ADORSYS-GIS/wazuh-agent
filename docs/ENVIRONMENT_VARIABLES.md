@@ -55,7 +55,23 @@ This document describes all environment variables used by the Wazuh Agent instal
 
 ```bash
 export WAZUH_MANAGER="wazuh.mycompany.com"
-./scripts/setup-agent.sh
+./install.sh
+```
+
+### OS-Specific Direct Installation
+
+```bash
+# Linux-specific installation
+export WAZUH_MANAGER="wazuh.mycompany.com"
+./scripts/linux/setup-agent.sh
+
+# macOS-specific installation
+export WAZUH_MANAGER="wazuh.mycompany.com"
+./scripts/macos/setup-agent.sh
+
+# Windows-specific installation (PowerShell)
+$env:WAZUH_MANAGER = "wazuh.mycompany.com"
+.\scripts\windows\setup-agent.ps1
 ```
 
 ### Custom Version Installation
@@ -64,7 +80,7 @@ export WAZUH_MANAGER="wazuh.mycompany.com"
 export WAZUH_MANAGER="wazuh.mycompany.com"
 export WAZUH_AGENT_VERSION="4.12.0-1"
 export WAZUH_YARA_VERSION="0.3.10"
-./scripts/setup-agent.sh
+./scripts/linux/setup-agent.sh  # or ./scripts/macos/setup-agent.sh
 ```
 
 ### Debug Mode Installation
@@ -72,7 +88,7 @@ export WAZUH_YARA_VERSION="0.3.10"
 ```bash
 export WAZUH_MANAGER="wazuh.mycompany.com"
 export LOG_LEVEL="DEBUG"
-./scripts/setup-agent.sh
+./scripts/linux/setup-agent.sh  # or ./scripts/macos/setup-agent.sh
 ```
 
 ### Windows Installation (PowerShell)
@@ -80,23 +96,23 @@ export LOG_LEVEL="DEBUG"
 ```powershell
 $env:WAZUH_MANAGER = "wazuh.mycompany.com"
 $env:WAZUH_AGENT_VERSION = "4.14.2-1"
-.\scripts\setup-agent.ps1 -InstallSuricata
+.\scripts\windows\setup-agent.ps1 -InstallSuricata
 ```
 
 ### With Specific NIDS Configuration
 
 ```bash
-# Install with Suricata in IPS mode
+# Install with Suricata in IPS mode (Linux)
 export WAZUH_MANAGER="wazuh.mycompany.com"
-./scripts/setup-agent.sh -s ips
+./scripts/linux/setup-agent.sh -s ips
 
-# Install with Snort
+# Install with Snort (macOS)
 export WAZUH_MANAGER="wazuh.mycompany.com"
-./scripts/setup-agent.sh -n
+./scripts/macos/setup-agent.sh -n
 
-# Install with Trivy vulnerability scanner
+# Install with Trivy vulnerability scanner (Linux)
 export WAZUH_MANAGER="wazuh.mycompany.com"
-./scripts/setup-agent.sh -s ids -t
+./scripts/linux/setup-agent.sh -s ids -t
 ```
 
 ## Validation Rules

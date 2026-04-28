@@ -8,9 +8,9 @@ New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
 
 try {
     $ChecksumsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
-    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/utils.ps1"
+    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/shared/utils.ps1"
     
-    $ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $global:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
     $UtilsPath = Join-Path $UtilsTmp "utils.ps1"
 
     Invoke-WebRequest -Uri $ChecksumsURL -OutFile $ChecksumsPath -ErrorAction Stop
@@ -22,7 +22,7 @@ try {
         return (Get-FileHash -Path $FilePath -Algorithm SHA256).Hash.ToLower()
     }
 
-    $ExpectedHash = (Select-String -Path $ChecksumsPath -Pattern "scripts/utils.ps1").Line.Split(" ")[0]
+    $ExpectedHash = (Select-String -Path $ChecksumsPath -Pattern "scripts/shared/utils.ps1").Line.Split(" ")[0]
     $ActualHash = Get-FileChecksum-Bootstrap -FilePath $UtilsPath
 
     if ([string]::IsNullOrWhiteSpace($ExpectedHash) -or ($ActualHash -ne $ExpectedHash.ToLower())) {
@@ -46,7 +46,7 @@ $TempDir = $env:TEMP
 $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.msi"
 $MsiPath = Join-Path -Path $TempDir -ChildPath $AgentFileName
 
-$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
+$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF"
 
 $APP_LOGO_URL = "$RepoUrl/assets/wazuh-logo.png"
 $APP_LOGO_PATH = Join-Path -Path $APP_DATA -ChildPath "wazuh-logo.png"
@@ -114,20 +114,11 @@ function Install-Agent {
 }
 
 function Config {
-    InfoMessage "Downloading app logo..."
-
     if (!(Test-Path -Path $APP_DATA)) {
         New-Item -ItemType Directory -Path $APP_DATA -Force | Out-Null
     }
 
-    try {
-        Invoke-WebRequest -Uri $APP_LOGO_URL -OutFile $APP_LOGO_PATH -ErrorAction Stop
-    } catch {
-        ErrorMessage "Failed to download App logo: $($_.Exception.Message)"
-        return
-    } finally {
-        InfoMessage "App logo downloaded successfully"
-    }
+    Download-And-VerifyFile -Url $APP_LOGO_URL -Destination $APP_LOGO_PATH -ChecksumPattern "assets/wazuh-logo.png" -FileName "App logo" -ChecksumUrl "$RepoUrl/checksums.sha256"
 }
 
 function Cleanup {
