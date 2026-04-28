@@ -1,36 +1,117 @@
-# Linux enrollment Guide
+# Linux Enrollment Guide
 
 This guide walks you through the process of enrolling a Linux system with the Wazuh Manager. By following these steps, you will install and configure necessary components, ensuring secure communication between the Wazuh Agent and the Wazuh Manager.
 
+## Linux-Specific Scripts
+
+The installer now uses Linux-specific scripts located in the `scripts/linux/` directory:
+
+```
+scripts/linux/
+├── setup-agent.sh      # Full setup for Linux
+├── install.sh          # Core installation
+├── uninstall.sh        # Core uninstallation
+├── uninstall-agent.sh  # Complete uninstallation
+└── deps.sh             # Dependencies
+```
+
+You can use either the bootstrap installer (recommended) or run the Linux-specific scripts directly.
 
 ## Prerequisites
 
 - **Administrator Privileges:** Ensure you have sudo access.
 
-- **Dependencies**: Have **curl, jq and sed** installed. You can install them with this command
+- **Dependencies**: Have **curl** installed. You can install it with:
 
+  ```bash
+  sudo apt install -y curl
   ```
-  sudo apt install -y curl jq sed
-  ```
 
-## Step by step process
+## Step by Step Process
 
-### Step 1: Download and Run the Setup Script
+### Method 1: Bootstrap Installer (Recommended)
 
-Download the setup script from the repository and run it to configure the Wazuh agent with the necessary parameters for secure communication with the Wazuh Manager.
+The installer automatically verifies script integrity using SHA256 checksums before execution.
 
 ```bash
-curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh | WAZUH_MANAGER=example.wazuh.com bash
+# Set your Wazuh Manager address
+export WAZUH_MANAGER="wazuh.your-company.com"
+
+# Run the verified installer
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash
 ```
 
-**Remark**: For servers with container engines, you can add **trivy** for vulnerability scanning of container images with this command:
+**What happens:**
+1. Detects Linux operating system
+2. Downloads the Linux-specific setup script (`scripts/linux/setup-agent.sh`)
+3. Verifies the SHA256 checksum matches
+4. Only executes if verification passes
+
+### Method 2: Direct Linux Script Usage
+
+You can also run the Linux-specific scripts directly:
+
 ```bash
-WAZUH_MANAGER="example.wazuh.com" bash <(curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh) -t
+# Set your Wazuh Manager address
+export WAZUH_MANAGER="wazuh.your-company.com"
+
+# Run the Linux-specific setup script directly
+./scripts/linux/setup-agent.sh
 ```
 
-**NB:** You have other components that can be installed from this script, to know of them and how to install then run this command
+#### Installation Options
+
+**Bootstrap Installer - Default (Suricata IDS mode):**
 ```bash
-WAZUH_MANAGER="example.wazuh.com" bash <(curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/setup-agent.sh) -h
+export WAZUH_MANAGER="wazuh.your-company.com"
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash
+```
+
+**Bootstrap Installer - With Suricata in IPS mode:**
+```bash
+export WAZUH_MANAGER="wazuh.your-company.com"
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -s ips
+```
+
+**Bootstrap Installer - With Snort instead of Suricata:**
+```bash
+export WAZUH_MANAGER="wazuh.your-company.com"
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -n
+```
+
+**Bootstrap Installer - With Trivy for container vulnerability scanning:**
+```bash
+export WAZUH_MANAGER="wazuh.your-company.com"
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -t
+```
+
+**Direct Linux Script - Default (Suricata IDS mode):**
+```bash
+export WAZUH_MANAGER="wazuh.your-company.com"
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash
+```
+
+**Direct Linux Script - With Suricata in IPS mode:**
+```bash
+export WAZUH_MANAGER="wazuh.your-company.com"
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -s ips
+```
+
+**Direct Linux Script - With Snort instead of Suricata:**
+```bash
+export WAZUH_MANAGER="wazuh.your-company.com"
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -n
+```
+
+**Direct Linux Script - With Trivy for container vulnerability scanning:**
+```bash
+export WAZUH_MANAGER="wazuh.your-company.com"
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -s ids -t
+```
+
+**Show all options:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -h
 ```
 
 #### Components Installed by the Script:
@@ -53,10 +134,13 @@ The agent is installed and configured to connect to the specified manager (WAZUH
 
    <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-14-00.png" width="500" height="200">
 
-**5. Snort:**
+**5. Suricata (or Snort):**
 Adds network intrusion detection capabilities to monitor suspicious traffic.
 
    <img src="/Agent Enrollment/images/linux/Screenshot%20from%202024-12-16%2012-58-37.png" width="500" height="200">
+
+**6. USB DLP Scripts:**
+Active Response scripts for USB device control (mass storage blocking, BadUSB detection).
 
 
 ### Step 2: Enroll Agent to Manager
@@ -75,7 +159,7 @@ This command will generate a URL. Copy the link and paste it into your web brows
 
 #### 2. Authentication via browser
 
-- **i. Login:** You will be prompted to log in page,Log in using **Active directories: `Adorsys GIS `or `adorsys GmbH & CO KG`**, which will generate an authentication token using Keycloak.
+- **i. Login:** You will be prompted to log in page, Log in using **Active directories: `Adorsys GIS` or `adorsys GmbH & CO KG`**, which will generate an authentication token using Keycloak.
 
    <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-14.png" width="400" height="300">
 
@@ -113,14 +197,23 @@ Look for the Wazuh icon in the system tray to confirm that the agent is running 
 - YARA
 
 ```bash
-  yara -v
-  sudo ls -l /var/ossec/ruleset/yara/rules
+yara -v
+sudo ls -l /var/ossec/ruleset/yara/rules
 ```
 
-- Snort
+- Suricata (or Snort)
 
 ```bash
-  snort -V
+suricata -V
+# or
+snort -V
+```
+
+- USB DLP Scripts
+
+```bash
+ls -la /var/ossec/active-response/bin/disable-usb-storage.sh
+ls -la /var/ossec/active-response/bin/alert-usb-hid.sh
 ```
 
 #### 3. Check the Wazuh Manager Dashboard:
@@ -129,6 +222,16 @@ Ping an admin for confirmation that the agent appears in the Wazuh Manager dashb
 
 
 ## Troubleshooting
+
+### Checksum Verification Failed
+
+If you see "Checksum verification FAILED":
+- **Do NOT proceed** - this could indicate tampering
+- Report to your security team immediately
+- Try downloading from a different network
+- Contact IT support
+
+### Other Issues
 
 - If the enrollment URL fails to generate, check internet connectivity and script permissions.
 
@@ -139,7 +242,7 @@ Ping an admin for confirmation that the agent appears in the Wazuh Manager dashb
    ```bash
    sudo tail -f /var/ossec/logs/ossec.log
    ```
-  
+
 
 ## Uninstall Agent
 
@@ -148,12 +251,12 @@ Ping an admin for confirmation that the agent appears in the Wazuh Manager dashb
 - Use this command to uninstall
 
   ```bash
-  curl -SL --progress-bar https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall-agent.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall-agent.sh | sudo bash
   ```
   **NB:** Use the `-n` option for **Snort** or the `-s` for **Suricata**. For Suricata, you do not need to specify a mode; the uninstall script will remove all Suricata components regardless of mode.
 
 - Reboot the user's machine
-  
+
 ### 2. Remove Agent from Wazuh Manager:
 
 Shell into the **master manager node** and use this command to remove agent from wazuh manager's database
@@ -162,7 +265,8 @@ Shell into the **master manager node** and use this command to remove agent from
   /var/ossec/bin/manage_agents -r <AGENT_ID>
   ```
 
- 
+
 ### Additional Resources
 
 - [Wazuh Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html#wazuh-agent)
+- [Environment Variables Reference](/docs/ENVIRONMENT_VARIABLES.md)

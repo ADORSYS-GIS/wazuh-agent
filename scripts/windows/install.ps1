@@ -1,11 +1,44 @@
+# Source shared utilities
+if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
+$WAZUH_AGENT_REPO_REF = $env:WAZUH_AGENT_REPO_REF
+
+# Create a secure temporary directory for utilities
+$UtilsTmp = Join-Path $env:TEMP "wazuh-utils-$(Get-Random)"
+New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
+
+try {
+    $ChecksumsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
+    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/shared/utils.ps1"
+    
+    $global:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $UtilsPath = Join-Path $UtilsTmp "utils.ps1"
+
+    Invoke-WebRequest -Uri $ChecksumsURL -OutFile $ChecksumsPath -ErrorAction Stop
+    Invoke-WebRequest -Uri $UtilsURL -OutFile $UtilsPath -ErrorAction Stop
+
+    # Verification function (bootstrap)
+    function Get-FileChecksum-Bootstrap {
+        param([string]$FilePath)
+        return (Get-FileHash -Path $FilePath -Algorithm SHA256).Hash.ToLower()
+    }
+
+    $ExpectedHash = (Select-String -Path $ChecksumsPath -Pattern "scripts/shared/utils.ps1").Line.Split(" ")[0]
+    $ActualHash = Get-FileChecksum-Bootstrap -FilePath $UtilsPath
+
+    if ([string]::IsNullOrWhiteSpace($ExpectedHash) -or ($ActualHash -ne $ExpectedHash.ToLower())) {
+        Write-Error "Checksum verification failed for utils.ps1"
+        exit 1
+    }
+
+    . $UtilsPath
+}
+catch {
+    Write-Error "Failed to initialize utilities: $($_.Exception.Message)"
+    exit 1
+}
+
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
-$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.13.1-1" }
-
-
-# Global variables
-$OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
-$OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
-$APP_DATA = "C:\ProgramData\ossec-agent\"
+$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.2-1" }
 
 # Variables
 $AgentFileName = "wazuh-agent-$WAZUH_AGENT_VERSION.msi"
@@ -13,57 +46,12 @@ $TempDir = $env:TEMP
 $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$WAZUH_AGENT_VERSION.msi"
 $MsiPath = Join-Path -Path $TempDir -ChildPath $AgentFileName
 
-$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main"
+$RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF"
 
 $APP_LOGO_URL = "$RepoUrl/assets/wazuh-logo.png"
 $APP_LOGO_PATH = Join-Path -Path $APP_DATA -ChildPath "wazuh-logo.png"
 
-# Function for logging with timestamp
-function Log {
-    param (
-        [string]$Level,
-        [string]$Message,
-        [string]$Color = "White"  # Default color
-    )
-    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
-}
-
-# Logging helpers with colors
-function InfoMessage {
-    param ([string]$Message)
-    Log "[INFO]" $Message "White"
-}
-
-function WarnMessage {
-    param ([string]$Message)
-    Log "[WARNING]" $Message "Yellow"
-}
-
-function ErrorMessage {
-    param ([string]$Message)
-    Log "[ERROR]" $Message "Red"
-}
-
-function SuccessMessage {
-    param ([string]$Message)
-    Log "[SUCCESS]" $Message "Green"
-}
-
-function PrintStep {
-    param (
-        [int]$StepNumber,
-        [string]$Message
-    )
-    Log "[STEP]" "Step ${StepNumber}: $Message" "White"
-}
-
 # Exit script with an error message
-function ErrorExit {
-    param ([string]$Message)
-    ErrorMessage $Message
-    exit 1
-}
 
 # Function to install Wazuh Agent
 function Install-Agent {
@@ -126,20 +114,11 @@ function Install-Agent {
 }
 
 function Config {
-    InfoMessage "Downloading app logo..."
-
     if (!(Test-Path -Path $APP_DATA)) {
         New-Item -ItemType Directory -Path $APP_DATA -Force | Out-Null
     }
 
-    try {
-        Invoke-WebRequest -Uri $APP_LOGO_URL -OutFile $APP_LOGO_PATH -ErrorAction Stop
-    } catch {
-        ErrorMessage "Failed to download App logo: $($_.Exception.Message)"
-        return
-    } finally {
-        InfoMessage "App logo downloaded successfully"
-    }
+    Download-And-VerifyFile -Url $APP_LOGO_URL -Destination $APP_LOGO_PATH -ChecksumPattern "assets/wazuh-logo.png" -FileName "App logo" -ChecksumUrl "$RepoUrl/checksums.sha256"
 }
 
 function Cleanup {

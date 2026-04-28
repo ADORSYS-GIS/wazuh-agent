@@ -1,48 +1,39 @@
+# Source shared utilities
+if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
+$WAZUH_AGENT_REPO_REF = $env:WAZUH_AGENT_REPO_REF
 
-# Function to log messages with a timestamp
-function Log {
-    param (
-        [string]$Level,
-        [string]$Message,
-        [string]$Color = "White"  # Default color
-    )
-    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
+# Create a secure temporary directory for utilities
+$UtilsTmp = Join-Path $env:TEMP "wazuh-utils-$(Get-Random)"
+New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
+
+try {
+    $ChecksumsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
+    $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/shared/utils.ps1"
+    
+    $global:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $UtilsPath = Join-Path $UtilsTmp "utils.ps1"
+
+    Invoke-WebRequest -Uri $ChecksumsURL -OutFile $ChecksumsPath -ErrorAction Stop
+    Invoke-WebRequest -Uri $UtilsURL -OutFile $UtilsPath -ErrorAction Stop
+
+    # Verification function (bootstrap)
+    function Get-FileChecksum-Bootstrap {
+        param([string]$FilePath)
+        return (Get-FileHash -Path $FilePath -Algorithm SHA256).Hash.ToLower()
+    }
+
+    $ExpectedHash = (Select-String -Path $ChecksumsPath -Pattern "scripts/shared/utils.ps1").Line.Split(" ")[0]
+    $ActualHash = Get-FileChecksum-Bootstrap -FilePath $UtilsPath
+
+    if ([string]::IsNullOrWhiteSpace($ExpectedHash) -or ($ActualHash -ne $ExpectedHash.ToLower())) {
+        Write-Error "Checksum verification failed for utils.ps1"
+        exit 1
+    }
+
+    . $UtilsPath
 }
-
-# Logging helpers with colors
-function InfoMessage {
-    param ([string]$Message)
-    Log "[INFO]" $Message "White"
-}
-
-function WarnMessage {
-    param ([string]$Message)
-    Log "[WARNING]" $Message "Yellow"
-}
-
-function ErrorMessage {
-    param ([string]$Message)
-    Log "[ERROR]" $Message "Red"
-}
-
-function SuccessMessage {
-    param ([string]$Message)
-    Log "[SUCCESS]" $Message "Green"
-}
-
-function PrintStep {
-    param (
-        [int]$StepNumber,
-        [string]$Message
-    )
-    Log "[STEP]" "Step ${StepNumber}: $Message" "White"
-}
-
-# Exit script with an error message
-function ErrorExit {
-    param ([string]$Message)
-    ErrorMessage $Message
+catch {
+    Write-Error "Failed to initialize utilities: $($_.Exception.Message)"
     exit 1
 }
 
@@ -79,6 +70,42 @@ function Ensure-Dependencies {
 }
 
 
+function Install-Python {
+    $PythonUrl = "https://www.python.org/ftp/python/3.12.2/python-3.12.2-amd64.exe"
+    $InstallerPath = "$env:TEMP\python-3.12.2-amd64.exe"
+
+    InfoMessage "Checking if Python 3 is already installed..."
+    $pythonInfo = Get-FunctionalPythonPath
+    if ($pythonInfo) {
+        SuccessMessage "Python 3 $($pythonInfo.Version) detected at $($pythonInfo.Path)"
+        return
+    }
+
+    try {
+        InfoMessage "Python 3 not found. Downloading installer from $PythonUrl..."
+        Invoke-WebRequest -Uri $PythonUrl -OutFile $InstallerPath -ErrorAction Stop
+        
+        InfoMessage "Installing Python 3 (silent)..."
+        # /quiet: Minimal UI
+        # InstallAllUsers=1: Install for all users
+        # PrependPath=1: Add to PATH
+        $process = Start-Process -FilePath $InstallerPath -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait -PassThru
+        
+        if ($process.ExitCode -eq 0) {
+            SuccessMessage "Python 3 installed successfully."
+            # Update current process PATH
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine) + ";" + [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+        } else {
+            ErrorMessage "Python 3 installation failed with exit code $($process.ExitCode)."
+        }
+    } catch {
+        ErrorMessage "Failed to download or install Python 3: $($_.Exception.Message)"
+    } finally {
+        if (Test-Path $InstallerPath) { Remove-Item -Path $InstallerPath }
+    }
+}
+
+
 function Install-BurntToastModule {
     [CmdletBinding()]
     param()
@@ -89,7 +116,7 @@ function Install-BurntToastModule {
             InfoMessage "NuGet provider is already installed."
         }
         else {
-            WarnMessage "NuGet provider not found. Installing NuGet provider..."
+            WarningMessage "NuGet provider not found. Installing NuGet provider..."
             Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false -ErrorAction Stop
             InfoMessage "NuGet provider installed successfully."
         }
@@ -136,7 +163,7 @@ function Install-GnuSed {
             return
         }
     } catch {
-        WarnMessage "GNU sed is not installed. Proceeding with download and installation..." 
+        WarningMessage "GNU sed is not installed. Proceeding with download and installation..." 
     }
 
     try {
@@ -161,7 +188,7 @@ function Install-GnuSed {
         InfoMessage "Checking if sed is in the PATH..."
         $currentPath = [Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
         if ($currentPath -notlike "*$DefaultInstallPath*") {
-            WarnMessage "Adding GNU sed to the system PATH..." 
+            WarningMessage "Adding GNU sed to the system PATH..." 
             
             $env:Path += ";C:\Program Files (x86)\GnuWin32\bin"
             [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
@@ -189,7 +216,7 @@ function IsVCppInstalled {
             return $true
         }
     }
-    WarnMessage "Visual C++ Redistributable is not installed. Installing Visual C++ Redistributable..." 
+    WarningMessage "Visual C++ Redistributable is not installed. Installing Visual C++ Redistributable..." 
     Invoke-WebRequest -Uri "https://aka.ms/vs/16/release/vc_redist.x64.exe" -OutFile "$env:TEMP\vc_redist.x64.exe"
     Start-Process -FilePath "$env:TEMP\vc_redist.x64.exe" -ArgumentList "/quiet /install" -Wait
     Remove-Item -Path "$env:TEMP\vc_redist.x64.exe"
@@ -199,6 +226,7 @@ function IsVCppInstalled {
 
 
 IsVCppInstalled
+Install-Python
 Install-GnuSed
 Ensure-Dependencies
 Install-BurntToastModule
