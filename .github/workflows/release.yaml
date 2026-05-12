@@ -15,16 +15,14 @@ on:
       - hotfix/**
 
 env:
-  WAZUH_AGENT_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
-  WAZUH_AGENT_STATUS_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
-  WAZUH_YARA_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
-  WAZUH_SURICATA_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
-  WAZUH_SNORT_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
-  WAZUH_TRIVY_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
-  WAZUH_CERT_OAUTH2_REPO_REF: refs/heads/${{ github.head_ref || github.ref_name }}
+  WAZUH_AGENT_REPO_REF: main
+  WAZUH_AGENT_STATUS_REPO_REF: main
+  WAZUH_YARA_REPO_REF: main
+  WAZUH_SURICATA_REPO_REF: main
+  WAZUH_SNORT_REPO_REF: main
+  WAZUH_TRIVY_REPO_REF: main
+  WAZUH_CERT_OAUTH2_REPO_REF: main
   YARA_INSTALLATION_TYPE: server
-  WOPS_VERSION: "0.4.2-rc.1"
-  WAZUH_AGENT_STATUS_VERSION: "v0.4.2.rc1"
 
 jobs:
   # ============================================
