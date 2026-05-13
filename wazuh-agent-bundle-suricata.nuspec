@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>wazuh-agent-bundle-suricata</id>
+    <version>$env:ChocolateyPackageVersion</version>
+    <title>Wazuh Agent Bundle with Suricata</title>
+    <authors>ADORSYS-GIS</authors>
+    <owners>ADORSYS-GIS</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>https://github.com/ADORSYS-GIS/wazuh-agent/blob/main/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/ADORSYS-GIS/wazuh-agent</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/assets/wazuh-logo.png</iconUrl>
+    <description>Bundled Wazuh agent with ADORSYS-GIS security plugins and Suricata IDS/IPS. This meta-package installs the Wazuh agent along with certificate-based authentication, agent status monitoring, YARA malware detection, USB DLP protection, and Suricata network intrusion detection.</description>
+    <summary>Wazuh agent with ADORSYS-GIS security plugins and Suricata IDS/IPS</summary>
+    <releaseNotes>https://github.com/ADORSYS-GIS/wazuh-agent/releases</releaseNotes>
+    <copyright>ADORSYS-GIS</copyright>
+    <tags>wazuh security siem agent monitoring ids ips suricata</tags>
+    <dependencies>
+      <dependency id="wazuh-agent" version="4.0.0" />
+      <dependency id="wazuh-cert-oauth2-client" version="0.4.1" />
+      <dependency id="wazuh-agent-status" version="0.4.1" />
+      <dependency id="wazuh-yara" version="0.3.11" />
+      <dependency id="wazuh-suricata" version="0.1.4" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

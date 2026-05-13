@@ -1,0 +1,77 @@
+name: wazuh-agent-bundle-snort
+version: ${VERSION}
+maintainer: ADORSYS-GIS <security@adorsys-gis.com>
+description: Bundled Wazuh agent with ADORSYS-GIS security plugins and Snort IDS
+license: MIT
+homepage: https://github.com/ADORSYS-GIS/wazuh-agent
+vendor: ADORSYS-GIS
+
+# Dependencies - includes wazuh-snort instead of wazuh-suricata
+depends:
+  - wazuh-agent
+  - wazuh-cert-oauth2-client
+  - wazuh-agent-status
+  - wazuh-yara
+  - wazuh-snort
+
+# Package contents
+contents:
+  # USB DLP Active Response scripts for Linux
+  - src: files/active-response/disable-usb-storage.sh
+    dst: /var/ossec/active-response/bin/disable-usb-storage.sh
+    file_info:
+      owner: root
+      group: wazuh
+      mode: 0750
+  
+  - src: files/active-response/alert-usb-hid.sh
+    dst: /var/ossec/active-response/bin/alert-usb-hid.sh
+    file_info:
+      owner: root
+      group: wazuh
+      mode: 0750
+  
+  # USB DLP Active Response scripts for macOS
+  - src: files/active-response/disable-usb-storage-macos.sh
+    dst: /Library/Ossec/active-response/bin/disable-usb-storage-macos.sh
+    file_info:
+      owner: root
+      group: wheel
+      mode: 0750
+  
+  - src: files/active-response/alert-usb-hid.sh
+    dst: /Library/Ossec/active-response/bin/alert-usb-hid.sh
+    file_info:
+      owner: root
+      group: wheel
+      mode: 0750
+
+# Scripts that run at various stages
+scripts:
+  postinstall: scripts/postinst.sh
+
+# Platform-specific overrides
+overrides:
+  deb:
+    depends:
+      - wazuh-agent (>= 4.0.0)
+      - wazuh-cert-oauth2-client
+      - wazuh-agent-status
+      - wazuh-yara
+      - wazuh-snort
+  
+  rpm:
+    depends:
+      - wazuh-agent >= 4.0.0
+      - wazuh-cert-oauth2-client
+      - wazuh-agent-status
+      - wazuh-yara
+      - wazuh-snort
+  
+  apk:
+    depends:
+      - wazuh-agent>=4.0.0
+      - wazuh-cert-oauth2-client
+      - wazuh-agent-status
+      - wazuh-yara
+      - wazuh-snort
