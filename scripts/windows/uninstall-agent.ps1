@@ -47,11 +47,11 @@ Set-StrictMode -Version Latest
 # Variables (default log level, app details, paths)
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.11" }
-$WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4" }
-$WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.0" }
-$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.4.1-rc5-user" }
+$WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4-rc.1" }
+$WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.0-rc.4" }
+$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.4.3" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.2-1" }
-$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.2" }
+$WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.2-rc.1" }
 $WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.9.0-rc.1" }
 
 # Repo ref variables for components
@@ -86,12 +86,12 @@ function Show-Help {
     Write-Host ""
     Write-Host "Environment Variables (optional):" -ForegroundColor Cyan
     Write-Host "  LOG_LEVEL                : Sets the logging level (e.g., INFO, DEBUG). Default: INFO" -ForegroundColor Cyan
-    Write-Host "  WAZUH_YARA_VERSION       : Sets the Wazuh YARA module version. Default: 0.3.4" -ForegroundColor Cyan
-    Write-Host "  WAZUH_SNORT_VERSION      : Sets the Wazuh Snort module version. Default: 0.2.2" -ForegroundColor Cyan
-    Write-Host "  WAZUH_SURICATA_VERSION   : Sets the Wazuh Suricata module version. Default: 0.1.0" -ForegroundColor Cyan
-    Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: 0.4.1-rc4-user" -ForegroundColor Cyan
-    Write-Host "  WAZUH_AGENT_VERSION      : Sets the Wazuh Agent version. Default: 4.14.2-1" -ForegroundColor Cyan
-    Write-Host "  WOPS_VERSION             : Sets the WOPS client version. Default: 0.4.2" -ForegroundColor Cyan
+    Write-Host "  WAZUH_YARA_VERSION       : Sets the Wazuh YARA module version. Default: $WAZUH_YARA_VERSION" -ForegroundColor Cyan
+    Write-Host "  WAZUH_SNORT_VERSION      : Sets the Wazuh Snort module version. Default: $WAZUH_SNORT_VERSION" -ForegroundColor Cyan
+    Write-Host "  WAZUH_SURICATA_VERSION   : Sets the Wazuh Suricata module version. Default: $WAZUH_SURICATA_VERSION" -ForegroundColor Cyan
+    Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: $WAZUH_AGENT_STATUS_VERSION" -ForegroundColor Cyan
+    Write-Host "  WAZUH_AGENT_VERSION      : Sets the Wazuh Agent version. Default: $WAZUH_AGENT_VERSION" -ForegroundColor Cyan
+    Write-Host "  WOPS_VERSION             : Sets the WOPS client version. Default: $WOPS_VERSION" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Examples:" -ForegroundColor Cyan
     Write-Host "  .\uninstall-agent.ps1 -Help" -ForegroundColor Cyan
