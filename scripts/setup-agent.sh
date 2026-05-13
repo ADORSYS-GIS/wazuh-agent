@@ -34,10 +34,12 @@ CHECKSUMS_FILE="$TMP_DIR/checksums.sha256"
 SCRIPT_FILE="$TMP_DIR/remote_setup.sh"
 
 download() {
+    local url="$1"
+    local dest="$2"
     if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "$1" -o "$2"
+        curl -fsSL "$url" -o "$dest"
     elif command -v wget >/dev/null 2>&1; then
-        wget -q "$1" -O "$2"
+        wget -q "$url" -O "$dest"
     else
         echo "Neither curl nor wget available" >&2
         return 1
@@ -45,10 +47,11 @@ download() {
 }
 
 calculate_sha256() {
+    local file="$1"
     if command -v sha256sum >/dev/null 2>&1; then
-        sha256sum "$1" | awk '{print $1}'
+        sha256sum "$file" | awk '{print $1}'
     else
-        shasum -a 256 "$1" | awk '{print $1}'
+        shasum -a 256 "$file" | awk '{print $1}'
     fi
 }
 
