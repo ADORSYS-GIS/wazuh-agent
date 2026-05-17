@@ -30,21 +30,6 @@ contents:
       owner: root
       group: wazuh
       mode: 0750
-  
-  # USB DLP Active Response scripts for macOS
-  - src: files/active-response/disable-usb-storage-macos.sh
-    dst: /Library/Ossec/active-response/bin/disable-usb-storage-macos.sh
-    file_info:
-      owner: root
-      group: wheel
-      mode: 0750
-  
-  - src: files/active-response/alert-usb-hid.sh
-    dst: /Library/Ossec/active-response/bin/alert-usb-hid.sh
-    file_info:
-      owner: root
-      group: wheel
-      mode: 0750
 
 # Scripts that run at various stages
 scripts:
