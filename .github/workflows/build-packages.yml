@@ -44,9 +44,13 @@ jobs:
 
       - name: Install nFPM
         run: |
-          echo 'deb [trusted=yes] https://repo.nfpm.dev/apt /' | sudo tee /etc/apt/sources.list.d/nfpm.list
-          sudo apt-get update
-          sudo apt-get install -y nfpm
+          mkdir -p nfpm-dist
+          curl -L --retry 5 --retry-connrefused -f \
+            -o nfpm-dist/nfpm.tar.gz \
+            https://github.com/goreleaser/nfpm/releases/download/v2.46.3/nfpm_2.46.3_Linux_x86_64.tar.gz
+          tar -xzf nfpm-dist/nfpm.tar.gz -C nfpm-dist
+          sudo mv nfpm-dist/nfpm /usr/local/bin/
+          rm -rf nfpm-dist
           nfpm --version
 
       - name: Create tools directory for Chocolatey files
