@@ -178,13 +178,27 @@ jobs:
 
       - name: Setup GitHub Pages for APT repo
         run: |
+          mkdir -p apt-repo/conf
           mkdir -p apt-repo/pool/main/w/wazuh-agent-bundle
           cp artifacts/linux-packages/*.deb apt-repo/pool/main/w/wazuh-agent-bundle/
+          
+          # Generate Packages file
+          cd apt-repo
+          apt-ftparchive packages pool/main > Packages
+          gzip -c Packages > Packages.gz
+          
+          # Generate Release file
+          apt-ftparchive release . > Release
+          cd ..
 
       - name: Setup GitHub Pages for RPM repo
         run: |
+          sudo apt-get install -y createrepo-c
           mkdir -p rpm-repo/packages
           cp artifacts/linux-packages/*.rpm rpm-repo/packages/
+          
+          # Generate RPM metadata
+          createrepo_c rpm-repo/
 
       - name: Setup GitHub Pages for Chocolatey feed
         run: |
