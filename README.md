@@ -26,7 +26,7 @@ This repository provides an automated, **verified** setup script for installing 
 
 ### Native Package Installation (Recommended)
 
-The recommended installation method uses native OS package managers for reliable, idempotent installation.
+Native OS packages provide the most reliable and idempotent way to install the Wazuh agent bundle. This method handles all dependencies automatically.
 
 **Debian/Ubuntu:**
 ```bash
@@ -145,22 +145,22 @@ The installer automatically:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  VERIFICATION FLOW                       │
+│                  VERIFICATION FLOW                      │
 ├─────────────────────────────────────────────────────────┤
-│                                                          │
+│                                                         │
 │  You run: curl .../install.sh | bash                    │
-│                    │                                     │
-│                    ▼                                     │
+│                    │                                    │
+│                    ▼                                    │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │ 1. Download checksums.sha256                     │   │
 │  │ 2. Download setup-agent.sh                       │   │
 │  │ 3. Calculate SHA256 of downloaded script         │   │
 │  │ 4. Compare with expected checksum                │   │
-│  │                                                   │   │
+│  │                                                  │   │
 │  │    ✓ Match → Execute script                      │   │
 │  │    ✗ Mismatch → Abort + Alert                    │   │
 │  └──────────────────────────────────────────────────┘   │
-│                                                          │
+│                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
 
