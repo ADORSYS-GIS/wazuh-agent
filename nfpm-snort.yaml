@@ -38,24 +38,15 @@ scripts:
 overrides:
   deb:
     depends:
-      - wazuh-agent (>= 4.0.0)
-      - wazuh-cert-oauth2-client
-      - wazuh-agent-status
-      - wazuh-yara
+      - wazuh-agent-bundle (= ${VERSION})
       - wazuh-snort
   
   rpm:
     depends:
-      - wazuh-agent >= 4.0.0
-      - wazuh-cert-oauth2-client
-      - wazuh-agent-status
-      - wazuh-yara
+      - wazuh-agent-bundle = ${VERSION}
       - wazuh-snort
   
   apk:
     depends:
-      - wazuh-agent>=4.0.0
-      - wazuh-cert-oauth2-client
-      - wazuh-agent-status
-      - wazuh-yara
+      - wazuh-agent-bundle=${VERSION}
       - wazuh-snort
