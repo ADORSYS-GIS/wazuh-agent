@@ -44,8 +44,13 @@ jobs:
 
       - name: Install nFPM
         run: |
-          curl -L --retry 3 --retry-connrefused https://github.com/goreleaser/nfpm/releases/download/v2.36.0/nfpm_2.36.0_linux_amd64.tar.gz | tar -xz
-          sudo mv nfpm /usr/local/bin/
+          mkdir -p nfpm-dist
+          curl -L --retry 5 --retry-connrefused -f \
+            -o nfpm-dist/nfpm.tar.gz \
+            https://github.com/goreleaser/nfpm/releases/download/v2.36.0/nfpm_2.36.0_linux_amd64.tar.gz
+          tar -xzf nfpm-dist/nfpm.tar.gz -C nfpm-dist
+          sudo mv nfpm-dist/nfpm /usr/local/bin/
+          rm -rf nfpm-dist
           nfpm --version
 
       - name: Create tools directory for Chocolatey files
@@ -124,9 +129,13 @@ jobs:
         env:
           ChocolateyPackageVersion: ${{ steps.version.outputs.VERSION }}
         run: |
+          $ver = $env:ChocolateyPackageVersion
           foreach ($nuspec in @("wazuh-agent-bundle.nuspec", "wazuh-agent-bundle-suricata.nuspec", "wazuh-agent-bundle-snort.nuspec")) {
-            Write-Host "Packing $nuspec..."
-            choco pack $nuspec --version $env:ChocolateyPackageVersion
+            Write-Host "Packing $nuspec with version $ver..."
+            # Substitute version variable in nuspec file before packing
+            $content = Get-Content $nuspec
+            $content -replace '\$env:ChocolateyPackageVersion', $ver | Set-Content $nuspec
+            choco pack $nuspec
           }
           ls *.nupkg
 
