@@ -109,7 +109,7 @@ jobs:
 
       - name: Create tools directory structure
         run: |
-          mkdir -p tools/files/active-response
+          New-Item -ItemType Directory -Path "tools/files/active-response" -Force
           Copy-Item files/active-response/disable-usb-storage.ps1 tools/files/active-response/
           Copy-Item files/active-response/alert-usb-hid.ps1 tools/files/active-response/
 
