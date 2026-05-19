@@ -14,8 +14,7 @@ on:
         description: 'Version to build (e.g., 1.8.0)'
         required: true
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   # ============================================
@@ -24,6 +23,8 @@ jobs:
   build-linux:
     name: Build Linux Packages
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -33,6 +34,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            VERSION="0.0.0-pr${{ github.event.pull_request.number }}"
           else
             VERSION="${GITHUB_REF#refs/tags/v}"
           fi
@@ -41,7 +44,7 @@ jobs:
 
       - name: Install nFPM
         run: |
-          wget -qO- https://github.com/goreleaser/nfpm/releases/download/v2.36.0/nfpm_2.36.0_linux_amd64.tar.gz | tar -xz
+          curl -L --retry 3 --retry-connrefused https://github.com/goreleaser/nfpm/releases/download/v2.36.0/nfpm_2.36.0_linux_amd64.tar.gz | tar -xz
           sudo mv nfpm /usr/local/bin/
           nfpm --version
 
@@ -88,6 +91,8 @@ jobs:
   build-windows:
     name: Build Chocolatey Package
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -98,6 +103,8 @@ jobs:
         run: |
           if ("${{ github.event_name }}" -eq "workflow_dispatch") {
             $VERSION = "${{ github.event.inputs.version }}"
+          } elseif ("${{ github.event_name }}" -eq "pull_request") {
+            $VERSION = "0.0.0-pr${{ github.event.pull_request.number }}"
           } else {
             $VERSION = "${{ github.ref }}" -replace "refs/tags/v", ""
           }
@@ -121,7 +128,7 @@ jobs:
             Write-Host "Packing $nuspec..."
             choco pack $nuspec --version $env:ChocolateyPackageVersion
           }
-          ls -la *.nupkg
+          ls *.nupkg
 
       - name: Upload Chocolatey package as artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

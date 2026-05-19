@@ -17,7 +17,7 @@ elif command -v rpm >/dev/null 2>&1; then
     PKG_VERSION=$(rpm -q --queryformat '%{VERSION}' wazuh-agent-bundle 2>/dev/null || true)
 fi
 
-if [ -n "$PKG_VERSION" ]; then
+if [[ -n "$PKG_VERSION" ]]; then
     echo "$PKG_VERSION" > "$VERSION_FILE"
     echo "Wrote version $PKG_VERSION to $VERSION_FILE"
 else
@@ -36,12 +36,12 @@ else
     OWNER="root:root"
 fi
 
-if [ -f "$AR_BIN_DIR/disable-usb-storage.sh" ]; then
+if [[ -f "$AR_BIN_DIR/disable-usb-storage.sh" ]]; then
     chown "$OWNER" "$AR_BIN_DIR/disable-usb-storage.sh"
     chmod 750 "$AR_BIN_DIR/disable-usb-storage.sh"
 fi
 
-if [ -f "$AR_BIN_DIR/alert-usb-hid.sh" ]; then
+if [[ -f "$AR_BIN_DIR/alert-usb-hid.sh" ]]; then
     chown "$OWNER" "$AR_BIN_DIR/alert-usb-hid.sh"
     chmod 750 "$AR_BIN_DIR/alert-usb-hid.sh"
 fi
