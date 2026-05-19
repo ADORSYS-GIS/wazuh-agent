@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Post-installation script for wazuh-agent-bundle
 # This script runs after the package is installed on Linux
