@@ -16,11 +16,11 @@
     <copyright>ADORSYS-GIS</copyright>
     <tags>wazuh security siem agent monitoring ids ips</tags>
     <dependencies>
-      <!-- Individual plugin packages - these need to be published separately -->
+      <!-- Individual plugin packages - we use minimum versions -->
       <dependency id="wazuh-agent" version="4.0.0" />
-      <dependency id="wazuh-cert-oauth2-client" version="0.4.1" />
-      <dependency id="wazuh-agent-status" version="0.4.1" />
-      <dependency id="wazuh-yara" version="0.3.11" />
+      <dependency id="wazuh-cert-oauth2-client" version="0.4.0" />
+      <dependency id="wazuh-agent-status" version="0.4.0" />
+      <dependency id="wazuh-yara" version="0.3.0" />
     </dependencies>
   </metadata>
   <files>

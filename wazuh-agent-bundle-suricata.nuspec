@@ -16,11 +16,8 @@
     <copyright>ADORSYS-GIS</copyright>
     <tags>wazuh security siem agent monitoring ids ips suricata</tags>
     <dependencies>
-      <dependency id="wazuh-agent" version="4.0.0" />
-      <dependency id="wazuh-cert-oauth2-client" version="0.4.1" />
-      <dependency id="wazuh-agent-status" version="0.4.1" />
-      <dependency id="wazuh-yara" version="0.3.11" />
-      <dependency id="wazuh-suricata" version="0.1.4" />
+      <dependency id="wazuh-agent-bundle" version="[$env:ChocolateyPackageVersion]" />
+      <dependency id="wazuh-suricata" version="0.1.0" />
     </dependencies>
   </metadata>
   <files>
