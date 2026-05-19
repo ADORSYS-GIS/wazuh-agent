@@ -6,12 +6,9 @@ license: MIT
 homepage: https://github.com/ADORSYS-GIS/wazuh-agent
 vendor: ADORSYS-GIS
 
-# Dependencies - includes wazuh-suricata instead of wazuh-snort
+# Dependencies - depends on the base bundle plus suricata
 depends:
-  - wazuh-agent
-  - wazuh-cert-oauth2-client
-  - wazuh-agent-status
-  - wazuh-yara
+  - wazuh-agent-bundle
   - wazuh-suricata
 
 # Package contents
