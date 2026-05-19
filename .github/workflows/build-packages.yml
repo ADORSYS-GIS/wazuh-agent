@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - 'v*'
+  pull_request:
+    branches:
+      - main
+      - develop
   workflow_dispatch:
     inputs:
       version:
@@ -32,8 +36,8 @@ jobs:
           else
             VERSION="${GITHUB_REF#refs/tags/v}"
           fi
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building version: $VERSION"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Building version: ${VERSION}"
 
       - name: Install nFPM
         run: |
@@ -47,20 +51,16 @@ jobs:
           cp files/active-response/disable-usb-storage.ps1 tools/files/active-response/
           cp files/active-response/alert-usb-hid.ps1 tools/files/active-response/
 
-      - name: Build .deb package
+      - name: Build Linux packages (Base and Variants)
         run: |
-          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager deb --target .
-          ls -la *.deb
-
-      - name: Build .rpm package
-        run: |
-          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager rpm --target .
-          ls -la *.rpm
-
-      - name: Build .apk package
-        run: |
-          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager apk --target .
-          ls -la *.apk
+          VERSION=${{ steps.version.outputs.VERSION }}
+          for config in nfpm.yaml nfpm-suricata.yaml nfpm-snort.yaml; do
+            echo "Building packages for $config..."
+            VERSION=$VERSION nfpm package --config $config --packager deb --target .
+            VERSION=$VERSION nfpm package --config $config --packager rpm --target .
+            VERSION=$VERSION nfpm package --config $config --packager apk --target .
+          done
+          ls -la ./*.deb ./*.rpm ./*.apk
 
       - name: Upload Linux packages as artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -113,11 +113,14 @@ jobs:
           Copy-Item files/active-response/disable-usb-storage.ps1 tools/files/active-response/
           Copy-Item files/active-response/alert-usb-hid.ps1 tools/files/active-response/
 
-      - name: Build Chocolatey package
+      - name: Build Chocolatey packages (Base and Variants)
         env:
           ChocolateyPackageVersion: ${{ steps.version.outputs.VERSION }}
         run: |
-          choco pack wazuh-agent-bundle.nuspec --version $env:ChocolateyPackageVersion
+          foreach ($nuspec in @("wazuh-agent-bundle.nuspec", "wazuh-agent-bundle-suricata.nuspec", "wazuh-agent-bundle-snort.nuspec")) {
+            Write-Host "Packing $nuspec..."
+            choco pack $nuspec --version $env:ChocolateyPackageVersion
+          }
           ls -la *.nupkg
 
       - name: Upload Chocolatey package as artifact
@@ -155,7 +158,7 @@ jobs:
         id: version
         run: |
           VERSION="${GITHUB_REF#refs/tags/v}"
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Setup GitHub Pages for APT repo
         run: |
@@ -219,7 +222,7 @@ jobs:
         id: version
         run: |
           VERSION="${GITHUB_REF#refs/tags/v}"
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Copy formula to tap
         run: |
