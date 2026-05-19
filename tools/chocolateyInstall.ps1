@@ -18,21 +18,21 @@ if (!(Test-Path -Path $AR_BIN_DIR)) {
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # Copy disable-usb-storage.ps1
-$usbStorageScript = Join-Path -Path $scriptDir -ChildPath "files\disable-usb-storage.ps1"
+$usbStorageScript = Join-Path -Path $scriptDir -ChildPath "files\active-response\disable-usb-storage.ps1"
 if (Test-Path -Path $usbStorageScript) {
     Write-Host "Installing disable-usb-storage.ps1..."
     Copy-Item -Path $usbStorageScript -Destination $AR_BIN_DIR -Force
 } else {
-    Write-Warning "disable-usb-storage.ps1 not found in package"
+    Write-Warning "disable-usb-storage.ps1 not found in package ($usbStorageScript)"
 }
 
 # Copy alert-usb-hid.ps1
-$usbHidScript = Join-Path -Path $scriptDir -ChildPath "files\alert-usb-hid.ps1"
+$usbHidScript = Join-Path -Path $scriptDir -ChildPath "files\active-response\alert-usb-hid.ps1"
 if (Test-Path -Path $usbHidScript) {
     Write-Host "Installing alert-usb-hid.ps1..."
     Copy-Item -Path $usbHidScript -Destination $AR_BIN_DIR -Force
 } else {
-    Write-Warning "alert-usb-hid.ps1 not found in package"
+    Write-Warning "alert-usb-hid.ps1 not found in package ($usbHidScript)"
 }
 
 # Write version file
