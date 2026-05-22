@@ -25,6 +25,16 @@ else
 fi
 OSSEC_CONF_PATH="$OSSEC_PATH/ossec.conf"
 
+# Map uname output to repo folder name (Darwin -> macos, Linux -> linux)
+if [ "$(uname -s)" = "Linux" ]; then
+    AGENT_STATUS_OS="linux"
+elif [ "$(uname -s)" = "Darwin" ]; then
+    AGENT_STATUS_OS="macos"
+else
+    echo "[ERROR] Unsupported OS: $(uname -s)" >&2
+    exit 1
+fi
+
 USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
 
@@ -211,7 +221,7 @@ info_message "Downloading core component scripts..."
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/deps.sh" > "$TMP_FOLDER/install-deps.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent-status.sh"
+curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/$AGENT_STATUS_OS/install.sh" > "$TMP_FOLDER/install-wazuh-agent-status.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-yara.sh"
 
 # Step 0: Install dependencies
