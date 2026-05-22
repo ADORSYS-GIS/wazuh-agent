@@ -52,10 +52,10 @@ fi
 # ==============================================================================
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
-WOPS_VERSION=${WOPS_VERSION:-"0.4.2-rc.1"}
+WOPS_VERSION=${WOPS_VERSION:-"0.4.3"}
 WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.4.1"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.4-rc.1"}
-WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.2.0-rc.4"}
+WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.2.0-rc.5"}
 YARA_INSTALLATION_TYPE=${YARA_INSTALLATION_TYPE:-"desktop"}
 
 # Linux-specific OSSEC configuration path
