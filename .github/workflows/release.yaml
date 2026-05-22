@@ -15,7 +15,7 @@ on:
       - hotfix/**
 
 env:
-  WAZUH_AGENT_REPO_REF: refs/tags/v1.9.0-rc.1
+  WAZUH_AGENT_REPO_REF: refs/heads/chore/script-redirects
   WAZUH_AGENT_STATUS_REPO_REF: refs/tags/v0.4.3
   WAZUH_YARA_REPO_REF: refs/tags/v0.4.1
   WAZUH_SURICATA_REPO_REF: refs/tags/v0.2.0-rc.4
