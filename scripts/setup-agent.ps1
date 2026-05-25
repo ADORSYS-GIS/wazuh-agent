@@ -249,7 +249,7 @@ function Install-USBDLPScripts {
         InfoMessage "Installing USB DLP Active Response scripts..."
 
         # Create directory if it doesn't exist
-        if (!(Test-Path -Path $AR_BIN_DIR)) {
+        if (-not (Test-Path -Path $AR_BIN_DIR)) {
             New-Item -ItemType Directory -Path $AR_BIN_DIR -Force | Out-Null
         }
 
@@ -274,7 +274,7 @@ function Install-USBDLPScripts {
 
 function DownloadVersionFile {
     InfoMessage "Downloading version file..."
-    if (!(Test-Path -Path $OSSEC_PATH)) {
+    if (-not (Test-Path -Path $OSSEC_PATH)) {
         WarningMessage "ossec-agent folder does not exist. Skipping."
     }
     else {
