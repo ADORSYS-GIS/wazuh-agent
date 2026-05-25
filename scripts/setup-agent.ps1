@@ -36,7 +36,7 @@ function Log {
         [string]$Color = "White"  # Default color
     )
     $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
+    Write-Output "$Timestamp $Level $Message" -ForegroundColor $Color
 }
 
 function InfoMessage {
@@ -63,11 +63,11 @@ function SectionSeparator {
     param (
         [string]$SectionName
     )
-    Write-Host ""
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host "  $SectionName" -ForegroundColor Magenta
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host ""
+    Write-Output ""
+    Write-Output "==================================================" -ForegroundColor Magenta
+    Write-Output "  $SectionName" -ForegroundColor Magenta
+    Write-Output "==================================================" -ForegroundColor Magenta
+    Write-Output ""
 }
 
 # Cleanup function to remove installer files at the end
@@ -320,7 +320,7 @@ function Show-Help {
 # Show help if -Help is specified
 if ($Help) {
     Show-Help
-    Exit 0
+    exit 0
 }
 
 # Provide a non-interactive default for NIDS selection (default: Suricata)
@@ -333,7 +333,7 @@ if (-not $InstallSnort -and -not $InstallSuricata) {
 if ($InstallSnort -and $InstallSuricata) {
     ErrorMessage "Cannot install both Snort and Suricata. Please choose one."
     Show-Help
-    Exit 1
+    exit 1
 }
 
 # Main Execution wrapped in a try-finally to ensure cleanup runs even if errors occur.

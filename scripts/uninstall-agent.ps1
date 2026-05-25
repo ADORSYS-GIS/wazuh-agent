@@ -29,7 +29,7 @@ function Log {
         [string]$Color = "White"
     )
     $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
+    Write-Output "$Timestamp $Level $Message" -ForegroundColor $Color
 }
 
 function InfoMessage { param([string]$Message) Log "[INFO]" $Message "Cyan" }
@@ -38,11 +38,11 @@ function SuccessMessage { param([string]$Message) Log "[SUCCESS]" $Message "Gree
 function ErrorMessage { param([string]$Message) Log "[ERROR]" $Message "Red" }
 function SectionSeparator {
     param ([string]$SectionName)
-    Write-Host ""
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host "  $SectionName" -ForegroundColor Magenta
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host ""
+    Write-Output ""
+    Write-Output "==================================================" -ForegroundColor Magenta
+    Write-Output "  $SectionName" -ForegroundColor Magenta
+    Write-Output "==================================================" -ForegroundColor Magenta
+    Write-Output ""
 }
 
 # Cleanup function to remove uninstaller files at the end
@@ -84,7 +84,7 @@ function Show-Help {
 # Show help if -Help is specified
 if ($Help) {
     Show-Help
-    Exit 0
+    exit 0
 }
 
 # Step 1: Download and execute Wazuh agent uninstall script with error handling
