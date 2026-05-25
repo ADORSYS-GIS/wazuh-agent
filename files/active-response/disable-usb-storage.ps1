@@ -27,7 +27,13 @@ $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
 function Write-Log {
     param([string]$message)
-    "$timestamp - USB-DLP - $message" | Out-File -Append -FilePath $logFile
+
+    $localMessage = $message
+
+    "$timestamp - USB-DLP - $localMessage" |
+        Out-File -Append -FilePath $logFile
+
+    return 0
 }
 
 # Registry path for USB storage
@@ -44,7 +50,7 @@ try {
         Write-Log "SUCCESS: USB Mass Storage disabled via registry"
 
         # Get list of current USB storage devices
-        $usbDevices = Get-WmiObject Win32_DiskDrive | Where-Object { $_.InterfaceType -eq "USB" }
+        $usbDevices = Get-CimInstance Win32_DiskDrive -Filter "InterfaceType='USB'"
 
         foreach ($device in $usbDevices) {
             Write-Log "WARNING: USB Storage device present: $($device.Model) - $($device.DeviceID)"

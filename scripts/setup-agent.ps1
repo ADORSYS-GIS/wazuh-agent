@@ -17,7 +17,7 @@ $OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
 $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.11" }
 $WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4" }
-$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.4.1-rc4-user" }
+$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.0" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.1" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.1.4" }
 $WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.8.0" }
@@ -36,7 +36,7 @@ function Log {
         [string]$Color = "White"  # Default color
     )
     $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
+    Write-Output "$Timestamp $Level $Message" -ForegroundColor $Color
 }
 
 function InfoMessage {
@@ -63,11 +63,11 @@ function SectionSeparator {
     param (
         [string]$SectionName
     )
-    Write-Host ""
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host "  $SectionName" -ForegroundColor Magenta
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host ""
+    Write-Output ""
+    Write-Output "==================================================" -ForegroundColor Magenta
+    Write-Output "  $SectionName" -ForegroundColor Magenta
+    Write-Output "==================================================" -ForegroundColor Magenta
+    Write-Output ""
 }
 
 # Cleanup function to remove installer files at the end
@@ -249,7 +249,7 @@ function Install-USBDLPScripts {
         InfoMessage "Installing USB DLP Active Response scripts..."
 
         # Create directory if it doesn't exist
-        if (!(Test-Path -Path $AR_BIN_DIR)) {
+        if (-not (Test-Path -Path $AR_BIN_DIR)) {
             New-Item -ItemType Directory -Path $AR_BIN_DIR -Force | Out-Null
         }
 
@@ -274,7 +274,7 @@ function Install-USBDLPScripts {
 
 function DownloadVersionFile {
     InfoMessage "Downloading version file..."
-    if (!(Test-Path -Path $OSSEC_PATH)) {
+    if (-not (Test-Path -Path $OSSEC_PATH)) {
         WarningMessage "ossec-agent folder does not exist. Skipping."
     }
     else {
@@ -320,7 +320,7 @@ function Show-Help {
 # Show help if -Help is specified
 if ($Help) {
     Show-Help
-    Exit 0
+    exit 0
 }
 
 # Provide a non-interactive default for NIDS selection (default: Suricata)
@@ -333,7 +333,7 @@ if (-not $InstallSnort -and -not $InstallSuricata) {
 if ($InstallSnort -and $InstallSuricata) {
     ErrorMessage "Cannot install both Snort and Suricata. Please choose one."
     Show-Help
-    Exit 1
+    exit 1
 }
 
 # Main Execution wrapped in a try-finally to ensure cleanup runs even if errors occur.

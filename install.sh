@@ -39,19 +39,27 @@ NC='\033[0m' # No Color
 # =============================================================================
 
 log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+    local message="$1"
+    echo -e "${BLUE}[INFO]${NC} $message"
+    return 0
 }
 
 log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    local message="$1"
+    echo -e "${GREEN}[SUCCESS]${NC} $message"
+    return 0
 }
 
 log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    local message="$1"
+    echo -e "${YELLOW}[WARNING]${NC} $message"
+    return 0
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    local message="$1"
+    echo -e "${RED}[ERROR]${NC} $message" >&2
+    return 0
 }
 
 # Detect OS type
@@ -86,7 +94,7 @@ verify_checksum() {
     local actual
     actual=$(calculate_hash "$file")
 
-    if [ "$actual" != "$expected" ]; then
+    if [[ "$actual" != "$expected" ]]; then
         log_error "Checksum verification FAILED!"
         log_error "  Expected: $expected"
         log_error "  Got:      $actual"
@@ -117,7 +125,7 @@ download_file() {
 
 # Cleanup on exit
 cleanup() {
-    if [ -n "$TMP_DIR" ] && [ -d "$TMP_DIR" ]; then
+    if [[ -n "$TMP_DIR" ]] && [[ -d "$TMP_DIR" ]]; then
         rm -rf "$TMP_DIR"
     fi
 }
@@ -134,7 +142,7 @@ main() {
     echo ""
 
     # Check for WAZUH_MANAGER
-    if [ -z "$WAZUH_MANAGER" ] || [ "$WAZUH_MANAGER" = "wazuh.example.com" ]; then
+    if [[ -z "$WAZUH_MANAGER" ]] || [[ "$WAZUH_MANAGER" = "wazuh.example.com" ]]; then
         log_warning "WAZUH_MANAGER is not set or using default placeholder"
         log_warning "Please set WAZUH_MANAGER environment variable:"
         log_warning "  export WAZUH_MANAGER=\"your-wazuh-manager.com\""
@@ -153,7 +161,7 @@ main() {
     log_info "Downloading checksums..."
     if ! download_file "$checksums_url" "$TMP_DIR/$CHECKSUMS_FILE"; then
         log_warning "Could not download checksums file"
-        if [ "$SKIP_VERIFY" != "true" ]; then
+        if [[ "$SKIP_VERIFY" != "true" ]]; then
             log_error "Verification required. Set SKIP_VERIFY=true to bypass (not recommended)"
             exit 1
         fi
@@ -167,14 +175,14 @@ main() {
     fi
 
     # Verify checksum
-    if [ -f "$TMP_DIR/$CHECKSUMS_FILE" ] && [ "$SKIP_VERIFY" != "true" ]; then
+    if [[ -f "$TMP_DIR/$CHECKSUMS_FILE" ]] && [[ "$SKIP_VERIFY" != "true" ]]; then
         log_info "Verifying script integrity..."
 
         # Extract expected checksum for setup-agent.sh
         local expected_hash
         expected_hash=$(grep "scripts/${SCRIPT_NAME}" "$TMP_DIR/$CHECKSUMS_FILE" | awk '{print $1}')
 
-        if [ -z "$expected_hash" ]; then
+        if [[ -z "$expected_hash" ]]; then
             log_warning "No checksum found for ${SCRIPT_NAME} in checksums file"
             log_warning "Proceeding without verification..."
         else
@@ -183,7 +191,7 @@ main() {
                 exit 1
             fi
         fi
-    elif [ "$SKIP_VERIFY" = "true" ]; then
+    elif [[ "$SKIP_VERIFY" = "true" ]]; then
         log_warning "Skipping verification (SKIP_VERIFY=true)"
     fi
 
@@ -197,7 +205,7 @@ main() {
     echo ""
 
     # Run the script with sudo if not root
-    if [ "$(id -u)" -ne 0 ]; then
+    if [[ "$(id -u)" -ne 0 ]]; then
         if command -v sudo >/dev/null 2>&1; then
             sudo -E bash "$TMP_DIR/$SCRIPT_NAME" "$@"
         else

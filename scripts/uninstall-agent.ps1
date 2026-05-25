@@ -13,7 +13,7 @@ $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.11" }
 $WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.1.4" }
-$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.4.1-rc4-user" }
+$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.0" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.13.1-1" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.1" }
 $WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.8.0" }
@@ -29,7 +29,7 @@ function Log {
         [string]$Color = "White"
     )
     $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Write-Host "$Timestamp $Level $Message" -ForegroundColor $Color
+    Write-Output "$Timestamp $Level $Message" -ForegroundColor $Color
 }
 
 function InfoMessage { param([string]$Message) Log "[INFO]" $Message "Cyan" }
@@ -38,11 +38,11 @@ function SuccessMessage { param([string]$Message) Log "[SUCCESS]" $Message "Gree
 function ErrorMessage { param([string]$Message) Log "[ERROR]" $Message "Red" }
 function SectionSeparator {
     param ([string]$SectionName)
-    Write-Host ""
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host "  $SectionName" -ForegroundColor Magenta
-    Write-Host "==================================================" -ForegroundColor Magenta
-    Write-Host ""
+    Write-Output ""
+    Write-Output "==================================================" -ForegroundColor Magenta
+    Write-Output "  $SectionName" -ForegroundColor Magenta
+    Write-Output "==================================================" -ForegroundColor Magenta
+    Write-Output ""
 }
 
 # Cleanup function to remove uninstaller files at the end
@@ -69,7 +69,7 @@ function Show-Help {
     Write-Host "  WAZUH_YARA_VERSION       : Sets the Wazuh YARA module version. Default: 0.3.4" -ForegroundColor Cyan
     Write-Host "  WAZUH_SNORT_VERSION      : Sets the Wazuh Snort module version. Default: 0.2.2" -ForegroundColor Cyan
     Write-Host "  WAZUH_SURICATA_VERSION   : Sets the Wazuh Suricata module version. Default: 0.1.0" -ForegroundColor Cyan
-    Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: 0.4.1-rc4-user" -ForegroundColor Cyan
+    Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: 0.5.0" -ForegroundColor Cyan
     Write-Host "  WAZUH_AGENT_VERSION      : Sets the Wazuh Agent version. Default: 4.13.1-1" -ForegroundColor Cyan
     Write-Host "  WOPS_VERSION             : Sets the WOPS client version. Default: 0.4.1" -ForegroundColor Cyan
     Write-Host ""
@@ -84,7 +84,7 @@ function Show-Help {
 # Show help if -Help is specified
 if ($Help) {
     Show-Help
-    Exit 0
+    exit 0
 }
 
 # Step 1: Download and execute Wazuh agent uninstall script with error handling
