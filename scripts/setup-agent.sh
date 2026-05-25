@@ -17,8 +17,10 @@ WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.11"}
 WAZUH_SNORT_VERSION=${WAZUH_SNORT_VERSION:-"0.2.4"}
 WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.4"}
 
+OS_MAC="Darwin"
+
 # Define the OSSEC configuration path
-if [ "$(uname)" = "Darwin" ]; then
+if [ "$(uname)" = "$OS_MAC" ]; then
     OSSEC_PATH="/Library/Ossec/etc"
 else
     OSSEC_PATH="/var/ossec/etc"
@@ -28,7 +30,7 @@ OSSEC_CONF_PATH="$OSSEC_PATH/ossec.conf"
 # Map uname output to repo folder name (Darwin -> macos, Linux -> linux)
 if [ "$(uname -s)" = "Linux" ]; then
     AGENT_STATUS_OS="linux"
-elif [ "$(uname -s)" = "Darwin" ]; then
+elif [ "$(uname -s)" = "$OS_MAC" ]; then
     AGENT_STATUS_OS="macos"
 else
     echo "[ERROR] Unsupported OS: $(uname -s)" >&2
@@ -293,7 +295,7 @@ fi
 info_message "Installing USB DLP Active Response scripts..."
 
 # Determine Active Response bin directory based on OS
-if [ "$(uname)" = "Darwin" ]; then
+if [ "$(uname)" = "$OS_MAC" ]; then
     AR_BIN_DIR="/Library/Ossec/active-response/bin"
 else
     AR_BIN_DIR="/var/ossec/active-response/bin"
@@ -305,7 +307,7 @@ maybe_sudo mkdir -p "$AR_BIN_DIR"
 # Download and install USB DLP scripts
 USB_DLP_BASE_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/files/active-response"
 
-if [ "$(uname)" = "Darwin" ]; then
+if [ "$(uname)" = "$OS_MAC" ]; then
     # macOS-specific scripts
     info_message "Installing macOS USB DLP scripts..."
     curl -SL -s "$USB_DLP_BASE_URL/disable-usb-storage-macos.sh" -o "$TMP_FOLDER/disable-usb-storage-macos.sh"
