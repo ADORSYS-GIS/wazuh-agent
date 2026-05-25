@@ -59,11 +59,9 @@ download_and_verify() {
     fi
 
     # Verify checksum if provided
-    if [ -n "$expected_hash" ]; then
-        if ! verify_checksum "$dest" "$expected_hash"; then
-            rm -f "$dest"
-            return 1
-        fi
+    if [ -n "$expected_hash" ] && ! verify_checksum "$dest" "$expected_hash"; then
+        rm -f "$dest"
+        return 1
     fi
 
     return 0
@@ -82,6 +80,7 @@ fetch_remote_checksum() {
 
     checksum=$(curl -SL -s "$checksums_url" 2>/dev/null | grep "$filename" | awk '{print $1}')
     echo "$checksum"
+    return 0
 }
 
 # Validate input parameters
@@ -101,11 +100,9 @@ validate_input() {
         return 1
     fi
 
-    if [ -n "$pattern" ]; then
-        if ! echo "$value" | grep -qE "$pattern"; then
-            echo "ERROR: $name has invalid format: $value" >&2
-            return 1
-        fi
+    if [ -n "$pattern" ] && ! echo "$value" | grep -qE "$pattern"; then
+        echo "ERROR: $name has invalid format: $value" >&2
+        return 1
     fi
 
     return 0
@@ -187,14 +184,12 @@ check_connectivity() {
     fi
 
     # Try TCP connection to common Wazuh ports
-    if command -v nc >/dev/null 2>&1; then
-        if nc -z -w "$timeout" "$host" 1514 2>/dev/null || \
-           nc -z -w "$timeout" "$host" 1515 2>/dev/null || \
-           nc -z -w "$timeout" "$host" 443 2>/dev/null; then
-            return 0
-        fi
+    if command -v nc >/dev/null 2>&1 &&
+    ( nc -z -w "$timeout" "$host" 1514 2>/dev/null ||
+        nc -z -w "$timeout" "$host" 1515 2>/dev/null ||
+        nc -z -w "$timeout" "$host" 443 2>/dev/null ); then
+        return 0
     fi
-
     # Try curl to HTTPS
     if curl -s --connect-timeout "$timeout" "https://$host" >/dev/null 2>&1; then
         return 0

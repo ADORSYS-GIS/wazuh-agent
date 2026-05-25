@@ -27,7 +27,13 @@ $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
 function Write-Log {
     param([string]$message)
-    "$timestamp - USB-DLP - $message" | Out-File -Append -FilePath $logFile
+
+    $localMessage = $message
+
+    "$timestamp - USB-DLP - $localMessage" |
+        Out-File -Append -FilePath $logFile
+
+    return 0
 }
 
 # Registry path for USB storage

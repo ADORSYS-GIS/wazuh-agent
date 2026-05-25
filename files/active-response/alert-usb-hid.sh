@@ -40,7 +40,9 @@ ALERTID=$4
 RULEID=$5
 
 log_message() {
-    echo "$TIMESTAMP - USB-HID-DLP-$OS_TYPE - $1" >> "$LOGFILE"
+    local message="$1"
+    echo "$TIMESTAMP - USB-HID-DLP-$OS_TYPE - $message" >> "$LOGFILE"
+    return 0
 }
 
 # Function to collect HID device evidence on Linux
@@ -74,6 +76,7 @@ $(dmesg | grep -i "usb\|hid\|input" | tail -50)
 --- XINPUT LIST ---
 $(xinput list 2>/dev/null || echo "X not available")
 EOF
+return 0
 }
 
 # Function to collect HID device evidence on macOS
@@ -101,6 +104,7 @@ $(hidutil list 2>/dev/null | head -50)
 --- SYSTEM LOG HID EVENTS ---
 $(log show --predicate 'eventMessage contains "HID" or eventMessage contains "keyboard"' --last 30m 2>/dev/null | head -50)
 EOF
+return 0
 }
 
 case "$ACTION" in
@@ -130,21 +134,23 @@ case "$ACTION" in
         log_message "DEVICE COUNT: $KEYBOARD_COUNT keyboard-type devices detected"
 
         # Alert if multiple keyboards detected (anomaly)
-        if [ "$KEYBOARD_COUNT" -gt 2 ]; then
+        LOG_TAG="Wazuh-DLP"
+
+        if [[ "$KEYBOARD_COUNT" -gt 2 ]]; then
             log_message "ANOMALY: Multiple keyboards ($KEYBOARD_COUNT) detected - possible BadUSB attack!"
 
             # Send high-priority syslog
             if [[ "$OS_TYPE" == "macOS" ]]; then
-                /usr/bin/logger -t "Wazuh-DLP" -p local0.alert "CRITICAL: Multiple USB keyboards detected ($KEYBOARD_COUNT) - possible BadUSB attack. Evidence: $EVIDENCE_FILE"
+                /usr/bin/logger -t "$LOG_TAG" -p local0.alert "CRITICAL: Multiple USB keyboards detected ($KEYBOARD_COUNT) - possible BadUSB attack. Evidence: $EVIDENCE_FILE"
             else
-                logger -t "Wazuh-DLP" -p auth.alert "CRITICAL: Multiple USB keyboards detected ($KEYBOARD_COUNT) - possible BadUSB attack. Evidence: $EVIDENCE_FILE"
+                logger -t "$LOG_TAG" -p auth.alert "CRITICAL: Multiple USB keyboards detected ($KEYBOARD_COUNT) - possible BadUSB attack. Evidence: $EVIDENCE_FILE"
             fi
         else
             # Standard syslog entry
             if [[ "$OS_TYPE" == "macOS" ]]; then
-                /usr/bin/logger -t "Wazuh-DLP" "USB HID device alert. Rule: $RULEID, Alert: $ALERTID. Evidence: $EVIDENCE_FILE"
+                /usr/bin/logger -t "$LOG_TAG" "USB HID device alert. Rule: $RULEID, Alert: $ALERTID. Evidence: $EVIDENCE_FILE"
             else
-                logger -t "Wazuh-DLP" -p auth.warning "USB HID device alert. Rule: $RULEID, Alert: $ALERTID. Evidence: $EVIDENCE_FILE"
+                logger -t "$LOG_TAG" -p auth.warning "USB HID device alert. Rule: $RULEID, Alert: $ALERTID. Evidence: $EVIDENCE_FILE"
             fi
         fi
 
