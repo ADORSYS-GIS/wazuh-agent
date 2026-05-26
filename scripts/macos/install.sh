@@ -47,7 +47,7 @@ fi
 # Variables
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.2-1'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.4-1'}
 
 # macOS-specific paths
 OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"

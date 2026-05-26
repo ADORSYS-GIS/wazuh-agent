@@ -21,7 +21,7 @@ env:
   WAZUH_SURICATA_REPO_REF: refs/tags/v0.2.0-rc.4
   WAZUH_SNORT_REPO_REF: refs/tags/v0.2.4-rc.1
   WAZUH_TRIVY_REPO_REF: main
-  WAZUH_CERT_OAUTH2_REPO_REF: refs/tags/v0.4.2-rc.1
+  WAZUH_CERT_OAUTH2_REPO_REF: refs/tags/v0.4.3
   YARA_INSTALLATION_TYPE: server
 
 jobs:

@@ -47,7 +47,7 @@ fi
 # Common variables
 OS="Linux"
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.2-1'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.4-1'}
 OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
 OSSEC_LOG_PATH="/var/ossec/logs"
 LOGO_PATH="/usr/share/pixmaps"

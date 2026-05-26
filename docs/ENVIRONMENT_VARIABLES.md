@@ -13,7 +13,7 @@ This document describes all environment variables used by the Wazuh Agent instal
 | Variable              | Default             | Description                            |
 | --------------------- | ------------------- | -------------------------------------- |
 | `WAZUH_MANAGER`       | `wazuh.example.com` | Wazuh Manager address (hostname or IP) |
-| `WAZUH_AGENT_VERSION` | `4.14.2-1`          | Wazuh Agent version to install         |
+| `WAZUH_AGENT_VERSION` | `4.14.4-1`          | Wazuh Agent version to install         |
 | `WAZUH_AGENT_NAME`    | `$(hostname)`       | Agent registration name                |
 | `WAZUH_AGENT_GROUP`   | _(none)_            | Agent group for enrollment             |
 
@@ -95,7 +95,7 @@ export LOG_LEVEL="DEBUG"
 
 ```powershell
 $env:WAZUH_MANAGER = "wazuh.mycompany.com"
-$env:WAZUH_AGENT_VERSION = "4.14.2-1"
+$env:WAZUH_AGENT_VERSION = "4.14.4-1"
 .\scripts\windows\setup-agent.ps1 -InstallSuricata
 ```
 
@@ -129,7 +129,7 @@ export WAZUH_MANAGER="wazuh.mycompany.com"
 
 - **Format:** `X.Y.Z` or `X.Y.Z-N` where X, Y, Z, N are integers
 - **Examples:**
-  - Valid: `4.14.2-1`, `0.3.11`, `1.0.0`
+  - Valid: `4.14.4-1`, `0.3.11`, `1.0.0`
   - Invalid: `v4.13.1`, `4.13`, `latest`
 
 ### LOG_LEVEL
@@ -185,5 +185,5 @@ ERROR: Invalid version format: v4.13.1
 **Solution:** Remove 'v' prefix:
 
 ```bash
-export WAZUH_AGENT_VERSION="4.14.2-1"  # Correct
+export WAZUH_AGENT_VERSION="4.14.4-1"  # Correct
 ```

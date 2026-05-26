@@ -37,7 +37,7 @@ catch {
     exit 1
 }
 
-$AgentVersion = "4.14.2-1"
+$AgentVersion = "4.14.4-1"
 $OssecPath = "C:\Program Files (x86)\ossec-agent"
 $DownloadUrl = "https://packages.wazuh.com/4.x/windows/wazuh-agent-$AgentVersion.msi"
 $TempFile = New-TemporaryFile
