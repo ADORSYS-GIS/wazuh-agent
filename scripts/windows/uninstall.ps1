@@ -119,11 +119,19 @@ function Cleanup-Files {
     # 1. Cleanup Docker Monitoring Task and Environment
     $dockerTask = "WazuhDockerListener"
     if (Get-ScheduledTask -TaskName $dockerTask -ErrorAction SilentlyContinue) {
+        InfoMessage "Stopping Docker Listener Scheduled Task..."
+        Stop-ScheduledTask -TaskName $dockerTask -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 2
         InfoMessage "Removing Docker Listener Scheduled Task..."
         Unregister-ScheduledTask -TaskName $dockerTask -Confirm:$false
     }
     
-    $venvPath = "C:\wazuh-docker-env"
+    $venvPath = if ($env:VENV_DIR) { $env:VENV_DIR } else { "C:\wazuh-docker-env" }
+    $normalizedVenvPath = $venvPath.Replace('/', '\')
+    InfoMessage "Stopping any running Python processes associated with the Docker listener..."
+    Get-Process -Name "python" -ErrorAction SilentlyContinue | Where-Object { $_.Path -and ($_.Path.Replace('/', '\') -like "*$normalizedVenvPath*") } | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    
     if (Test-Path $venvPath) {
         InfoMessage "Removing Docker Python virtual environment..."
         Remove-Item -Path $venvPath -Recurse -Force -ErrorAction SilentlyContinue

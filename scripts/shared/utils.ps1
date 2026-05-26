@@ -120,7 +120,7 @@ function Download-File {
         } catch {
             $attempt++
             if ($attempt -lt $MaxRetries) {
-                WarnMessage "Download failed, retrying ($attempt/$MaxRetries)..."
+                WarningMessage "Download failed, retrying ($attempt/$MaxRetries)..."
                 Start-Sleep -Seconds 2
             }
         }
