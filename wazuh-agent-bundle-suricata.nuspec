@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>wazuh-agent-bundle-suricata</id>
-    <version>$env:ChocolateyPackageVersion</version>
+    <version>$version$</version>
     <title>Wazuh Agent Bundle with Suricata</title>
     <authors>ADORSYS-GIS</authors>
     <owners>ADORSYS-GIS</owners>
