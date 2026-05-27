@@ -121,11 +121,12 @@ jobs:
           Copy-Item files/active-response/alert-usb-hid.ps1 tools/files/active-response/
 
       - name: Build Chocolatey package
+        shell: pwsh
         env:
           ChocolateyPackageVersion: ${{ steps.version.outputs.VERSION }}
         run: |
           choco pack wazuh-agent-bundle.nuspec --version $env:ChocolateyPackageVersion
-          ls -la *.nupkg
+          Get-ChildItem *.nupkg
 
       - name: Upload Chocolatey package as artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
