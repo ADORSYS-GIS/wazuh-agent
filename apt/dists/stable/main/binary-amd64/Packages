@@ -1,0 +1,48 @@
+Package: wazuh-agent-bundle
+Version: 0.0.4~test
+Architecture: amd64
+Maintainer: ADORSYS-GIS <security@adorsys-gis.com>
+Installed-Size: 10
+Depends: wazuh-agent (>= 4.0.0), wazuh-cert-oauth2-client, wazuh-agent-status, wazuh-yara
+Homepage: https://github.com/ADORSYS-GIS/wazuh-agent
+Priority: optional
+Section: 
+Filename: pool/main/w/wazuh-agent-bundle/wazuh-agent-bundle_0.0.4~test_amd64.deb
+Size: 4876
+SHA256: dcf3f9a0ec9f9a18cfc243c2bc889575f2a9c34ef2abb5f0fc14b1d52cd897d4
+SHA1: b2ecad71ff7647fc98085dce2d4e6fd1676270d0
+MD5sum: 097656b008a5d9273437a9961872a397
+Description: Bundled Wazuh agent with ADORSYS-GIS security plugins
+
+Package: wazuh-agent-bundle-snort
+Version: 0.0.4~test
+Architecture: amd64
+Maintainer: ADORSYS-GIS <security@adorsys-gis.com>
+Installed-Size: 10
+Depends: wazuh-agent (>= 4.0.0), wazuh-cert-oauth2-client, wazuh-agent-status, wazuh-yara, wazuh-snort
+Homepage: https://github.com/ADORSYS-GIS/wazuh-agent
+Priority: optional
+Section: 
+Filename: pool/main/w/wazuh-agent-bundle-snort/wazuh-agent-bundle-snort_0.0.4~test_amd64.deb
+Size: 4890
+SHA256: 6c63be2f2545911eaa7cac18e5449af8f40a7c97f48d7db994b3d16b7f540212
+SHA1: 924274f26243d3ef3b4a3b4f8974308dde4f70f0
+MD5sum: a307a7b4c1b4ac01b40bc767230cd7be
+Description: Bundled Wazuh agent with ADORSYS-GIS security plugins and Snort IDS
+
+Package: wazuh-agent-bundle-suricata
+Version: 0.0.4~test
+Architecture: amd64
+Maintainer: ADORSYS-GIS <security@adorsys-gis.com>
+Installed-Size: 10
+Depends: wazuh-agent (>= 4.0.0), wazuh-cert-oauth2-client, wazuh-agent-status, wazuh-yara, wazuh-suricata
+Homepage: https://github.com/ADORSYS-GIS/wazuh-agent
+Priority: optional
+Section: 
+Filename: pool/main/w/wazuh-agent-bundle-suricata/wazuh-agent-bundle-suricata_0.0.4~test_amd64.deb
+Size: 4896
+SHA256: 2f0e317e675bdf3bd77fe7891ca92e7ca155dbfddd55e9f53424d10204b3bdc9
+SHA1: 2a8c5aaa5400afa4288983ccb201560f1351ae2b
+MD5sum: 239753603183a52279269009605d3ec7
+Description: Bundled Wazuh agent with ADORSYS-GIS security plugins and Suricata IDS/IPS
+

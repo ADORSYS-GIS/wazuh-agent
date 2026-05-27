@@ -1,0 +1,28 @@
+Origin: ADORSYS-GIS
+Label: ADORSYS-GIS
+Codename: stable
+Date: Wed, 27 May 2026 22:19:46 UTC
+Architectures: amd64 arm64
+Components: main
+Description: ADORSYS-GIS Wazuh Agent Bundle packages
+MD5Sum:
+ 3a50a8cd52fb6f9333ee69a383c03b84 2002 main/binary-amd64/Packages
+ 091c08033d5bfd38674a13c2cf2d00a3 693 main/binary-amd64/Packages.gz
+ 30aab717bbb755eb95727151e82e3bc3 128 main/binary-amd64/Release
+ d41d8cd98f00b204e9800998ecf8427e 0 main/binary-arm64/Packages
+ 7029066c27ac6f5ef18d660d5741979a 20 main/binary-arm64/Packages.gz
+ ec4c248bb40ef7b641fc6bcd1f6cf188 128 main/binary-arm64/Release
+SHA1:
+ f61478fa850aa2531943f54794b3df4902fa779b 2002 main/binary-amd64/Packages
+ d2ec7eda935f798ee63c0b91e7d3fc45e9aa6059 693 main/binary-amd64/Packages.gz
+ 057d8a25be8aa079f3e59d740368f3721a1bf8f5 128 main/binary-amd64/Release
+ da39a3ee5e6b4b0d3255bfef95601890afd80709 0 main/binary-arm64/Packages
+ 46c6643f07aa7f6bfe7118de926b86defc5087c4 20 main/binary-arm64/Packages.gz
+ 8debc8292d53718bae3229d8d35c382abf8d4b89 128 main/binary-arm64/Release
+SHA256:
+ e6f0ea7f30f0d1f60ebfce4d636b8a0c473a62b639086916a9a8ddfbffd1333c 2002 main/binary-amd64/Packages
+ e84cd085241ef934d3ea99bf9ea0fa73837b724f385a4459ae88800998c3c325 693 main/binary-amd64/Packages.gz
+ ebf4b62a238e27349b3d5f2b3c2bab9464d82bd670eaaa13872de097450ddd2e 128 main/binary-amd64/Release
+ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 0 main/binary-arm64/Packages
+ 59869db34853933b239f1e2219cf7d431da006aa919635478511fabbfc8849d2 20 main/binary-arm64/Packages.gz
+ 8ccbdf8db1d87d2b7b03ae050f7d5568ce6ed326bb128da138804e4067bb431b 128 main/binary-arm64/Release

@@ -1,0 +1,5 @@
+Component: main
+Origin: ADORSYS-GIS
+Label: ADORSYS-GIS
+Architecture: amd64
+Description: ADORSYS-GIS Wazuh Agent Bundle packages
