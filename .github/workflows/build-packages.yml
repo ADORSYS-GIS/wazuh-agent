@@ -10,11 +10,6 @@ on:
         description: 'Version to build (e.g., 1.8.0)'
         required: true
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-
 jobs:
   # ============================================
   # Build Linux Packages (deb, rpm, apk)
@@ -22,6 +17,8 @@ jobs:
   build-linux:
     name: Build Linux Packages
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -96,6 +93,8 @@ jobs:
   build-windows:
     name: Build Chocolatey Package
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -148,6 +147,10 @@ jobs:
   publish-repos:
     name: Publish to Repositories
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
     needs: [build-linux, build-windows]
     if: github.event_name == 'push'
     steps:
@@ -228,6 +231,8 @@ jobs:
   update-homebrew:
     name: Update Homebrew Tap
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     needs: [build-linux]
     if: github.event_name == 'push'
     steps:

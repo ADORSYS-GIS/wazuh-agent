@@ -9,7 +9,7 @@ $AR_BIN_DIR = Join-Path -Path $OSSEC_PATH -ChildPath "active-response\bin"
 Write-Host "Running post-installation tasks for wazuh-agent-bundle..."
 
 # Create active-response bin directory if it doesn't exist
-if (!(Test-Path -Path $AR_BIN_DIR)) {
+if (-not (Test-Path -Path $AR_BIN_DIR)) {
     Write-Host "Creating directory: $AR_BIN_DIR"
     New-Item -ItemType Directory -Path $AR_BIN_DIR -Force | Out-Null
 }

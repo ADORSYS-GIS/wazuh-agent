@@ -13,7 +13,7 @@ WAZUH_REPO_FILE="/etc/apt/sources.list.d/wazuh.list"
 # Step 1: Add Wazuh's official APT repo so apt can install
 #         wazuh-agent as a dependency automatically
 # ---------------------------------------------------------------
-if [ ! -f "$WAZUH_REPO_FILE" ]; then
+if [[ ! -f "$WAZUH_REPO_FILE" ]]; then
     echo "Setting up Wazuh APT repository..."
 
     # Import Wazuh GPG key
@@ -47,7 +47,7 @@ elif command -v rpm >/dev/null 2>&1; then
 fi
 
 mkdir -p "$OSSEC_PATH"
-if [ -n "$PKG_VERSION" ]; then
+if [[ -n "$PKG_VERSION" ]]; then
     echo "$PKG_VERSION" > "$VERSION_FILE"
     echo "Wrote version $PKG_VERSION to $VERSION_FILE"
 else
@@ -66,12 +66,12 @@ else
     OWNER="root:root"
 fi
 
-if [ -f "$AR_BIN_DIR/disable-usb-storage.sh" ]; then
+if [[ -f "$AR_BIN_DIR/disable-usb-storage.sh" ]]; then
     chown "$OWNER" "$AR_BIN_DIR/disable-usb-storage.sh"
     chmod 750 "$AR_BIN_DIR/disable-usb-storage.sh"
 fi
 
-if [ -f "$AR_BIN_DIR/alert-usb-hid.sh" ]; then
+if [[ -f "$AR_BIN_DIR/alert-usb-hid.sh" ]]; then
     chown "$OWNER" "$AR_BIN_DIR/alert-usb-hid.sh"
     chmod 750 "$AR_BIN_DIR/alert-usb-hid.sh"
 fi
