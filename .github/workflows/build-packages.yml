@@ -122,10 +122,8 @@ jobs:
 
       - name: Build Chocolatey package
         shell: pwsh
-        env:
-          ChocolateyPackageVersion: ${{ steps.version.outputs.VERSION }}
         run: |
-          choco pack wazuh-agent-bundle.nuspec --version $env:ChocolateyPackageVersion
+          choco pack wazuh-agent-bundle.nuspec --version ${{ steps.version.outputs.VERSION }}
           Get-ChildItem *.nupkg
 
       - name: Upload Chocolatey package as artifact
@@ -232,6 +230,7 @@ jobs:
   update-homebrew:
     name: Update Homebrew Tap
     runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
       contents: write
     needs: [build-linux]
