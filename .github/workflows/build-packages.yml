@@ -12,6 +12,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   # ============================================
@@ -37,8 +39,8 @@ jobs:
 
       - name: Install nFPM
         run: |
-          wget -qO- https://github.com/goreleaser/nfpm/releases/download/v2.36.0/nfpm_2.36.0_linux_amd64.tar.gz | tar -xz
-          sudo mv nfpm /usr/local/bin/
+          curl -fsSL "https://github.com/goreleaser/nfpm/releases/download/v2.46.3/nfpm_2.46.3_amd64.deb" -o /tmp/nfpm.deb
+          sudo dpkg -i /tmp/nfpm.deb
           nfpm --version
 
       - name: Create tools directory for Chocolatey files
@@ -47,19 +49,25 @@ jobs:
           cp files/active-response/disable-usb-storage.ps1 tools/files/active-response/
           cp files/active-response/alert-usb-hid.ps1 tools/files/active-response/
 
-      - name: Build .deb package
+      - name: Build .deb packages (base, snort, suricata)
         run: |
-          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager deb --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager deb --config nfpm.yaml --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager deb --config nfpm-snort.yaml --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager deb --config nfpm-suricata.yaml --target .
           ls -la *.deb
 
-      - name: Build .rpm package
+      - name: Build .rpm packages (base, snort, suricata)
         run: |
-          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager rpm --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager rpm --config nfpm.yaml --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager rpm --config nfpm-snort.yaml --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager rpm --config nfpm-suricata.yaml --target .
           ls -la *.rpm
 
-      - name: Build .apk package
+      - name: Build .apk packages (base, snort, suricata)
         run: |
-          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager apk --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager apk --config nfpm.yaml --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager apk --config nfpm-snort.yaml --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager apk --config nfpm-suricata.yaml --target .
           ls -la *.apk
 
       - name: Upload Linux packages as artifacts
@@ -157,43 +165,61 @@ jobs:
           VERSION="${GITHUB_REF#refs/tags/v}"
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Setup GitHub Pages for APT repo
-        run: |
-          mkdir -p apt-repo/pool/main/w/wazuh-agent-bundle
-          cp artifacts/linux-packages/*.deb apt-repo/pool/main/w/wazuh-agent-bundle/
+      # ----------------------------------------------------------------
+      # APT repo — reprepro generates Packages/Release index files
+      # so that `apt install wazuh-agent-bundle` works correctly
+      # ----------------------------------------------------------------
+      - name: Install reprepro and createrepo
+        run: sudo apt-get install -y reprepro createrepo-c
 
-      - name: Setup GitHub Pages for RPM repo
+      - name: Build APT repo with reprepro
+        run: |
+          mkdir -p apt-repo/conf
+          cat <<'DISTEOF' | sed 's/^[[:space:]]*//' > apt-repo/conf/distributions
+          Origin: ADORSYS-GIS
+          Label: ADORSYS-GIS
+          Codename: stable
+          Architectures: amd64 arm64
+          Components: main
+          Description: ADORSYS-GIS Wazuh Agent Bundle packages
+          DISTEOF
+          for deb in artifacts/linux-packages/*.deb; do
+            reprepro -b apt-repo includedeb stable "$deb"
+          done
+
+      # ----------------------------------------------------------------
+      # RPM repo — createrepo generates repomd.xml index
+      # so that `dnf install wazuh-agent-bundle` works correctly
+      # ----------------------------------------------------------------
+      - name: Build RPM repo with createrepo
         run: |
           mkdir -p rpm-repo/packages
           cp artifacts/linux-packages/*.rpm rpm-repo/packages/
+          createrepo_c rpm-repo/
 
-      - name: Setup GitHub Pages for Chocolatey feed
+      # ----------------------------------------------------------------
+      # Chocolatey feed — simple NuGet-compatible directory
+      # ----------------------------------------------------------------
+      - name: Build Chocolatey feed
         run: |
           mkdir -p choco-feed
           cp artifacts/chocolatey-package/*.nupkg choco-feed/
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./apt-repo
-          destination_dir: apt
-          keep_files: true
+      # ----------------------------------------------------------------
+      # Deploy everything to GitHub Pages under separate subdirectories
+      # ----------------------------------------------------------------
+      - name: Combine repos for GitHub Pages
+        run: |
+          mkdir -p gh-pages/apt gh-pages/rpm gh-pages/choco
+          cp -r apt-repo/. gh-pages/apt/
+          cp -r rpm-repo/. gh-pages/rpm/
+          cp -r choco-feed/. gh-pages/choco/
 
-      - name: Deploy RPM repo to GitHub Pages
+      - name: Deploy all repos to GitHub Pages
         uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./rpm-repo
-          destination_dir: rpm
-          keep_files: true
-
-      - name: Deploy Chocolatey feed to GitHub Pages
-        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./choco-feed
-          destination_dir: choco
+          publish_dir: ./gh-pages
           keep_files: true
 
   # ============================================
