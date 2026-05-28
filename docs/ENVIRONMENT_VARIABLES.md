@@ -22,10 +22,10 @@ This document describes all environment variables used by the Wazuh Agent instal
 | Variable                     | Default          | Description                          |
 | ---------------------------- | ---------------- | ------------------------------------ |
 | `WAZUH_AGENT_REPO_VERSION`   | `1.9.0-rc.1`     | Version of this installer repository |
-| `WOPS_VERSION`               | `0.4.2-rc.1`          | Wazuh Cert OAuth2 client version     |
+| `WOPS_VERSION`               | `0.4.3`          | Wazuh Cert OAuth2 client version     |
 | `WAZUH_AGENT_STATUS_VERSION` | `0.4.3`          | Wazuh Agent Status tool version      |
-| `WAZUH_YARA_VERSION`         | `0.4.1`          | Wazuh Yara integration version       |
-| `WAZUH_SURICATA_VERSION`     | `0.2.0-rc.4`     | Wazuh Suricata integration version   |
+| `WAZUH_YARA_VERSION`         | `0.4.2`          | Wazuh Yara integration version       |
+| `WAZUH_SURICATA_VERSION`     | `0.2.1`          | Wazuh Suricata integration version   |
 
 ## Application Settings
 
@@ -77,8 +77,8 @@ $env:WAZUH_MANAGER = "wazuh.mycompany.com"
 
 ```bash
 export WAZUH_MANAGER="wazuh.mycompany.com"
-export WAZUH_AGENT_VERSION="4.12.0-1"
-export WAZUH_YARA_VERSION="0.3.10"
+export WAZUH_AGENT_VERSION="4.14.4-1"
+export WAZUH_YARA_VERSION="0.4.2"
 ./scripts/linux/setup-agent.sh  # or ./scripts/macos/setup-agent.sh
 ```
 

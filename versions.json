@@ -16,25 +16,25 @@
       "documentation": "https://documentation.wazuh.com/current/release-notes/"
     },
     "wazuh-yara": {
-      "version": "0.4.1",
+      "version": "0.4.2",
       "repository": "ADORSYS-GIS/wazuh-yara",
       "min_compatible": "0.3.0",
       "max_compatible": "0.4.99"
     },
     "wazuh-suricata": {
-      "version": "0.2.0-rc.4",
+      "version": "0.2.1",
       "repository": "ADORSYS-GIS/wazuh-suricata",
       "min_compatible": "0.1.0",
       "max_compatible": "0.2.99"
     },
     "wazuh-snort": {
-      "version": "0.2.4-rc.1",
+      "version": "main",
       "repository": "ADORSYS-GIS/wazuh-snort",
       "min_compatible": "0.2.0",
       "max_compatible": "0.3.99"
     },
     "wazuh-cert-oauth2": {
-      "version": "0.4.2-rc.1",
+      "version": "0.4.3",
       "repository": "ADORSYS-GIS/wazuh-cert-oauth2",
       "min_compatible": "0.2.0",
       "max_compatible": "0.3.99"
