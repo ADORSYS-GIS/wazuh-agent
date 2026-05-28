@@ -1,0 +1,271 @@
+name: Build and Publish Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., 1.8.0)'
+        required: true
+
+jobs:
+  # ============================================
+  # Build Linux Packages (deb, rpm, apk)
+  # ============================================
+  build-linux:
+    name: Build Linux Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Install nFPM
+        run: |
+          curl -fsSL "https://github.com/goreleaser/nfpm/releases/download/v2.46.3/nfpm_2.46.3_amd64.deb" -o /tmp/nfpm.deb
+          sudo dpkg -i /tmp/nfpm.deb
+          nfpm --version
+
+      - name: Create tools directory for Chocolatey files
+        run: |
+          mkdir -p tools/files/active-response
+          cp files/active-response/disable-usb-storage.ps1 tools/files/active-response/
+          cp files/active-response/alert-usb-hid.ps1 tools/files/active-response/
+
+      - name: Build .deb packages (base, snort, suricata)
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager deb --config nfpm.yaml --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager deb --config nfpm-snort.yaml --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager deb --config nfpm-suricata.yaml --target .
+          ls -la *.deb
+
+      - name: Build .rpm packages (base, snort, suricata)
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager rpm --config nfpm.yaml --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager rpm --config nfpm-snort.yaml --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager rpm --config nfpm-suricata.yaml --target .
+          ls -la *.rpm
+
+      - name: Build .apk packages (base, snort, suricata)
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager apk --config nfpm.yaml --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager apk --config nfpm-snort.yaml --target .
+          VERSION=${{ steps.version.outputs.VERSION }} nfpm package --packager apk --config nfpm-suricata.yaml --target .
+          ls -la *.apk
+
+      - name: Upload Linux packages as artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: linux-packages
+          path: |
+            *.deb
+            *.rpm
+            *.apk
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+        if: github.event_name == 'push'
+        with:
+          files: |
+            *.deb
+            *.rpm
+            *.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================
+  # Build Windows Chocolatey Package
+  # ============================================
+  build-windows:
+    name: Build Chocolatey Package
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set version
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $VERSION = "${{ github.event.inputs.version }}"
+          } else {
+            $VERSION = "${{ github.ref }}" -replace "refs/tags/v", ""
+          }
+          echo "VERSION=$VERSION" >> $env:GITHUB_OUTPUT
+          Write-Host "Building version: $VERSION"
+
+      - name: Verify Chocolatey is available
+        run: choco --version
+
+      - name: Create tools directory structure
+        run: |
+          mkdir -p tools/files/active-response
+          Copy-Item files/active-response/disable-usb-storage.ps1 tools/files/active-response/
+          Copy-Item files/active-response/alert-usb-hid.ps1 tools/files/active-response/
+
+      - name: Build Chocolatey package
+        shell: pwsh
+        run: |
+          choco pack wazuh-agent-bundle.nuspec --version ${{ steps.version.outputs.VERSION }}
+          Get-ChildItem *.nupkg
+
+      - name: Upload Chocolatey package as artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: chocolatey-package
+          path: '*.nupkg'
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+        if: github.event_name == 'push'
+        with:
+          files: '*.nupkg'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================
+  # Publish to Package Repositories
+  # ============================================
+  publish-repos:
+    name: Publish to Repositories
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    needs: [build-linux, build-windows]
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: artifacts
+
+      - name: Set version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      # ----------------------------------------------------------------
+      # APT repo — reprepro generates Packages/Release index files
+      # so that `apt install wazuh-agent-bundle` works correctly
+      # ----------------------------------------------------------------
+      - name: Install reprepro and createrepo
+        run: sudo apt-get install -y reprepro createrepo-c
+
+      - name: Build APT repo with reprepro
+        run: |
+          mkdir -p apt-repo/conf
+          cat <<'DISTEOF' | sed 's/^[[:space:]]*//' > apt-repo/conf/distributions
+          Origin: ADORSYS-GIS
+          Label: ADORSYS-GIS
+          Codename: stable
+          Architectures: amd64 arm64
+          Components: main
+          Description: ADORSYS-GIS Wazuh Agent Bundle packages
+          DISTEOF
+          for deb in artifacts/linux-packages/*.deb; do
+            reprepro -b apt-repo includedeb stable "$deb"
+          done
+
+      # ----------------------------------------------------------------
+      # RPM repo — createrepo generates repomd.xml index
+      # so that `dnf install wazuh-agent-bundle` works correctly
+      # ----------------------------------------------------------------
+      - name: Build RPM repo with createrepo
+        run: |
+          mkdir -p rpm-repo/packages
+          cp artifacts/linux-packages/*.rpm rpm-repo/packages/
+          createrepo_c rpm-repo/
+
+      # ----------------------------------------------------------------
+      # Chocolatey feed — simple NuGet-compatible directory
+      # ----------------------------------------------------------------
+      - name: Build Chocolatey feed
+        run: |
+          mkdir -p choco-feed
+          cp artifacts/chocolatey-package/*.nupkg choco-feed/
+
+      # ----------------------------------------------------------------
+      # Deploy everything to GitHub Pages under separate subdirectories
+      # ----------------------------------------------------------------
+      - name: Combine repos for GitHub Pages
+        run: |
+          mkdir -p gh-pages/apt gh-pages/rpm gh-pages/choco
+          cp -r apt-repo/. gh-pages/apt/
+          cp -r rpm-repo/. gh-pages/rpm/
+          cp -r choco-feed/. gh-pages/choco/
+
+      - name: Deploy all repos to GitHub Pages
+        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gh-pages
+          keep_files: true
+
+  # ============================================
+  # Update Homebrew Tap
+  # ============================================
+  update-homebrew:
+    name: Update Homebrew Tap
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: write
+    needs: [build-linux]
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout main repo
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Checkout homebrew tap repo
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: ADORSYS-GIS/homebrew-wazuh-agent
+          token: ${{ secrets.RELEASE_PAT }}
+          path: homebrew-tap
+
+      - name: Set version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Copy formula to tap
+        run: |
+          cp homebrew-wazuh-agent/Formula/wazuh-agent-bundle.rb homebrew-tap/Formula/
+
+      - name: Update formula version
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          sed -i "s/tag:      \"v.*\"/tag:      \"v$VERSION\"/g" homebrew-tap/Formula/wazuh-agent-bundle.rb
+
+      - name: Commit and push to tap
+        run: |
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/wazuh-agent-bundle.rb
+          git commit -m "Update wazuh-agent-bundle to v${{ steps.version.outputs.VERSION }}"
+          git push

@@ -24,7 +24,76 @@ This repository provides an automated, **verified** setup script for installing 
 
 ## Quick Start
 
-### Linux / macOS
+### Native Package Installation (Recommended)
+
+The recommended installation method uses native OS package managers for reliable, idempotent installation.
+
+**Debian/Ubuntu:**
+```bash
+# Add ADORSYS-GIS repository
+echo "deb [trusted=yes] https://adorsys-gis.github.io/wazuh-agent/apt ./" | sudo tee /etc/apt/sources.list.d/wazuh-agent.list
+sudo apt update
+
+# Install the bundle
+sudo apt install wazuh-agent-bundle
+
+# For Suricata variant
+sudo apt install wazuh-agent-bundle-suricata
+
+# For Snort variant
+sudo apt install wazuh-agent-bundle-snort
+```
+
+**RHEL/Fedora:**
+```bash
+# Add ADORSYS-GIS repository
+sudo dnf config-manager --add-repo https://adorsys-gis.github.io/wazuh-agent/rpm/wazuh-agent.repo
+
+# Install the bundle
+sudo dnf install wazuh-agent-bundle
+
+# For Suricata variant
+sudo dnf install wazuh-agent-bundle-suricata
+
+# For Snort variant
+sudo dnf install wazuh-agent-bundle-snort
+```
+
+**macOS:**
+```bash
+# Add ADORSYS-GIS tap
+brew tap adorsys-gis/wazuh-agent
+
+# Install the bundle
+brew install adorsys-gis/wazuh-agent/wazuh-agent-bundle
+
+# For Suricata variant
+brew install adorsys-gis/wazuh-agent/wazuh-agent-bundle-suricata
+
+# For Snort variant
+brew install adorsys-gis/wazuh-agent/wazuh-agent-bundle-snort
+```
+
+**Windows:**
+```powershell
+# Add ADORSYS-GIS Chocolatey feed
+choco source add --name=adorsys --source=https://adorsys-gis.github.io/wazuh-agent/choco
+
+# Install the bundle
+choco install wazuh-agent-bundle
+
+# For Suricata variant
+choco install wazuh-agent-bundle-suricata
+
+# For Snort variant
+choco install wazuh-agent-bundle-snort
+```
+
+### Script-Based Installation (Legacy)
+
+The script-based installation method is still available but is being phased out in favor of native packages.
+
+**Linux / macOS:**
 
 ```bash
 # Set your Wazuh Manager address
@@ -46,7 +115,7 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/instal
 curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -s ids -t
 ```
 
-### Windows (PowerShell)
+**Windows (PowerShell):**
 
 ```powershell
 # Set your Wazuh Manager address

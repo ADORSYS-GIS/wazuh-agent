@@ -43,12 +43,12 @@ try {
         }
 
         # Collect USB HID device information
-        $hidDevices = Get-WmiObject Win32_PnPEntity | Where-Object {
+        $hidDevices = Get-CimInstance Win32_PnPEntity | Where-Object {
             $_.DeviceID -match "HID" -or $_.DeviceID -match "USB\\VID"
         }
 
         # Collect keyboard devices specifically
-        $keyboards = Get-WmiObject Win32_Keyboard
+        $keyboards = Get-CimInstance Win32_Keyboard
 
         # Save evidence to file
         $evidenceFile = "$evidenceDir\hid_alert_$fileTimestamp.txt"

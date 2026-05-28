@@ -1,2 +1,7 @@
 .idea
 .code
+tools/files/
+*.deb
+*.rpm
+*.apk
+*.nupkg

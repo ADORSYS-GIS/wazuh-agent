@@ -44,7 +44,7 @@ try {
         Write-Log "SUCCESS: USB Mass Storage disabled via registry"
 
         # Get list of current USB storage devices
-        $usbDevices = Get-WmiObject Win32_DiskDrive | Where-Object { $_.InterfaceType -eq "USB" }
+        $usbDevices = Get-CimInstance Win32_DiskDrive | Where-Object { $_.InterfaceType -eq "USB" }
 
         foreach ($device in $usbDevices) {
             Write-Log "WARNING: USB Storage device present: $($device.Model) - $($device.DeviceID)"
