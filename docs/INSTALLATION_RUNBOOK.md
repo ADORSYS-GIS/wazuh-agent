@@ -31,6 +31,7 @@ The Wazuh Agent installer automatically:
 5. Installs all security components
 
 **Components Installed:**
+
 - Wazuh Agent - Endpoint monitoring
 - OAuth2 Authentication Client - Secure enrollment
 - Wazuh Agent Status - System tray health monitor
@@ -38,23 +39,63 @@ The Wazuh Agent installer automatically:
 - Suricata or Snort - Network intrusion detection
 - USB DLP Scripts - USB device control (Active Response)
 
+### Installation Scripts Directory Structure
+
+The installer uses OS-specific directories for better organization:
+
+```
+scripts/
+├── linux/          # Linux-specific scripts
+│   ├── setup-agent.sh
+│   ├── install.sh
+│   ├── uninstall.sh
+│   ├── uninstall-agent.sh
+│   ├── deps.sh
+│   └── setup-docker.sh
+├── macos/          # macOS-specific scripts
+│   ├── setup-agent.sh
+│   ├── install.sh
+│   ├── uninstall.sh
+│   ├── uninstall-agent.sh
+│   ├── deps.sh
+│   └── setup-docker.sh
+├── windows/        # Windows-specific scripts
+│   ├── setup-agent.ps1
+│   ├── install.ps1
+│   ├── uninstall.ps1
+│   ├── uninstall-agent.ps1
+│   ├── deps.ps1
+│   └── setup-docker.ps1
+└── shared/         # Shared utilities
+    └── utils.sh
+```
+
+**Benefits:**
+- **Cleaner Organization**: Each OS has its own dedicated directory
+- **Easier Maintenance**: OS-specific logic is isolated
+- **Better Navigation**: Quickly find scripts for your platform
+
 ---
 
 ## Prerequisites
 
 ### All Platforms
+
 - Internet connectivity
 - Administrator/sudo privileges
 - Wazuh Manager address (provided by your security team)
 
 ### Linux
+
 - `curl` installed (`sudo apt install -y curl` or equivalent)
 
 ### macOS
+
 - Homebrew installed
 - `curl` installed (`brew install curl`)
 
 ### Windows
+
 - PowerShell 5.1 or later
 - Run PowerShell as Administrator
 
@@ -67,17 +108,21 @@ The Wazuh Agent installer automatically:
 **Step 1: Open Terminal**
 
 **Step 2: Set Environment Variable**
+
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
 ```
+
 > Replace `wazuh.your-company.com` with your actual Wazuh Manager address.
 
 **Step 3: Run the Installer**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash
 ```
 
 **Optional: Install with Specific Options**
+
 ```bash
 # With Suricata in IPS mode (detection + prevention)
 curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -s ips
@@ -99,16 +144,19 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/instal
 **Step 1: Open Terminal**
 
 **Step 2: Set Environment Variable**
+
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
 ```
 
 **Step 3: Run the Installer**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash
 ```
 
 **Optional: Install with Specific Options**
+
 ```bash
 # With Suricata in IPS mode
 curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -s ips
@@ -122,26 +170,32 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/instal
 ### Windows
 
 **Step 1: Open PowerShell as Administrator**
+
 - Right-click on PowerShell
 - Select "Run as Administrator"
 
 **Step 2: Set Execution Policy (First Time Only)**
+
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
+
 When prompted, respond with `A` (Yes to All).
 
 **Step 3: Set Environment Variable**
+
 ```powershell
 $env:WAZUH_MANAGER = "wazuh.your-company.com"
 ```
 
 **Step 4: Run the Installer**
+
 ```powershell
 irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1 | iex
 ```
 
 **Alternative: Download and Run with Options**
+
 ```powershell
 # Download the installer
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.ps1" -OutFile "$env:TEMP\install.ps1"
@@ -171,7 +225,7 @@ The bootstrap installer protects you from tampered or malicious scripts:
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  1. Bootstrap script (install.sh) downloads                    │
+│  1. Bootstrap script (install.sh) detects OS                    │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -182,8 +236,9 @@ The bootstrap installer protects you from tampered or malicious scripts:
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  3. Downloads scripts/setup-agent.sh                           │
-│     (the full installation script)                             │
+│  3. Downloads OS-specific setup script:                        │
+│     - scripts/linux/setup-agent.sh (for Linux)                 │
+│     - scripts/macos/setup-agent.sh (for macOS)                 │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -201,6 +256,7 @@ The bootstrap installer protects you from tampered or malicious scripts:
 ```
 
 **What You See on Success:**
+
 ```
 [INFO] Wazuh Agent Bootstrap Installer
 [INFO] ================================
@@ -212,6 +268,7 @@ The bootstrap installer protects you from tampered or malicious scripts:
 ```
 
 **What You See if Tampering is Detected:**
+
 ```
 [ERROR] Checksum verification FAILED!
 [ERROR]   Expected: abc123def456...
@@ -232,16 +289,19 @@ After installation completes, you must enroll the agent with the Wazuh Manager.
 ### Step 1: Generate Enrollment URL
 
 **Linux:**
+
 ```bash
 sudo /var/ossec/bin/wazuh-cert-oauth2-client o-auth2
 ```
 
 **macOS:**
+
 ```bash
 sudo /Library/Ossec/bin/wazuh-cert-oauth2-client o-auth2
 ```
 
 **Windows:**
+
 ```powershell
 & 'C:\Program Files (x86)\ossec-agent\wazuh-cert-oauth2-client.exe' o-auth2
 ```
@@ -275,16 +335,19 @@ After reboot, verify the installation was successful:
 **Command Line:**
 
 Linux:
+
 ```bash
 sudo systemctl status wazuh-agent
 ```
 
 macOS:
+
 ```bash
 sudo /Library/Ossec/bin/wazuh-control status
 ```
 
 Windows:
+
 ```powershell
 Get-Service -Name "Wazuh"
 ```
@@ -292,16 +355,19 @@ Get-Service -Name "Wazuh"
 ### Check Logs
 
 Linux:
+
 ```bash
 sudo tail -20 /var/ossec/logs/ossec.log
 ```
 
 macOS:
+
 ```bash
 sudo tail -20 /Library/Ossec/logs/ossec.log
 ```
 
 Windows:
+
 ```powershell
 Get-Content 'C:\Program Files (x86)\ossec-agent\ossec.log' -Tail 20
 ```
@@ -309,11 +375,13 @@ Get-Content 'C:\Program Files (x86)\ossec-agent\ossec.log' -Tail 20
 ### Verify Security Tools
 
 **Yara:**
+
 ```bash
 yara -v
 ```
 
 **Suricata/Snort:**
+
 ```bash
 suricata -V
 # or
@@ -331,6 +399,7 @@ Contact your security administrator to confirm the agent appears in the Wazuh Ma
 ### "WAZUH_MANAGER is not set"
 
 Set the environment variable before running the installer:
+
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
 ```
@@ -346,12 +415,14 @@ export WAZUH_MANAGER="wazuh.your-company.com"
 ### Permission Denied
 
 **Linux/macOS:**
+
 ```bash
 # Run with sudo if needed
 sudo bash -c 'export WAZUH_MANAGER="wazuh.your-company.com" && curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash'
 ```
 
 **Windows:**
+
 - Ensure PowerShell is running as Administrator
 
 ### Agent Not Connecting
@@ -371,13 +442,20 @@ sudo bash -c 'export WAZUH_MANAGER="wazuh.your-company.com" && curl -fsSL https:
 
 ## Uninstallation
 
-### Linux/macOS
+### Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/uninstall-agent.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/linux/uninstall-agent.sh | sudo bash
+```
+
+### macOS
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/macos/uninstall-agent.sh | sudo bash
 ```
 
 Options:
+
 - `-s` - Uninstall Suricata
 - `-n` - Uninstall Snort
 
@@ -397,6 +475,7 @@ Reboot after uninstallation.
 ### Remove from Wazuh Manager
 
 Contact your security administrator to remove the agent from the Wazuh Manager database:
+
 ```bash
 /var/ossec/bin/manage_agents -r <AGENT_ID>
 ```
@@ -416,6 +495,7 @@ Contact your security administrator to remove the agent from the Wazuh Manager d
 ## Support
 
 For issues or questions:
+
 1. Check the troubleshooting section above
 2. Review the agent logs
 3. Contact your security team
