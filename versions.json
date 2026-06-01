@@ -40,7 +40,7 @@
       "max_compatible": "0.3.99"
     },
     "wazuh-agent-status": {
-      "version": "0.4.3",
+      "version": "0.5.0",
       "repository": "ADORSYS-GIS/wazuh-agent-status",
       "min_compatible": "0.1.0",
       "max_compatible": "0.2.99"
