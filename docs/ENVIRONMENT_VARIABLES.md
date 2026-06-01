@@ -4,50 +4,49 @@ This document describes all environment variables used by the Wazuh Agent instal
 
 ## Required Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
+| Variable        | Description                                 | Example             |
+| --------------- | ------------------------------------------- | ------------------- |
 | `WAZUH_MANAGER` | Hostname or IP address of the Wazuh Manager | `wazuh.company.com` |
 
 ## Core Agent Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `WAZUH_MANAGER` | `wazuh.example.com` | Wazuh Manager address (hostname or IP) |
-| `WAZUH_AGENT_VERSION` | `4.13.1-1` | Wazuh Agent version to install |
-| `WAZUH_AGENT_NAME` | `$(hostname)` | Agent registration name |
-| `WAZUH_AGENT_GROUP` | *(none)* | Agent group for enrollment |
+| Variable              | Default             | Description                            |
+| --------------------- | ------------------- | -------------------------------------- |
+| `WAZUH_MANAGER`       | `wazuh.example.com` | Wazuh Manager address (hostname or IP) |
+| `WAZUH_AGENT_VERSION` | `4.14.4-1`          | Wazuh Agent version to install         |
+| `WAZUH_AGENT_NAME`    | `$(hostname)`       | Agent registration name                |
+| `WAZUH_AGENT_GROUP`   | _(none)_            | Agent group for enrollment             |
 
 ## Component Versions
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `WAZUH_AGENT_REPO_VERSION` | `1.8.0` | Version of this installer repository |
-| `WOPS_VERSION` | `0.4.1` | Wazuh Cert OAuth2 client version |
-| `WAZUH_AGENT_STATUS_VERSION` | `0.4.1-rc4-user` | Wazuh Agent Status tool version |
-| `WAZUH_YARA_VERSION` | `0.3.11` | Wazuh Yara integration version |
-| `WAZUH_SNORT_VERSION` | `0.2.4` | Wazuh Snort integration version |
-| `WAZUH_SURICATA_VERSION` | `0.1.4` | Wazuh Suricata integration version |
+| Variable                     | Default          | Description                          |
+| ---------------------------- | ---------------- | ------------------------------------ |
+| `WAZUH_AGENT_REPO_VERSION`   | `1.9.0-rc.1`     | Version of this installer repository |
+| `WOPS_VERSION`               | `0.4.3`          | Wazuh Cert OAuth2 client version     |
+| `WAZUH_AGENT_STATUS_VERSION` | `0.4.3`          | Wazuh Agent Status tool version      |
+| `WAZUH_YARA_VERSION`         | `0.4.2`          | Wazuh Yara integration version       |
+| `WAZUH_SURICATA_VERSION`     | `0.2.1`          | Wazuh Suricata integration version   |
 
 ## Application Settings
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `APP_NAME` | `wazuh-cert-oauth2-client` | OAuth2 client application name |
-| `LOG_LEVEL` | `INFO` | Logging verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| Variable    | Default                    | Description                                             |
+| ----------- | -------------------------- | ------------------------------------------------------- |
+| `APP_NAME`  | `wazuh-cert-oauth2-client` | OAuth2 client application name                          |
+| `LOG_LEVEL` | `INFO`                     | Logging verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
 
 ## Path Configuration
 
-| Variable | Default (Linux) | Default (macOS) | Default (Windows) |
-|----------|-----------------|-----------------|-------------------|
-| `OSSEC_PATH` | `/var/ossec/etc` | `/Library/Ossec/etc` | `C:\Program Files (x86)\ossec-agent\` |
+| Variable          | Default (Linux)             | Default (macOS)                 | Default (Windows)                               |
+| ----------------- | --------------------------- | ------------------------------- | ----------------------------------------------- |
+| `OSSEC_PATH`      | `/var/ossec/etc`            | `/Library/Ossec/etc`            | `C:\Program Files (x86)\ossec-agent\`           |
 | `OSSEC_CONF_PATH` | `/var/ossec/etc/ossec.conf` | `/Library/Ossec/etc/ossec.conf` | `C:\Program Files (x86)\ossec-agent\ossec.conf` |
 
 ## User/Group Configuration (Linux/macOS)
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `USER` | `root` | User for file ownership |
-| `GROUP` | `wazuh` | Group for file ownership |
+| Variable | Default | Description              |
+| -------- | ------- | ------------------------ |
+| `USER`   | `root`  | User for file ownership  |
+| `GROUP`  | `wazuh` | Group for file ownership |
 
 ## Usage Examples
 
@@ -55,16 +54,32 @@ This document describes all environment variables used by the Wazuh Agent instal
 
 ```bash
 export WAZUH_MANAGER="wazuh.mycompany.com"
-./scripts/setup-agent.sh
+./install.sh
+```
+
+### OS-Specific Direct Installation
+
+```bash
+# Linux-specific installation
+export WAZUH_MANAGER="wazuh.mycompany.com"
+./scripts/linux/setup-agent.sh
+
+# macOS-specific installation
+export WAZUH_MANAGER="wazuh.mycompany.com"
+./scripts/macos/setup-agent.sh
+
+# Windows-specific installation (PowerShell)
+$env:WAZUH_MANAGER = "wazuh.mycompany.com"
+.\scripts\windows\setup-agent.ps1
 ```
 
 ### Custom Version Installation
 
 ```bash
 export WAZUH_MANAGER="wazuh.mycompany.com"
-export WAZUH_AGENT_VERSION="4.12.0-1"
-export WAZUH_YARA_VERSION="0.3.10"
-./scripts/setup-agent.sh
+export WAZUH_AGENT_VERSION="4.14.4-1"
+export WAZUH_YARA_VERSION="0.4.2"
+./scripts/linux/setup-agent.sh  # or ./scripts/macos/setup-agent.sh
 ```
 
 ### Debug Mode Installation
@@ -72,31 +87,31 @@ export WAZUH_YARA_VERSION="0.3.10"
 ```bash
 export WAZUH_MANAGER="wazuh.mycompany.com"
 export LOG_LEVEL="DEBUG"
-./scripts/setup-agent.sh
+./scripts/linux/setup-agent.sh  # or ./scripts/macos/setup-agent.sh
 ```
 
 ### Windows Installation (PowerShell)
 
 ```powershell
 $env:WAZUH_MANAGER = "wazuh.mycompany.com"
-$env:WAZUH_AGENT_VERSION = "4.13.1-1"
-.\scripts\setup-agent.ps1 -InstallSuricata
+$env:WAZUH_AGENT_VERSION = "4.14.4-1"
+.\scripts\windows\setup-agent.ps1 -InstallSuricata
 ```
 
 ### With Specific NIDS Configuration
 
 ```bash
-# Install with Suricata in IPS mode
+# Install with Suricata in IPS mode (Linux)
 export WAZUH_MANAGER="wazuh.mycompany.com"
-./scripts/setup-agent.sh -s ips
+./scripts/linux/setup-agent.sh -s ips
 
-# Install with Snort
+# Install with Snort (macOS)
 export WAZUH_MANAGER="wazuh.mycompany.com"
-./scripts/setup-agent.sh -n
+./scripts/macos/setup-agent.sh -n
 
-# Install with Trivy vulnerability scanner
+# Install with Trivy vulnerability scanner (Linux)
 export WAZUH_MANAGER="wazuh.mycompany.com"
-./scripts/setup-agent.sh -s ids -t
+./scripts/linux/setup-agent.sh -s ids -t
 ```
 
 ## Validation Rules
@@ -113,7 +128,7 @@ export WAZUH_MANAGER="wazuh.mycompany.com"
 
 - **Format:** `X.Y.Z` or `X.Y.Z-N` where X, Y, Z, N are integers
 - **Examples:**
-  - Valid: `4.13.1-1`, `0.3.11`, `1.0.0`
+  - Valid: `4.14.4-1`, `0.3.11`, `1.0.0`
   - Invalid: `v4.13.1`, `4.13`, `latest`
 
 ### LOG_LEVEL
@@ -165,6 +180,7 @@ ERROR: Invalid version format: v4.13.1
 ```
 
 **Solution:** Remove 'v' prefix:
+
 ```bash
-export WAZUH_AGENT_VERSION="4.13.1-1"  # Correct
+export WAZUH_AGENT_VERSION="4.14.4-1"  # Correct
 ```
