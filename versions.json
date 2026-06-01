@@ -4,44 +4,43 @@
   "description": "Wazuh Agent deployment framework version compatibility matrix",
   "framework": {
     "version": "1.8.0",
-    "release_date": "2026-02-17",
-    "min_supported": "1.4.0",
-    "prerelease_version": ""
+    "release_date": "2026-02-26",
+    "min_supported": "1.4.0"
   },
   "components": {
     "wazuh-agent": {
-      "version": "4.13.1-1",
+      "version": "4.14.4-1",
       "repository": "wazuh/wazuh",
       "min_compatible": "4.10.0",
       "max_compatible": "4.99.99",
       "documentation": "https://documentation.wazuh.com/current/release-notes/"
     },
     "wazuh-yara": {
-      "version": "0.3.11",
+      "version": "0.4.2",
       "repository": "ADORSYS-GIS/wazuh-yara",
       "min_compatible": "0.3.0",
       "max_compatible": "0.4.99"
     },
     "wazuh-suricata": {
-      "version": "0.1.4",
+      "version": "0.2.1",
       "repository": "ADORSYS-GIS/wazuh-suricata",
       "min_compatible": "0.1.0",
       "max_compatible": "0.2.99"
     },
     "wazuh-snort": {
-      "version": "0.2.4",
+      "version": "main",
       "repository": "ADORSYS-GIS/wazuh-snort",
       "min_compatible": "0.2.0",
       "max_compatible": "0.3.99"
     },
     "wazuh-cert-oauth2": {
-      "version": "0.2.9",
+      "version": "0.4.3",
       "repository": "ADORSYS-GIS/wazuh-cert-oauth2",
       "min_compatible": "0.2.0",
       "max_compatible": "0.3.99"
     },
     "wazuh-agent-status": {
-      "version": "0.1.12",
+      "version": "0.4.3",
       "repository": "ADORSYS-GIS/wazuh-agent-status",
       "min_compatible": "0.1.0",
       "max_compatible": "0.2.99"
@@ -54,17 +53,36 @@
   },
   "platform_support": {
     "linux": {
-      "distributions": ["ubuntu", "debian", "rhel", "centos", "alpine", "opensuse"],
-      "architectures": ["x86_64", "arm64"]
+      "distributions": [
+        "ubuntu",
+        "debian",
+        "rhel",
+        "centos",
+        "alpine",
+        "opensuse"
+      ],
+      "architectures": [
+        "x86_64",
+        "arm64"
+      ]
     },
     "macos": {
       "min_version": "11.0",
-      "architectures": ["x86_64", "arm64"]
+      "architectures": [
+        "x86_64",
+        "arm64"
+      ]
     },
     "windows": {
       "min_version": "10",
-      "editions": ["Windows 10", "Windows 11", "Windows Server 2016+"],
-      "architectures": ["x86_64"]
+      "editions": [
+        "Windows 10",
+        "Windows 11",
+        "Windows Server 2016+"
+      ],
+      "architectures": [
+        "x86_64"
+      ]
     }
   },
   "environment_variables": {
@@ -89,5 +107,9 @@
       }
     }
   },
-  "prerelease_test_grouops": ["SIEM", "SOC", "Prerelease-Test"]
+  "prerelease_test_groups": [
+    "SIEM",
+    "SOC",
+    "Prerelease-Test"
+  ]
 }
