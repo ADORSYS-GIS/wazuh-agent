@@ -77,6 +77,10 @@ WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.4-1'}
 WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.4.3'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-'test-agent-name'}
 
+# NetBird configuration
+NETBIRD_MANAGEMENT_URL=${NETBIRD_MANAGEMENT_URL:-''}
+NETBIRD_SETUP_KEY=${NETBIRD_SETUP_KEY:-''}
+
 # Additional repo ref variables for other components
 WAZUH_CERT_OAUTH2_REPO_REF=${WAZUH_CERT_OAUTH2_REPO_REF:-"refs/tags/v$WOPS_VERSION"}
 WAZUH_YARA_REPO_REF=${WAZUH_YARA_REPO_REF:-"refs/tags/v$WAZUH_YARA_VERSION"}
@@ -128,12 +132,23 @@ help_message() {
     echo -e "  ${YELLOW}-t${NORMAL}         Optionally install ${BOLD}Trivy${NORMAL} for vulnerability scanning."
     echo -e "  ${YELLOW}-h${NORMAL}         Display this help message and exit."
     echo ""
+    echo -e "${BOLD}ENVIRONMENT VARIABLES:${NORMAL}"
+    echo "  NETBIRD_MANAGEMENT_URL   NetBird management server URL (optional)."
+    echo "  NETBIRD_SETUP_KEY    NetBird setup key for automated registration (optional)."
+    echo ""
+    echo "  If either NETBIRD_SETUP_KEY or NETBIRD_MANAGEMENT_URL is set, the NetBird agent will"
+    echo "  be installed and connected automatically."
+    echo ""
     echo -e "${BOLD}EXAMPLES:${NORMAL}"
     echo "  # Install all core components + Suricata (IDS mode) + Trivy:"
     echo "  ./setup-agent.sh -s ids -t"
     echo ""
     echo "  # Install all core components + Snort:"
     echo "  ./setup-agent.sh -n"
+    echo ""
+    echo "  # Install with NetBird:"
+    echo "  NETBIRD_SETUP_KEY=\"your-setup-key\" NETBIRD_MANAGEMENT_URL=\"https://netbird.example.com\" \\"
+    echo "    ./setup-agent.sh -s ids"
 }
 
 # ==============================================================================
@@ -371,7 +386,26 @@ else
     fi
 fi
 
-# Step 9: Download version file
+# Step 9: Install and configure NetBird agent (if both setup key and server URL are provided)
+if [[ -n "$NETBIRD_SETUP_KEY" ]] || [[ -n "$NETBIRD_MANAGEMENT_URL" ]]; then
+    if [[ -z "$NETBIRD_SETUP_KEY" ]] || [[ -z "$NETBIRD_MANAGEMENT_URL" ]]; then
+        warn_message "NetBird configuration incomplete: both NETBIRD_SETUP_KEY and NETBIRD_MANAGEMENT_URL must be set. Skipping NetBird installation."
+    else
+        info_message "Installing NetBird agent..."
+        if ! command_exists netbird; then
+            if ! download_file "https://pkgs.netbird.io/install.sh" "$TMP_FOLDER/netbird-install.sh" "NetBird install script"; then
+                error_exit "Failed to download NetBird install script"
+            fi
+            sh "$TMP_FOLDER/netbird-install.sh"
+        fi
+        if ! netbird up --setup-key "$NETBIRD_SETUP_KEY" --management-url "$NETBIRD_MANAGEMENT_URL"; then
+            error_exit "Failed to connect NetBird agent"
+        fi
+        success_message "NetBird agent installed and connected successfully."
+    fi
+fi
+
+# Step 10: Download version file
 info_message "Downloading version file..."
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_PATH/version.txt" "version.txt" "version file"
 info_message "Version file downloaded successfully."
