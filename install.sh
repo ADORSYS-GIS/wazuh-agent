@@ -17,7 +17,7 @@
 #   SKIP_VERIFY         - Set to "true" to skip checksum verification (not recommended)
 #
 
-set -e
+set -euo pipefail
 
 # =============================================================================
 # Configuration
@@ -31,28 +31,31 @@ CHECKSUMS_FILE="checksums.sha256"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+# Constant for extracting first field with awk
+AWK_PRINT_FIELD='{print $1}'
 BLUE='\033[1;34m'
+BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # =============================================================================
 # Functions
 # =============================================================================
 
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+# Function for logging with timestamp
+log() {
+    local level="$1"
+    shift
+    local message="$*"
+    local timestamp
+    timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+    echo -e "${timestamp} ${level} ${message}"
 }
 
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
+info_message() { log "${BLUE}${BOLD}[INFO]${NC}" "$*"; }
+warn_message() { log "${YELLOW}${BOLD}[WARNING]${NC}" "$*"; }
+error_message() { log "${RED}${BOLD}[ERROR]${NC}" "$*"; }
+success_message() { log "${GREEN}${BOLD}[SUCCESS]${NC}" "$*"; }
+error_exit() { error_message "$*"; exit 1; }
 
 # Detect OS type
 detect_os() {
@@ -61,7 +64,7 @@ detect_os() {
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "linux"
     else
-        echo "unknown"
+        error_exit "Unsupported operating system. Only linux and macos are supported."
     fi
 }
 
@@ -69,11 +72,11 @@ detect_os() {
 calculate_hash() {
     local file="$1"
     if command -v sha256sum >/dev/null 2>&1; then
-        sha256sum "$file" | awk '{print $1}'
+        sha256sum "$file" | awk "$AWK_PRINT_FIELD"
     elif command -v shasum >/dev/null 2>&1; then
-        shasum -a 256 "$file" | awk '{print $1}'
+        shasum -a 256 "$file" | awk "$AWK_PRINT_FIELD"
     else
-        log_error "No SHA256 tool available (sha256sum or shasum required)"
+        error_message "No SHA256 tool available (sha256sum or shasum required)"
         return 1
     fi
 }
@@ -87,16 +90,16 @@ verify_checksum() {
     actual=$(calculate_hash "$file")
 
     if [ "$actual" != "$expected" ]; then
-        log_error "Checksum verification FAILED!"
-        log_error "  Expected: $expected"
-        log_error "  Got:      $actual"
-        log_error ""
-        log_error "The downloaded file may have been tampered with."
-        log_error "Please report this to the security team immediately."
+        error_message "Checksum verification FAILED!"
+        error_message "  Expected: $expected"
+        error_message "  Got:      $actual"
+        error_message ""
+        error_message "The downloaded file may have been tampered with."
+        error_message "Please report this to the security team immediately."
         return 1
     fi
 
-    log_success "Checksum verified successfully"
+    success_message "Checksum verified successfully"
     return 0
 }
 
@@ -110,14 +113,14 @@ download_file() {
     elif command -v wget >/dev/null 2>&1; then
         wget -q "$url" -O "$dest"
     else
-        log_error "Neither curl nor wget is available"
+        error_message "Neither curl nor wget is available"
         return 1
     fi
 }
 
 # Cleanup on exit
 cleanup() {
-    if [ -n "$TMP_DIR" ] && [ -d "$TMP_DIR" ]; then
+    if [[ -n "$TMP_DIR" && -d "$TMP_DIR" ]]; then
         rm -rf "$TMP_DIR"
     fi
 }
@@ -129,69 +132,91 @@ trap cleanup EXIT
 # =============================================================================
 
 main() {
-    log_info "Wazuh Agent Bootstrap Installer"
-    log_info "================================"
+    info_message "Wazuh Agent Bootstrap Installer"
+    info_message "================================"
     echo ""
 
     # Check for WAZUH_MANAGER
-    if [ -z "$WAZUH_MANAGER" ] || [ "$WAZUH_MANAGER" = "wazuh.example.com" ]; then
-        log_warning "WAZUH_MANAGER is not set or using default placeholder"
-        log_warning "Please set WAZUH_MANAGER environment variable:"
-        log_warning "  export WAZUH_MANAGER=\"your-wazuh-manager.com\""
+    if [[ -z "$WAZUH_MANAGER" || "$WAZUH_MANAGER" == "wazuh.example.com" ]]; then
+        warn_message "WAZUH_MANAGER is not set or using default placeholder"
+        warn_message "Please set WAZUH_MANAGER environment variable:"
+        warn_message "  export WAZUH_MANAGER=\"your-wazuh-manager.com\""
         echo ""
     fi
 
     # Create temporary directory
     TMP_DIR=$(mktemp -d)
-    log_info "Using temporary directory: $TMP_DIR"
+    info_message "Using temporary directory: $TMP_DIR"
 
     # Determine URLs
-    local script_url="${REPO_URL}/${VERSION}/scripts/${SCRIPT_NAME}"
+    local os_type
+    os_type=$(detect_os)
+    local script_url="${REPO_URL}/${VERSION}/scripts/${os_type}/${SCRIPT_NAME}"
     local checksums_url="${REPO_URL}/${VERSION}/checksums.sha256"
 
     # Download checksums file
-    log_info "Downloading checksums..."
+    info_message "Downloading checksums..."
     if ! download_file "$checksums_url" "$TMP_DIR/$CHECKSUMS_FILE"; then
-        log_warning "Could not download checksums file"
+        warn_message "Could not download checksums file"
         if [ "$SKIP_VERIFY" != "true" ]; then
-            log_error "Verification required. Set SKIP_VERIFY=true to bypass (not recommended)"
-            exit 1
+            error_exit "Verification required. Set SKIP_VERIFY=true to bypass (not recommended)"
         fi
     fi
 
     # Download setup script
-    log_info "Downloading ${SCRIPT_NAME}..."
+    info_message "Downloading ${SCRIPT_NAME}..."
     if ! download_file "$script_url" "$TMP_DIR/$SCRIPT_NAME"; then
-        log_error "Failed to download ${SCRIPT_NAME}"
-        exit 1
+        error_exit "Failed to download ${SCRIPT_NAME}"
+    fi
+
+    # Download utils.sh (only if not available locally)
+    info_message "Checking for utils.sh..."
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [[ -f "$script_dir/scripts/shared/utils.sh" ]]; then
+        info_message "Using local utils.sh"
+        cp "$script_dir/scripts/shared/utils.sh" "$TMP_DIR/utils.sh"
+    else
+        info_message "Downloading utils.sh..."
+        if ! download_file "${REPO_URL}/${VERSION}/scripts/shared/utils.sh" "$TMP_DIR/utils.sh"; then
+            warn_message "Could not download utils.sh. Scripts might fail if not run from a full repository check-out."
+        fi
     fi
 
     # Verify checksum
-    if [ -f "$TMP_DIR/$CHECKSUMS_FILE" ] && [ "$SKIP_VERIFY" != "true" ]; then
-        log_info "Verifying script integrity..."
+    if [[ -f "$TMP_DIR/$CHECKSUMS_FILE" && "$SKIP_VERIFY" != "true" ]]; then
+        info_message "Verifying script integrity..."
 
-        # Extract expected checksum for setup-agent.sh
+        # Extract expected checksum for setup-agent.sh (anchored match to avoid partial filename matches)
         local expected_hash
-        expected_hash=$(grep "scripts/${SCRIPT_NAME}" "$TMP_DIR/$CHECKSUMS_FILE" | awk '{print $1}')
+        expected_hash=$(grep -E "[[:space:]]scripts/${os_type}/${SCRIPT_NAME}$" "$TMP_DIR/$CHECKSUMS_FILE" | awk "$AWK_PRINT_FIELD")
 
-        if [ -z "$expected_hash" ]; then
-            log_warning "No checksum found for ${SCRIPT_NAME} in checksums file"
-            log_warning "Proceeding without verification..."
+        if [[ -z "$expected_hash" ]]; then
+            warn_message "No checksum found for ${SCRIPT_NAME} in checksums file"
+            warn_message "Proceeding without verification..."
         else
             if ! verify_checksum "$TMP_DIR/$SCRIPT_NAME" "$expected_hash"; then
-                log_error "Aborting installation due to checksum mismatch"
-                exit 1
+                error_exit "Aborting installation due to checksum mismatch for ${SCRIPT_NAME}"
+            fi
+
+            # Verify utils.sh (anchored match)
+            local utils_hash
+            utils_hash=$(grep -E "[[:space:]]scripts/shared/utils\.sh$" "$TMP_DIR/$CHECKSUMS_FILE" | awk "$AWK_PRINT_FIELD")
+            if [[ -n "$utils_hash" ]] && [[ -f "$TMP_DIR/utils.sh" ]]; then
+                if ! verify_checksum "$TMP_DIR/utils.sh" "$utils_hash"; then
+                    error_exit "Aborting installation due to checksum mismatch for utils.sh"
+                fi
             fi
         fi
     elif [ "$SKIP_VERIFY" = "true" ]; then
-        log_warning "Skipping verification (SKIP_VERIFY=true)"
+        warn_message "Skipping verification (SKIP_VERIFY=true)"
     fi
 
     # Make executable
     chmod +x "$TMP_DIR/$SCRIPT_NAME"
 
     # Execute with any passed arguments
-    log_info "Executing ${SCRIPT_NAME}..."
+    info_message "Executing ${SCRIPT_NAME}..."
     echo ""
     echo "=============================================="
     echo ""
@@ -201,8 +226,7 @@ main() {
         if command -v sudo >/dev/null 2>&1; then
             sudo -E bash "$TMP_DIR/$SCRIPT_NAME" "$@"
         else
-            log_error "This script requires root privileges. Please run with sudo."
-            exit 1
+            error_exit "This script requires root privileges. Please run with sudo."
         fi
     else
         bash "$TMP_DIR/$SCRIPT_NAME" "$@"

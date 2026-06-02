@@ -2,6 +2,21 @@
 
 This guide walks you through the process of enrolling a Linux system with the Wazuh Manager. By following these steps, you will install and configure necessary components, ensuring secure communication between the Wazuh Agent and the Wazuh Manager.
 
+## Linux-Specific Scripts
+
+The installer now uses Linux-specific scripts located in the `scripts/linux/` directory:
+
+```
+scripts/linux/
+├── setup-agent.sh      # Full setup for Linux
+├── install.sh          # Core installation
+├── uninstall.sh        # Core uninstallation
+├── uninstall-agent.sh  # Complete uninstallation
+└── deps.sh             # Dependencies
+```
+
+You can use either the bootstrap installer (recommended) or run the Linux-specific scripts directly.
+
 ## Prerequisites
 
 - **Administrator Privileges:** Ensure you have sudo access.
@@ -14,7 +29,7 @@ This guide walks you through the process of enrolling a Linux system with the Wa
 
 ## Step by Step Process
 
-### Step 1: Download and Run the Verified Installer
+### Method 1: Bootstrap Installer (Recommended)
 
 The installer automatically verifies script integrity using SHA256 checksums before execution.
 
@@ -27,35 +42,71 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/instal
 ```
 
 **What happens:**
-1. Downloads the checksums file
-2. Downloads the setup script
+1. Detects Linux operating system
+2. Downloads the Linux-specific setup script (`scripts/linux/setup-agent.sh`)
 3. Verifies the SHA256 checksum matches
 4. Only executes if verification passes
 
+### Method 2: Direct Linux Script Usage
+
+You can also run the Linux-specific scripts directly:
+
+```bash
+# Set your Wazuh Manager address
+export WAZUH_MANAGER="wazuh.your-company.com"
+
+# Run the Linux-specific setup script directly
+./scripts/linux/setup-agent.sh
+```
+
 #### Installation Options
 
-**Default installation (Suricata IDS mode):**
+**Bootstrap Installer - Default (Suricata IDS mode):**
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
 curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash
 ```
 
-**With Suricata in IPS mode (detection + prevention):**
+**Bootstrap Installer - With Suricata in IPS mode:**
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
 curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -s ips
 ```
 
-**With Snort instead of Suricata:**
+**Bootstrap Installer - With Snort instead of Suricata:**
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
 curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -n
 ```
 
-**With Trivy for container vulnerability scanning:**
+**Bootstrap Installer - With Trivy for container vulnerability scanning:**
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
 curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -t
+```
+
+**Direct Linux Script - Default (Suricata IDS mode):**
+```bash
+export WAZUH_MANAGER="wazuh.your-company.com"
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash
+```
+
+**Direct Linux Script - With Suricata in IPS mode:**
+```bash
+export WAZUH_MANAGER="wazuh.your-company.com"
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -s ips
+```
+
+**Direct Linux Script - With Snort instead of Suricata:**
+```bash
+export WAZUH_MANAGER="wazuh.your-company.com"
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -n
+```
+
+**Direct Linux Script - With Trivy for container vulnerability scanning:**
+```bash
+export WAZUH_MANAGER="wazuh.your-company.com"
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -s ids -t
 ```
 
 **Show all options:**

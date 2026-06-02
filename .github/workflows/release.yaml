@@ -17,13 +17,58 @@ on:
       - main
       - develop
       - hotfix/**
-    paths-ignore: *paths-ignore         
+
+env:
+  WAZUH_AGENT_REPO_REF: refs/heads/chore/script-redirects
+  WAZUH_AGENT_STATUS_REPO_REF: refs/tags/v0.4.3
+  WAZUH_YARA_REPO_REF: refs/tags/v0.4.1
+  WAZUH_SURICATA_REPO_REF: refs/tags/v0.2.1
+  WAZUH_SNORT_REPO_REF: main
+  WAZUH_TRIVY_REPO_REF: main
+  WAZUH_CERT_OAUTH2_REPO_REF: refs/tags/v0.4.3
+  YARA_INSTALLATION_TYPE: server
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # ============================================
+  # Update Changelog and Checksums
+  # ============================================
+  update-changelog-and-checksums:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: "0"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Configure git user
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Generate script checksums
+        run: |
+          find scripts lib assets files version.txt -type f -exec sha256sum {} + > checksums.sha256
+          cat checksums.sha256
+
+      - name: Commit and push checksums
+        run: |
+          if [[ -n $(git status --porcelain checksums.sha256) ]]; then
+            git add checksums.sha256
+            git commit -m "chore: update checksums [skip ci]"
+            git push origin ${{ github.head_ref || github.ref_name }}
+          else
+            echo "No checksum changes to commit"
+          fi
+
   # ============================================
   # Release Please - Changelog & Version Management
   # ============================================
@@ -56,6 +101,7 @@ jobs:
         with:
           # Use PAT to bypass org restrictions on GITHUB_TOKEN creating PRs
           token: ${{ secrets.RELEASE_PAT }}
+          target-branch: ${{ github.ref_name }}
           config-file: ${{ steps.config.outputs.config_file }}
           manifest-file: ${{ steps.config.outputs.manifest_file }}
 
@@ -65,11 +111,70 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
           TAG="${{ steps.release.outputs.tag_name }}"
-          if echo "$TAG" | grep -qiE '-(rc|beta|alpha|dev|pre)'; then
+          if [[ "$TAG" =~ -(rc|beta|alpha|dev|pre) ]]; then
             echo "Marking $TAG as prerelease"
             gh release edit "$TAG" --prerelease
           else
             echo "$TAG is a stable release"
+          fi
+
+  # ============================================
+  # Manual Tag Release - For Pre-releases
+  # ============================================
+  manual-tag-release:
+    name: Manual Tag Release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    outputs:
+      tag_name: ${{ steps.get-tag.outputs.tag }}
+      is_prerelease: ${{ steps.check-prerelease.outputs.is_prerelease }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Get tag name
+        id: get-tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Check if prerelease
+        id: check-prerelease
+        run: |
+          TAG="${{ steps.get-tag.outputs.tag }}"
+          if [[ "$TAG" =~ -(rc|beta|alpha|dev|pre) ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "This is a pre-release: $TAG"
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "This is a stable release: $TAG"
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.get-tag.outputs.tag }}"
+          IS_PRERELEASE="${{ steps.check-prerelease.outputs.is_prerelease }}"
+
+          # Generate release notes from recent commits
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            NOTES=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+          else
+            NOTES=$(git log --pretty=format:"- %s" --no-merges -n 10)
+          fi
+
+          # Create release
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes "$NOTES" \
+              --prerelease
+          else
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes "$NOTES"
           fi
 
   # ============================================
@@ -80,7 +185,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install ShellCheck
         run: sudo apt-get install -y shellcheck
@@ -115,7 +220,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@master
@@ -138,7 +243,7 @@ jobs:
   test-unix:
     name: Test Unix (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: [lint]
+    needs: [update-changelog-and-checksums, lint]
     strategy:
       fail-fast: false
       matrix:
@@ -146,7 +251,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dependencies (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
@@ -161,7 +266,7 @@ jobs:
 
       - name: Make scripts executable
         run: |
-          chmod +x ./scripts/*.sh
+          chmod +x ./scripts/linux/*.sh ./scripts/macos/*.sh ./scripts/windows/*.ps1 ./scripts/shared/*.sh
           chmod +x ./lib/*.sh 2>/dev/null || true
 
       - name: Test verification library
@@ -182,13 +287,14 @@ jobs:
             exit 1
           fi
 
-      - name: Test install script
-        run: |
-          sudo ./scripts/install.sh
-
       - name: Test setup-agent script
         run: |
-          sudo ./scripts/setup-agent.sh
+          echo "Debug: WAZUH_AGENT_REPO_REF is $WAZUH_AGENT_REPO_REF"
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            sudo -E bash ./scripts/linux/setup-agent.sh
+          else
+            sudo -E bash ./scripts/macos/setup-agent.sh
+          fi
 
   # ============================================
   # Windows Testing
@@ -196,11 +302,11 @@ jobs:
   test-windows:
     name: Test Windows
     runs-on: windows-latest
-    needs: [lint]
+    needs: [update-changelog-and-checksums, lint]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Import verification module
         shell: pwsh
@@ -240,22 +346,23 @@ jobs:
         shell: pwsh
         run: |
           # Run deps script in dry-run mode if available, otherwise skip heavy installs
+          Write-Host "Debug: WAZUH_AGENT_REPO_REF is $env:WAZUH_AGENT_REPO_REF"
           Write-Host "Testing deps.ps1 syntax..."
-          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/deps.ps1 -Raw), [ref]$null)
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/windows/deps.ps1 -Raw), [ref]$null)
           Write-Host "✓ deps.ps1 syntax valid" -ForegroundColor Green
 
       - name: Test install script syntax
         shell: pwsh
         run: |
           Write-Host "Testing install.ps1 syntax..."
-          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/install.ps1 -Raw), [ref]$null)
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/windows/install.ps1 -Raw), [ref]$null)
           Write-Host "✓ install.ps1 syntax valid" -ForegroundColor Green
 
       - name: Test setup-agent script syntax
         shell: pwsh
         run: |
           Write-Host "Testing setup-agent.ps1 syntax..."
-          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/setup-agent.ps1 -Raw), [ref]$null)
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content ./scripts/windows/setup-agent.ps1 -Raw), [ref]$null)
           Write-Host "✓ setup-agent.ps1 syntax valid" -ForegroundColor Green
 
   # ============================================
@@ -267,20 +374,29 @@ jobs:
     needs: [test-unix, test-windows, security]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Verify all scripts present
         run: |
           echo "Checking required files..."
           required_files=(
-            "scripts/setup-agent.sh"
-            "scripts/setup-agent.ps1"
-            "scripts/install.sh"
-            "scripts/install.ps1"
-            "scripts/deps.sh"
-            "scripts/deps.ps1"
-            "scripts/uninstall.sh"
-            "scripts/uninstall.ps1"
+            "scripts/linux/setup-agent.sh"
+            "scripts/macos/setup-agent.sh"
+            "scripts/windows/setup-agent.ps1"
+            "scripts/linux/install.sh"
+            "scripts/macos/install.sh"
+            "scripts/windows/install.ps1"
+            "scripts/linux/deps.sh"
+            "scripts/macos/deps.sh"
+            "scripts/windows/deps.ps1"
+            "scripts/linux/uninstall.sh"
+            "scripts/macos/uninstall.sh"
+            "scripts/windows/uninstall.ps1"
+            "scripts/linux/setup-docker.sh"
+            "scripts/macos/setup-docker.sh"
+            "scripts/windows/setup-docker.ps1"
+            "scripts/shared/utils.sh"
+            "scripts/shared/utils.ps1"
             "lib/verify.sh"
             "lib/Verify.psm1"
           )
@@ -311,24 +427,32 @@ jobs:
     name: Upload Release Assets
     permissions: write-all
     runs-on: ubuntu-latest
-    needs: [release-please, integration]
-    if: needs.release-please.outputs.release_created == 'true'
+    needs: [release-please, manual-tag-release, integration]
+    if: |
+      always() &&
+      needs.integration.result == 'success' &&
+      (
+        (needs.release-please.result == 'success' && needs.release-please.outputs.release_created == 'true') ||
+        (needs.manual-tag-release.result == 'success')
+      )
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Generate checksums
+      - name: Determine tag name
+        id: tag
         run: |
-          echo "Generating SHA256 checksums..."
-          sha256sum install.sh Install.ps1 scripts/*.sh scripts/*.ps1 lib/*.sh lib/*.psm1 > checksums.sha256
-          echo "=== Checksums ==="
-          cat checksums.sha256
+          if [ "${{ needs.release-please.outputs.release_created }}" = "true" ]; then
+            echo "name=${{ needs.release-please.outputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "name=${{ needs.manual-tag-release.outputs.tag_name }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Upload checksums to release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          tag_name: ${{ steps.tag.outputs.name }}
           files: |
             checksums.sha256
             versions.json
@@ -336,9 +460,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update checksums in repository
+        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add checksums.sha256
-          git commit -m "chore: update checksums for ${{ needs.release-please.outputs.tag_name }}" || echo "No changes to commit"
+          git commit -m "chore: update checksums for ${{ steps.tag.outputs.name }}" || echo "No changes to commit"
           git push

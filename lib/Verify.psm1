@@ -225,7 +225,7 @@ function Test-HostConnectivity {
             $tcpClient.Close()
         }
         catch {
-            # Continue to next port
+            Write-Verbose "TCP connection to $HostAddress on port $port failed: $($_.Exception.Message)"
         }
     }
 
@@ -237,7 +237,7 @@ function Test-HostConnectivity {
         }
     }
     catch {
-        # Ping may be blocked
+        Write-Verbose "Ping connectivity test to $HostAddress failed: $($_.Exception.Message)"
     }
 
     Write-Warning "Cannot verify connectivity to $HostAddress"

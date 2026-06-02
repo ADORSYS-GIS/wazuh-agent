@@ -12,6 +12,8 @@
   "packages": {
     ".": {
       "release-type": "simple",
+      "prerelease": true,
+      "prerelease-type": "rc",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         {
@@ -23,14 +25,50 @@
     }
   },
   "changelog-sections": [
-    {"type": "feat", "section": "Features", "hidden": false},
-    {"type": "fix", "section": "Bug Fixes", "hidden": false},
-    {"type": "security", "section": "Security", "hidden": false},
-    {"type": "perf", "section": "Performance", "hidden": false},
-    {"type": "docs", "section": "Documentation", "hidden": false},
-    {"type": "chore", "section": "Miscellaneous", "hidden": true},
-    {"type": "refactor", "section": "Code Refactoring", "hidden": true},
-    {"type": "test", "section": "Tests", "hidden": true},
-    {"type": "ci", "section": "CI/CD", "hidden": true}
+    {
+      "type": "feat",
+      "section": "Features",
+      "hidden": false
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes",
+      "hidden": false
+    },
+    {
+      "type": "security",
+      "section": "Security",
+      "hidden": false
+    },
+    {
+      "type": "perf",
+      "section": "Performance",
+      "hidden": false
+    },
+    {
+      "type": "docs",
+      "section": "Documentation",
+      "hidden": false
+    },
+    {
+      "type": "chore",
+      "section": "Miscellaneous",
+      "hidden": true
+    },
+    {
+      "type": "refactor",
+      "section": "Code Refactoring",
+      "hidden": true
+    },
+    {
+      "type": "test",
+      "section": "Tests",
+      "hidden": true
+    },
+    {
+      "type": "ci",
+      "section": "CI/CD",
+      "hidden": true
+    }
   ]
 }
