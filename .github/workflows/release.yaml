@@ -6,6 +6,8 @@ on:
       - main
       - develop
       - hotfix/**
+    tags:
+      - v*
     paths-ignore: &paths-ignore
       - '**.md'
       - 'docs/**'
@@ -60,6 +62,7 @@ jobs:
           cat checksums.sha256
 
       - name: Commit and push checksums
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         run: |
           if [[ -n $(git status --porcelain checksums.sha256) ]]; then
             git add checksums.sha256
