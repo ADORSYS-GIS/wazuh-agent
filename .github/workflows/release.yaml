@@ -6,6 +6,8 @@ on:
       - main
       - develop
       - hotfix/**
+    tags:
+      - v*
   pull_request:
     branches:
       - main
