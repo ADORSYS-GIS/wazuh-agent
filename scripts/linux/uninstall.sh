@@ -3,7 +3,7 @@
 set -eu
 
 # Repository ref
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.1'}
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.5'}
 WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
 
 # Download utils.sh from repository
@@ -149,11 +149,11 @@ uninstall_agent() {
 cleanup_repo() {
     info_message "Removing repository and GPG key"
     if ! maybe_sudo rm -f "$REPO_FILE"; then
-        error_error "Failed to remove repository file"
+        error_exit "Failed to remove repository file"
     fi
 
     if [[ "$PACKAGE_MANAGER" = "apt" ]] && ! maybe_sudo rm -f "$GPG_KEY_FILE"; then
-        error_error "Failed to remove GPG key"
+        error_exit "Failed to remove GPG key"
     fi
 
     info_message "Repository and GPG key removed successfully."
@@ -163,7 +163,7 @@ cleanup_repo() {
 cleanup_files() { 
     info_message "Cleaning up remaining Wazuh files"
     if ! maybe_sudo rm -rf /var/ossec; then
-        error_error "Failed to remove Wazuh directory"
+        error_exit "Failed to remove Wazuh directory"
     fi
     info_message "Linux cleanup completed."
 }
@@ -201,7 +201,7 @@ verify_uninstallation() {
     fi
     
     if [ "$verification_failed" = true ]; then
-        error_error "Uninstallation verification failed - some components were not removed"
+        error_exit "Uninstallation verification failed - some components were not removed"
     else
         success_message "Uninstallation verification passed - all components removed successfully"
         return 0
@@ -222,7 +222,7 @@ case $(uname) in
             success_message "Wazuh agent uninstallation completed successfully."
             info_message "You can now reinstall Wazuh agent without conflicts."
         else
-            error_error "Uninstallation completed with issues. Manual cleanup may be required."
+            error_exit "Uninstallation completed with issues. Manual cleanup may be required."
         fi
         ;;
     *)

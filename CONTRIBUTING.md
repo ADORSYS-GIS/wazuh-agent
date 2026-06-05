@@ -128,7 +128,7 @@ Pre-releases (release candidates, beta versions) are created **manually** by pus
 
 Tags should follow semantic versioning with pre-release identifiers:
 
-- **Release Candidate**: `v1.9.0-rc.1`, `v1.9.0-rc.2`, etc.
+- **Release Candidate**: `v1.9.0-rc.5`, `v1.9.0-rc.2`, etc.
 - **Beta**: `v1.9.0-beta.1`, `v1.9.0-beta.2`, etc.
 - **Alpha**: `v1.9.0-alpha.1`, `v1.9.0-alpha.2`, etc.
 
@@ -152,13 +152,13 @@ Tags should follow semantic versioning with pre-release identifiers:
 3. **Create and push the tag**:
    ```bash
    # Create the tag locally
-   git tag v1.9.0-rc.1 -m "Release Candidate 1 for v1.9.0"
+   git tag v1.9.0-rc.5 -m "Release Candidate 1 for v1.9.0"
 
    # Push the tag to trigger CI/CD
-   git push upstream v1.9.0-rc.1
+   git push upstream v1.9.0-rc.5
    ```
 
-   > **Note**: Replace `v1.9.0-rc.1` with your desired version
+   > **Note**: Replace `v1.9.0-rc.5` with your desired version
 
 4. **What happens automatically**:
    - ✅ All tests run (lint, security, Unix, Windows, integration)
@@ -178,12 +178,12 @@ Users can test pre-releases by specifying the tag:
 
 ```bash
 # Linux/macOS
-export WAZUH_AGENT_REPO_REF=refs/tags/v1.9.0-rc.1
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/v1.9.0-rc.1/install.sh | bash
+export WAZUH_AGENT_REPO_REF=refs/tags/v1.9.0-rc.5
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/v1.9.0-rc.5/install.sh | bash
 
 # Windows
-$env:WAZUH_AGENT_REPO_REF = "refs/tags/v1.9.0-rc.1"
-irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/v1.9.0-rc.1/install.ps1 | iex
+$env:WAZUH_AGENT_REPO_REF = "refs/tags/v1.9.0-rc.5"
+irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/v1.9.0-rc.5/install.ps1 | iex
 ```
 
 ### Incrementing RC Versions
