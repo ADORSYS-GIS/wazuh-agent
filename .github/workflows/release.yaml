@@ -302,8 +302,7 @@ jobs:
     name: Upload Release Assets
     permissions: write-all
     runs-on: ubuntu-latest
-    needs: [release-please, integration]
-    if: needs.release-please.outputs.release_created == 'true'
+    needs: [integration]
 
     steps:
       - name: Checkout code
