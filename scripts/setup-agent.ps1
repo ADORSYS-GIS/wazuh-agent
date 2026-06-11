@@ -342,8 +342,10 @@ try {
     Install-Dependencies
     SectionSeparator "Installing Wazuh Agent"
     Install-WazuhAgent
-    SectionSeparator "Installing OAuth2Client"
-    Install-OAuth2Client
+    if ($env:INSTALL_CERT_AUTH -ne "FALSE") {
+        SectionSeparator "Installing OAuth2Client"
+        Install-OAuth2Client
+    }
     SectionSeparator "Installing Agent Status"
     Install-AgentStatus
     SectionSeparator "Installing Yara"

@@ -229,10 +229,12 @@ if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZ
 fi
 
 # Step 2: Download and install wazuh-cert-oauth2-client
-info_message "Installing wazuh-cert-oauth2-client"
-if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh") 2>&1; then
-    error_message "Failed to install 'wazuh-cert-oauth2-client'"
-    exit 1
+if [ "$INSTALL_CERT_AUTH" != "FALSE" ]; then
+    info_message "Installing wazuh-cert-oauth2-client"
+    if ! (maybe_sudo env LOG_LEVEL="$LOG_LEVEL" OSSEC_CONF_PATH=$OSSEC_CONF_PATH APP_NAME="$APP_NAME" WOPS_VERSION="$WOPS_VERSION" bash "$TMP_FOLDER/install-wazuh-cert-oauth2.sh") 2>&1; then
+        error_message "Failed to install 'wazuh-cert-oauth2-client'"
+        exit 1
+    fi
 fi
 
 # Step 3: Download and install wazuh-agent-status
