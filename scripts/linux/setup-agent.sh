@@ -71,7 +71,7 @@ LINUX_SCRIPT_PATH="scripts/linux/install.sh"
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.4-1'}
-WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.5.1'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.5.0-rc.12'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-'test-agent-name'}
 
 # Additional repo ref variables for other components
