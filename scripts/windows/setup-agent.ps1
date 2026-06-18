@@ -6,8 +6,15 @@ param(
 )
 
 # Source shared utilities
-if (-not $env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION = "1.9.0-rc.5" }
-if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "refs/tags/v$env:WAZUH_AGENT_REPO_VERSION" }
+if (-not $env:WAZUH_AGENT_REPO_VERSION)
+{
+    $env:WAZUH_AGENT_REPO_VERSION = "1.9.0-rc.5"
+}
+
+if (-not $env:WAZUH_AGENT_REPO_REF)
+{
+    $env:WAZUH_AGENT_REPO_REF = "refs/tags/v$env:WAZUH_AGENT_REPO_VERSION"
+}
 
 $UtilsTmp = Join-Path -Path $env:TEMP -ChildPath "wazuh_utils_$((Get-Date).Ticks)"
 New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
