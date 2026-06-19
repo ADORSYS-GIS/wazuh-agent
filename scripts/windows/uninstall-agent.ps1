@@ -105,21 +105,7 @@ if ($Help) {
     exit 0
 }
 
-# Step 1: Download and execute Wazuh agent uninstall script with error handling
-function Uninstall-WazuhAgent {
-    $UninstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/windows/uninstall.ps1"
-    $UninstallerPath = "$env:TEMP\uninstall-wazuh-agent.ps1"
-    $global:UninstallerFiles += $UninstallerPath
-    try {
-        Download-And-VerifyFile -Url $UninstallerURL -Destination $UninstallerPath -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Wazuh agent uninstall script" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
-        & powershell.exe -ExecutionPolicy Bypass -File $UninstallerPath -ErrorAction Stop
-    }
-    catch {
-        ErrorMessage "Error during Wazuh agent Uninstallation: $($_.Exception.Message)"
-    }
-}
-
-# Step 2: Download and Uninstall Wazuh Agent Status with error handling
+# Step 1: Download and Uninstall Wazuh Agent Status with error handling
 function Uninstall-AgentStatus {
     $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/$WAZUH_AGENT_STATUS_REPO_REF/scripts/windows/uninstall.ps1"
     $AgentStatusScript = "$env:TEMP\uninstall-agent-status.ps1"
@@ -133,7 +119,7 @@ function Uninstall-AgentStatus {
     }
 }
 
-# Step 3: Download and Uninstall YARA with error handling
+# Step 2: Download and Uninstall YARA with error handling
 function Uninstall-Yara {
     $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/windows/uninstall.ps1"
     $YaraScript = "$env:TEMP\uninstall-yara.ps1"
@@ -147,7 +133,7 @@ function Uninstall-Yara {
     }
 }
 
-# Step 4: Download and Uninstall Snort with error handling
+# Step 3: Download and Uninstall Snort with error handling
 function Uninstall-Snort {
     $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/scripts/windows/uninstall.ps1"
     $SnortScript = "$env:TEMP\uninstall-snort.ps1"
@@ -161,7 +147,7 @@ function Uninstall-Snort {
     }
 }
 
-# Step 5: Download and Uninstall Suricata with error handling
+# Step 4: Download and Uninstall Suricata with error handling
 function Uninstall-Suricata {
     $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/uninstall.ps1"
     $SuricataScript = "$env:TEMP\uninstall-suricata.ps1"
@@ -172,6 +158,20 @@ function Uninstall-Suricata {
     }
     catch {
         ErrorMessage "Error during Suricata Uninstallation: $($_.Exception.Message)"
+    }
+}
+
+# Step 5: Download and execute Wazuh agent uninstall script with error handling
+function Uninstall-WazuhAgent {
+    $UninstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/windows/uninstall.ps1"
+    $UninstallerPath = "$env:TEMP\uninstall-wazuh-agent.ps1"
+    $global:UninstallerFiles += $UninstallerPath
+    try {
+        Download-And-VerifyFile -Url $UninstallerURL -Destination $UninstallerPath -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Wazuh agent uninstall script" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
+        & powershell.exe -ExecutionPolicy Bypass -File $UninstallerPath -ErrorAction Stop
+    }
+    catch {
+        ErrorMessage "Error during Wazuh agent Uninstallation: $($_.Exception.Message)"
     }
 }
 
@@ -187,8 +187,6 @@ function Is-SuricataInstalled {
 
 # Main Execution wrapped in a try-finally to ensure cleanup runs even if errors occur.
 try {
-    SectionSeparator "Uninstalling Wazuh Agent"
-    Uninstall-WazuhAgent
     SectionSeparator "Uninstalling Agent Status"
     Uninstall-AgentStatus
     SectionSeparator "Uninstalling Yara"
@@ -201,6 +199,8 @@ try {
         SectionSeparator "Uninstalling Suricata"
         Uninstall-Suricata
     }
+    SectionSeparator "Uninstalling Wazuh Agent"
+    Uninstall-WazuhAgent
 }
 finally {
     InfoMessage "Cleaning up uninstaller files..."

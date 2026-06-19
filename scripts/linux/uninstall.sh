@@ -83,18 +83,6 @@ stop_service() {
     else
         warn_message "Wazuh service does not exist, skipping"
     fi
-
-    # Process cleanup (Prevents 'deluser' failure if other components are still running under the wazuh user)
-    if id -u "$WAZUH_USER" >/dev/null 2>&1; then
-        info_message "Checking for remaining processes owned by $WAZUH_USER..."
-        if pgrep -u "$WAZUH_USER" > /dev/null; then
-            maybe_sudo pkill -u "$WAZUH_USER" || true
-            sleep 2
-            if pgrep -u "$WAZUH_USER" > /dev/null; then
-                maybe_sudo pkill -9 -u "$WAZUH_USER" || true
-            fi
-        fi
-    fi
 }
 
 # Uninstall Wazuh agent
