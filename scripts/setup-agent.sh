@@ -211,13 +211,15 @@ info_message "Downloading core component scripts..."
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/deps.sh" > "$TMP_FOLDER/install-deps.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v$WAZUH_AGENT_REPO_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
-curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent-status.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-yara.sh"
 if [ "$(uname)" = "Linux" ]; then
+    WAZUH_AGENT_STATUS_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/linux/install.sh"
     DOCKER_SETUP_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v1.9.0-rc.5/scripts/linux/setup-docker.sh"
 else
+    WAZUH_AGENT_STATUS_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/macos/install.sh"
     DOCKER_SETUP_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v1.9.0-rc.5/scripts/macos/setup-docker.sh"
 fi
+curl -SL -s "$WAZUH_AGENT_STATUS_URL" > "$TMP_FOLDER/install-wazuh-agent-status.sh"
 curl -SL -s "$DOCKER_SETUP_URL" > "$TMP_FOLDER/setup-docker.sh"
 
 # Step 0: Install dependencies
