@@ -3,7 +3,7 @@
 set -eu
 
 # Repository ref
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.1'}
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.5'}
 WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
 
 # Download utils.sh from repository
@@ -120,12 +120,12 @@ config() {
         info_message "Configuring Wazuh agent with manager address $WAZUH_MANAGER in $OSSEC_CONF_PATH"
         # First remove <address till address>
         maybe_sudo sed_inplace '/<address>.*<\/address>/d' "$OSSEC_CONF_PATH" || {
-            error_error "Error occurred during old manager address removal."
+            error_exit "Error occurred during old manager address removal."
         }
 
         maybe_sudo sed_inplace "/<server=*/ a\
         <address>$WAZUH_MANAGER</address>" "$OSSEC_CONF_PATH" || {
-            error_error "Error occurred during insertion of latest manager address."
+            error_exit "Error occurred during insertion of latest manager address."
         }
     fi
   
@@ -134,7 +134,7 @@ config() {
         info_message "Removing manager_address block from $OSSEC_CONF_PATH"
         # Remove <manager_address> till </manager_address>
         maybe_sudo sed_inplace '/<manager_address>.*<\/manager_address>/d' "$OSSEC_CONF_PATH" || {
-            error_error "Error occurred during old manager address removal."
+            error_exit "Error occurred during old manager address removal."
         }
     fi
   
