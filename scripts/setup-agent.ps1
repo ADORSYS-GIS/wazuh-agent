@@ -1,6 +1,7 @@
 param(
     [switch]$InstallSnort,
     [switch]$InstallSuricata,
+    [switch]$CaptureDockerLogs,
     [switch]$Help
 )
 
@@ -17,7 +18,7 @@ $OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
 $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.11" }
 $WAZUH_SNORT_VERSION = if ($env:WAZUH_SNORT_VERSION) { $env:WAZUH_SNORT_VERSION } else { "0.2.4" }
-$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.4.1-rc4-user" }
+$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.0-rc.12" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.1" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.1.4" }
 $WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.8.0" }
@@ -272,6 +273,26 @@ function Install-USBDLPScripts {
     }
 }
 
+# Step 8: Setup Docker monitoring (only runs if Docker is installed)
+function Install-DockerListener {
+    $DockerSetupUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v1.9.0-rc.5/scripts/windows/setup-docker.ps1"
+    $DockerSetupScript = "$env:TEMP\setup-docker.ps1"
+    $global:InstallerFiles += $DockerSetupScript
+
+    try {
+        InfoMessage "Downloading and executing Docker listener setup script..."
+        Invoke-WebRequest -Uri $DockerSetupUrl -OutFile $DockerSetupScript -ErrorAction Stop
+        InfoMessage "Docker listener setup script downloaded successfully."
+        $argList = @()
+        if ($CaptureDockerLogs) { $argList += "-CaptureLogs" }
+        & powershell.exe -ExecutionPolicy Bypass -File $DockerSetupScript $argList -ErrorAction Stop
+        InfoMessage "Docker monitoring setup completed successfully."
+    }
+    catch {
+        ErrorMessage "Error during Docker listener setup: $($_.Exception.Message)"
+    }
+}
+
 function DownloadVersionFile {
     InfoMessage "Downloading version file..."
     if (!(Test-Path -Path $OSSEC_PATH)) {
@@ -289,13 +310,14 @@ function DownloadVersionFile {
 }
 
 function Show-Help {
-    Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-Help]" -ForegroundColor Cyan
+    Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-CaptureDockerLogs] [-Help]" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "This script automates the installation of various Wazuh components and related tools." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Parameters:" -ForegroundColor Cyan
     Write-Host "  -InstallSnort      : Installs Snort. Cannot be used with -InstallSuricata." -ForegroundColor Cyan
     Write-Host "  -InstallSuricata   : Installs Suricata. Cannot be used with -InstallSnort." -ForegroundColor Cyan
+    Write-Host "  -CaptureDockerLogs : Captures Docker logs. Default: false" -ForegroundColor Cyan
     Write-Host "  -Help              : Displays this help message." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Environment Variables (optional):" -ForegroundColor Cyan
@@ -312,6 +334,7 @@ function Show-Help {
     Write-Host "Examples:" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -InstallSnort" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
+    Write-Host "  .\setup-agent.ps1 -CaptureDockerLogs" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -Help" -ForegroundColor Cyan
     Write-Host "  $env:LOG_LEVEL='DEBUG'; .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
     Write-Host ""
@@ -362,6 +385,11 @@ try {
     }
     else {
         WarningMessage "Neither Snort nor Suricata selected for installation. Skipping."
+    }
+
+    if ($CaptureDockerLogs) {
+        SectionSeparator "Installing Docker listener"
+        Install-DockerListener
     }
 
     SectionSeparator "Installing USB DLP Scripts"

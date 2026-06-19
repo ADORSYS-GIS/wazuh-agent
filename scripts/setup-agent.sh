@@ -30,7 +30,7 @@ GROUP=${GROUP:-"wazuh"}
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.13.1-1'}
-WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.4.1-rc4-user'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.5.0-rc.12'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-test-agent-name}
 WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.0'}
 
@@ -213,6 +213,12 @@ curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/refs/tags/v$WOPS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-cert-oauth2.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/refs/tags/v$WAZUH_AGENT_STATUS_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-wazuh-agent-status.sh"
 curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/refs/tags/v$WAZUH_YARA_VERSION/scripts/install.sh" > "$TMP_FOLDER/install-yara.sh"
+if [ "$(uname)" = "Linux" ]; then
+    DOCKER_SETUP_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v1.9.0-rc.5/scripts/linux/setup-docker.sh"
+else
+    DOCKER_SETUP_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/tags/v1.9.0-rc.5/scripts/macos/setup-docker.sh"
+fi
+curl -SL -s "$DOCKER_SETUP_URL" > "$TMP_FOLDER/setup-docker.sh"
 
 # Step 0: Install dependencies
 info_message "Installing dependencies"
@@ -287,6 +293,14 @@ if [ "$(uname)" = "Darwin" ]; then
     AR_BIN_DIR="/Library/Ossec/active-response/bin"
 else
     AR_BIN_DIR="/var/ossec/active-response/bin"
+fi
+
+# Step 8: Setup Docker monitoring (only runs if Docker is installed)
+info_message "Setting up Docker monitoring (if Docker is present)..."
+if ! (maybe_sudo env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then
+    error_message "Failed to setup Docker monitoring"
+else
+    info_message "Docker monitoring setup completed successfully."
 fi
 
 # Create directory if it doesn't exist
