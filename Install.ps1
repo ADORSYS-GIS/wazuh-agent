@@ -25,7 +25,7 @@
 .NOTES
     Environment Variables:
       WAZUH_MANAGER       - Wazuh Manager address (required)
-      WAZUH_AGENT_VERSION - Agent version (default: 4.13.1-1)
+      WAZUH_AGENT_VERSION - Agent version (default: 4.14.4-1)
 #>
 
 param(
@@ -118,7 +118,7 @@ Parameters:
 
 Environment Variables:
   WAZUH_MANAGER       Wazuh Manager address (REQUIRED)
-  WAZUH_AGENT_VERSION Agent version (default: 4.13.1-1)
+  WAZUH_AGENT_VERSION Agent version (default: 4.14.4-1)
 
 Examples:
   # Set manager and run

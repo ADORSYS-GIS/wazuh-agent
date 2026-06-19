@@ -13,7 +13,7 @@
 #
 # Environment Variables:
 #   WAZUH_MANAGER       - Wazuh Manager address (required)
-#   WAZUH_AGENT_VERSION - Agent version (default: 4.13.1-1)
+#   WAZUH_AGENT_VERSION - Agent version (default: 4.14.4-1)
 #   SKIP_VERIFY         - Set to "true" to skip checksum verification (not recommended)
 #
 

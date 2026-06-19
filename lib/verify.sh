@@ -150,7 +150,7 @@ validate_manager_address() {
 
 # Validate version string format
 # Arguments:
-#   $1 - Version string (e.g., 4.13.1-1, 0.3.11)
+#   $1 - Version string (e.g., 4.14.4-1, 0.3.11)
 # Returns:
 #   0 if valid, 1 otherwise
 validate_version() {

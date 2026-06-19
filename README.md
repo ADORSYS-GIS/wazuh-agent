@@ -125,7 +125,7 @@ The installer automatically:
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `WAZUH_MANAGER` | **Yes** | `wazuh.example.com` | Wazuh Manager hostname or IP |
-| `WAZUH_AGENT_VERSION` | No | `4.13.1-1` | Wazuh Agent version |
+| `WAZUH_AGENT_VERSION` | No | `4.14.4-1` | Wazuh Agent version |
 | `WAZUH_AGENT_NAME` | No | `$(hostname)` | Agent registration name |
 
 See [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) for the complete reference.

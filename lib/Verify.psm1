@@ -165,7 +165,7 @@ function Test-VersionFormat {
     .SYNOPSIS
         Validates version string format
     .PARAMETER Version
-        Version string (e.g., 4.13.1-1, 0.3.11)
+        Version string (e.g., 4.14.4-1, 0.3.11)
     .RETURNS
         $true if valid, $false otherwise
     #>

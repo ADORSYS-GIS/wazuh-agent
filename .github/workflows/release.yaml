@@ -159,7 +159,7 @@ jobs:
         run: |
           source ./lib/verify.sh
           # Test validate_version function
-          if validate_version "4.13.1-1"; then
+          if validate_version "4.14.4-1"; then
             echo "✓ Valid version test passed"
           else
             echo "✗ Valid version test failed"
@@ -204,7 +204,7 @@ jobs:
           Import-Module ./lib/Verify.psm1 -Force
 
           # Test valid version
-          if (Test-VersionFormat -Version "4.13.1-1") {
+          if (Test-VersionFormat -Version "4.14.4-1") {
             Write-Host "✓ Valid version test passed" -ForegroundColor Green
           } else {
             Write-Host "✗ Valid version test failed" -ForegroundColor Red
