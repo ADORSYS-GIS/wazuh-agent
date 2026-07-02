@@ -6,7 +6,15 @@ param(
 )
 
 # Source shared utilities
-if (-not $env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF = "main" }
+if (-not $env:WAZUH_AGENT_REPO_VERSION)
+{
+    $env:WAZUH_AGENT_REPO_VERSION = "1.9.0-rc.5"
+}
+
+if (-not $env:WAZUH_AGENT_REPO_REF)
+{
+    $env:WAZUH_AGENT_REPO_REF = "refs/tags/v$env:WAZUH_AGENT_REPO_VERSION"
+}
 
 $UtilsTmp = Join-Path -Path $env:TEMP -ChildPath "wazuh_utils_$((Get-Date).Ticks)"
 New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
@@ -45,14 +53,14 @@ $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION 
 $OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
 $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.4.1" }
-$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.4.3" }
+$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.0-rc.12" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.3" }
 
 # NetBird configuration
 $NETBIRD_MANAGEMENT_URL = if ($env:NETBIRD_MANAGEMENT_URL) { $env:NETBIRD_MANAGEMENT_URL } else { "" }
 $NETBIRD_SETUP_KEY = if ($env:NETBIRD_SETUP_KEY) { $env:NETBIRD_SETUP_KEY } else { "" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.1" }
-$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.9.0-rc.1" }
+$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.9.0-rc.5" }
 $WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
 
 # Additional repo ref variables for other components

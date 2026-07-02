@@ -3,7 +3,7 @@
 set -eu
 
 # Repository ref
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.1'}
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.5'}
 WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
 
 # Download utils.sh from repository
@@ -53,8 +53,7 @@ LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 WOPS_VERSION=${WOPS_VERSION:-"0.4.3"}
 WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.4.1"}
 WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.2.1"}
-WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-"0.4.3"}
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.1'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-"0.5.0-rc.12"}
 
 # Repo ref variables for components
 WAZUH_CERT_OAUTH2_REPO_REF=${WAZUH_CERT_OAUTH2_REPO_REF:-"refs/tags/v$WOPS_VERSION"}
@@ -156,55 +155,55 @@ if [ "$UNINSTALL_TRIVY" = "TRUE" ]; then
     download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/${LINUX_SCRIPT_PATH}" "$TMP_FOLDER/uninstall-trivy.sh" "${LINUX_SCRIPT_PATH}" "Trivy uninstall script" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/checksums.sha256"
 fi
 
-# Step 1: Uninstall Wazuh agent
-print_step 1 "Uninstalling Wazuh agent..."
-if ! (maybe_sudo bash "$TMP_FOLDER/uninstall-wazuh-agent.sh") 2>&1; then
-    error_exit "Failed to uninstall wazuh-agent"
-fi
-
-# Step 2: Uninstall wazuh-agent-status
-print_step 2 "Uninstalling wazuh-agent-status..."
+# Step 1: Uninstall wazuh-agent-status
+print_step 1 "Uninstalling wazuh-agent-status..."
 if ! (bash "$TMP_FOLDER/uninstall-wazuh-agent-status.sh") 2>&1; then
     error_exit "Failed to uninstall 'wazuh-agent-status'"
 fi
 
-# Step 3: Uninstall yara
-print_step 3 "Uninstalling yara..."
+# Step 2: Uninstall yara
+print_step 2 "Uninstalling yara..."
 if ! (bash "$TMP_FOLDER/uninstall-yara.sh") 2>&1; then
     error_exit "Failed to uninstall 'yara'"
 fi
 
-# Step 4: Uninstall IDS engines if present
+# Step 3: Uninstall IDS engines if present
 if command_exists suricata; then
-    print_step 4 "Uninstalling suricata..."
+    print_step 3 "Uninstalling suricata..."
     if ! (bash "$TMP_FOLDER/uninstall-suricata.sh") 2>&1; then
         error_exit "Failed to uninstall 'suricata'"
     fi
 fi
 
 if command_exists snort; then
-    print_step 4 "Uninstalling snort..."
+    print_step 3 "Uninstalling snort..."
     if ! (bash "$TMP_FOLDER/uninstall-snort.sh") 2>&1; then
         error_exit "Failed to uninstall 'snort'"
     fi
 fi
 
-# Step 5: Uninstall Trivy if the flag is set
+# Step 4: Uninstall Trivy if the flag is set
 if [ "$UNINSTALL_TRIVY" = "TRUE" ]; then
-    print_step 5 "Uninstalling trivy..."
+    print_step 4 "Uninstalling trivy..."
     if ! (bash "$TMP_FOLDER/uninstall-trivy.sh") 2>&1; then
         error_exit "Failed to uninstall 'trivy'"
     fi
 fi
 
-# Step 6: Remove Docker listener virtual environment
+# Step 5: Remove Docker listener virtual environment
 VENV_DIR="${VENV_DIR:-/opt/wazuh-docker-env}"
 if [ -d "$VENV_DIR" ]; then
-    print_step 6 "Removing Docker listener virtual environment..."
+    print_step 5 "Removing Docker listener virtual environment..."
     maybe_sudo rm -rf "$VENV_DIR"
     info_message "Docker listener virtual environment removed."
 else
     info_message "No Docker listener virtual environment found. Skipping."
+fi
+
+# Step 6: Uninstall Wazuh agent
+print_step 6 "Uninstalling Wazuh agent..."
+if ! (maybe_sudo bash "$TMP_FOLDER/uninstall-wazuh-agent.sh") 2>&1; then
+    error_exit "Failed to uninstall wazuh-agent"
 fi
 
 success_message "Uninstallation completed successfully."

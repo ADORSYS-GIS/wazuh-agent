@@ -3,15 +3,15 @@
 set -eu
 
 # Repository ref
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.1'}
-WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"main"}
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.9.0-rc.5'}
+WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
 
 # Create a secure temporary directory for utilities
 TMP_FOLDER="$(mktemp -d)"
 trap 'rm -rf "$TMP_FOLDER"' EXIT
 
 # Download utils.sh from repository
-if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$TMP_FOLDER/utils.sh"; then
+if ! curl -fsSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$TMP_FOLDER/utils.sh"; then
     echo "Failed to download utils.sh"
     exit 1
 fi
@@ -29,7 +29,7 @@ calculate_sha256_bootstrap() {
 
 # 1. Download checksums
 echo "Downloading checksums..."
-if ! curl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" -o "$TMP_FOLDER/checksums.sha256"; then
+if ! curl -fsSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" -o "$TMP_FOLDER/checksums.sha256"; then
     echo "Failed to download checksums.sha256"
     exit 1
 fi
@@ -71,7 +71,7 @@ LINUX_SCRIPT_PATH="scripts/linux/install.sh"
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.4-1'}
-WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.4.3'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.5.0-rc.12'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-'test-agent-name'}
 
 # NetBird configuration
