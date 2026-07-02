@@ -75,8 +75,7 @@ WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.5.0-rc.12'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-'test-agent-name'}
 
 # NetBird configuration
-NETBIRD_MANAGEMENT_URL=${NETBIRD_MANAGEMENT_URL:-''}
-NETBIRD_SETUP_KEY=${NETBIRD_SETUP_KEY:-''}
+INSTALL_NETBIRD=${INSTALL_NETBIRD:-''}
 
 # Additional repo ref variables for other components
 WAZUH_CERT_OAUTH2_REPO_REF=${WAZUH_CERT_OAUTH2_REPO_REF:-"refs/tags/v$WOPS_VERSION"}
@@ -130,11 +129,9 @@ help_message() {
     echo -e "  ${YELLOW}-h${NORMAL}         Display this help message and exit."
     echo ""
     echo -e "${BOLD}ENVIRONMENT VARIABLES:${NORMAL}"
-    echo "  NETBIRD_MANAGEMENT_URL   NetBird management server URL (optional)."
-    echo "  NETBIRD_SETUP_KEY    NetBird setup key for automated registration (optional)."
+    echo "  INSTALL_NETBIRD     Set to '1' to install the NetBird client (optional)."
     echo ""
-    echo "  If either NETBIRD_SETUP_KEY or NETBIRD_MANAGEMENT_URL is set, the NetBird agent will"
-    echo "  be installed and connected automatically."
+    echo "  If INSTALL_NETBIRD is set, the NetBird client will be installed (without enrollment)."
     echo ""
     echo -e "${BOLD}EXAMPLES:${NORMAL}"
     echo "  # Install all core components + Suricata (IDS mode) + Trivy:"
@@ -144,7 +141,7 @@ help_message() {
     echo "  ./setup-agent.sh -n"
     echo ""
     echo "  # Install with NetBird:"
-    echo "  NETBIRD_SETUP_KEY=\"your-setup-key\" NETBIRD_MANAGEMENT_URL=\"https://netbird.example.com\" \\"
+    echo "  INSTALL_NETBIRD=1 \\"
     echo "    ./setup-agent.sh -s ids"
 }
 
@@ -361,22 +358,17 @@ else
     fi
 fi
 
-# Step 9: Install and configure NetBird agent (if both setup key and server URL are provided)
-if [[ -n "$NETBIRD_SETUP_KEY" ]] || [[ -n "$NETBIRD_MANAGEMENT_URL" ]]; then
-    if [[ -z "$NETBIRD_SETUP_KEY" ]] || [[ -z "$NETBIRD_MANAGEMENT_URL" ]]; then
-        warn_message "NetBird configuration incomplete: both NETBIRD_SETUP_KEY and NETBIRD_MANAGEMENT_URL must be set. Skipping NetBird installation."
+# Step 9: Install NetBird client (if requested)
+if [[ "$INSTALL_NETBIRD" == "1" ]]; then
+    info_message "Installing NetBird client..."
+    if command_exists netbird; then
+        success_message "NetBird client is already installed."
     else
-        info_message "Installing NetBird agent..."
-        if ! command_exists netbird; then
-            if ! download_file "https://pkgs.netbird.io/install.sh" "$TMP_FOLDER/netbird-install.sh" "NetBird install script"; then
-                error_exit "Failed to download NetBird install script"
-            fi
-            sh "$TMP_FOLDER/netbird-install.sh"
+        if ! download_file "https://pkgs.netbird.io/install.sh" "$TMP_FOLDER/netbird-install.sh" "NetBird install script"; then
+            error_exit "Failed to download NetBird install script"
         fi
-        if ! netbird up --setup-key "$NETBIRD_SETUP_KEY" --management-url "$NETBIRD_MANAGEMENT_URL"; then
-            error_exit "Failed to connect NetBird agent"
-        fi
-        success_message "NetBird agent installed and connected successfully."
+        sh "$TMP_FOLDER/netbird-install.sh"
+        success_message "NetBird client installed successfully."
     fi
 fi
 

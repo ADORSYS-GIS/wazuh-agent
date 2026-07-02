@@ -57,8 +57,7 @@ $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.3" }
 
 # NetBird configuration
-$NETBIRD_MANAGEMENT_URL = if ($env:NETBIRD_MANAGEMENT_URL) { $env:NETBIRD_MANAGEMENT_URL } else { "" }
-$NETBIRD_SETUP_KEY = if ($env:NETBIRD_SETUP_KEY) { $env:NETBIRD_SETUP_KEY } else { "" }
+$INSTALL_NETBIRD = if ($env:INSTALL_NETBIRD) { $env:INSTALL_NETBIRD } else { "" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.1" }
 $WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.9.0-rc.5" }
 $WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
@@ -324,28 +323,17 @@ function DownloadVersionFile {
 }
 
 function Install-NetBirdAgent {
-    $hasKey = -not [string]::IsNullOrWhiteSpace($NETBIRD_SETUP_KEY)
-    $hasUrl = -not [string]::IsNullOrWhiteSpace($NETBIRD_MANAGEMENT_URL)
-
-    if (-not $hasKey -and -not $hasUrl) {
+    if ([string]::IsNullOrWhiteSpace($INSTALL_NETBIRD) -or $INSTALL_NETBIRD -ne "1") {
         return
     }
 
-    if (-not $hasKey -or -not $hasUrl) {
-        WarningMessage "NetBird configuration incomplete: both NETBIRD_SETUP_KEY and NETBIRD_MANAGEMENT_URL must be set. Skipping NetBird installation."
-        return
-    }
-
-    InfoMessage "Installing NetBird agent..."
+    InfoMessage "Installing NetBird client..."
     try {
         $installerUrl = "https://pkgs.netbird.io/windows/x64"
         $installerPath = "$env:TEMP\netbird-installer.exe"
         Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing -ErrorAction Stop
         Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait -ErrorAction Stop
-
-        & "netbird" "up", "--setup-key", $NETBIRD_SETUP_KEY, "--management-url", $NETBIRD_MANAGEMENT_URL
-        if ($LASTEXITCODE -ne 0) { throw "netbird up failed" }
-        SuccessMessage "NetBird agent installed and connected successfully."
+        SuccessMessage "NetBird client installed successfully."
     }
     catch {
         ErrorMessage "Error during NetBird installation: $($_.Exception.Message)"
@@ -371,11 +359,9 @@ function Show-Help {
     Write-Host "  WAZUH_SURICATA_VERSION: Sets the Wazuh Suricata module version. Default: $WAZUH_SURICATA_VERSION" -ForegroundColor Cyan
     Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: $WAZUH_AGENT_STATUS_VERSION" -ForegroundColor Cyan
     Write-Host "  WOPS_VERSION       : Sets the WOPS client version. Default: $WOPS_VERSION" -ForegroundColor Cyan
-    Write-Host "  NETBIRD_MANAGEMENT_URL : NetBird management server URL (optional)." -ForegroundColor Cyan
-    Write-Host "  NETBIRD_SETUP_KEY  : NetBird setup key for automated registration (optional)." -ForegroundColor Cyan
+    Write-Host "  INSTALL_NETBIRD    : Set to '1' to install the NetBird client (optional)." -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  If either NETBIRD_SETUP_KEY or NETBIRD_MANAGEMENT_URL is set, the NetBird agent will" -ForegroundColor Cyan
-    Write-Host "  be installed and connected automatically." -ForegroundColor Cyan
+    Write-Host "  If INSTALL_NETBIRD is set, the NetBird client will be installed (without enrollment)." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Examples:" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -InstallSnort" -ForegroundColor Cyan
