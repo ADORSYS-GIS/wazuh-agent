@@ -77,8 +77,6 @@ WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.4-1'}
 WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.5.0-rc.12'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-'test-agent-name'}
 
-# NetBird configuration
-INSTALL_NETBIRD=${INSTALL_NETBIRD:-''}
 
 # Additional repo ref variables for other components
 WAZUH_CERT_OAUTH2_REPO_REF=${WAZUH_CERT_OAUTH2_REPO_REF:-"refs/tags/v$WOPS_VERSION"}
@@ -92,6 +90,7 @@ WAZUH_AGENT_STATUS_REPO_REF=${WAZUH_AGENT_STATUS_REPO_REF:-"refs/tags/v$WAZUH_AG
 IDS_ENGINE=""
 SURICATA_MODE=""
 INSTALL_TRIVY="FALSE"
+INSTALL_NETBIRD="FALSE"
 
 cleanup() {
     # Remove temporary folder
@@ -121,7 +120,7 @@ help_message() {
     echo "    and can optionally include a vulnerability scanner."
     echo ""
     echo -e "${BOLD}USAGE:${NORMAL}"
-    echo "  ./setup-agent.sh [-s <mode> | -n] [-t] [-h]"
+    echo "  ./setup-agent.sh [-s <mode> | -n] [-t] [-b] [-h]"
     echo ""
     echo -e "${BOLD}OPTIONS:${NORMAL}"
     echo -e "  ${YELLOW}-s <mode>${NORMAL}  Install ${BOLD}Suricata${NORMAL}. The <mode> must be 'ids' (detection) or 'ips' (prevention)."
@@ -129,12 +128,8 @@ help_message() {
     echo -e "  ${YELLOW}-n${NORMAL}         Install ${BOLD}Snort${NORMAL} as the NIDS engine."
     echo -e "              (Cannot be used with -s)"
     echo -e "  ${YELLOW}-t${NORMAL}         Optionally install ${BOLD}Trivy${NORMAL} for vulnerability scanning."
+    echo -e "  ${YELLOW}-b${NORMAL}         Optionally install ${BOLD}NetBird${NORMAL} as the VPN/mesh-network client."
     echo -e "  ${YELLOW}-h${NORMAL}         Display this help message and exit."
-    echo ""
-    echo -e "${BOLD}ENVIRONMENT VARIABLES:${NORMAL}"
-    echo "  INSTALL_NETBIRD     Set to '1' to install the NetBird client (optional)."
-    echo ""
-    echo "  If INSTALL_NETBIRD is set, the NetBird client will be installed (without enrollment)."
     echo ""
     echo -e "${BOLD}EXAMPLES:${NORMAL}"
     echo "  # Install all core components + Suricata (IDS mode) + Trivy:"
@@ -143,9 +138,8 @@ help_message() {
     echo "  # Install all core components + Snort:"
     echo "  ./setup-agent.sh -n"
     echo ""
-    echo "  # Install with NetBird:"
-    echo "  INSTALL_NETBIRD=1 \\"
-    echo "    ./setup-agent.sh -s ids"
+    echo "  # Install all core components + Suricata (IDS mode) + NetBird:"
+    echo "  ./setup-agent.sh -s ids -b"
 }
 
 # ==============================================================================
@@ -155,7 +149,7 @@ help_message() {
 # Provide a non-interactive default for NIDS selection (default: suricata)
 default_nids=$SURICATA_ENGINE
 
-while getopts "s:nth" opt; do
+while getopts "s:ntbh" opt; do
     case ${opt} in
         s)
             IDS_ENGINE=$SURICATA_ENGINE
@@ -171,6 +165,9 @@ while getopts "s:nth" opt; do
             ;;
         t)
             INSTALL_TRIVY="TRUE"
+            ;;
+        b)
+            INSTALL_NETBIRD="TRUE"
             ;;
         h)
             help_message
@@ -384,7 +381,7 @@ else
 fi
 
 # Step 9: Install NetBird client (if requested)
-if [[ "$INSTALL_NETBIRD" == "1" ]]; then
+if [ "$INSTALL_NETBIRD" = "TRUE" ]; then
     info_message "Installing NetBird client..."
     if command_exists netbird; then
         success_message "NetBird client is already installed."
@@ -392,7 +389,9 @@ if [[ "$INSTALL_NETBIRD" == "1" ]]; then
         if ! download_file "https://pkgs.netbird.io/install.sh" "$TMP_FOLDER/netbird-install.sh" "NetBird install script"; then
             error_exit "Failed to download NetBird install script"
         fi
-        sh "$TMP_FOLDER/netbird-install.sh"
+        if ! sh "$TMP_FOLDER/netbird-install.sh" < /dev/null; then
+            error_exit "Failed to install NetBird client"
+        fi
         success_message "NetBird client installed successfully."
     fi
 fi

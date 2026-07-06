@@ -1,6 +1,7 @@
 param(
     [switch]$InstallSnort,
     [switch]$InstallSuricata,
+    [switch]$InstallNetBird,
     [switch]$CaptureDockerLogs,
     [switch]$Help
 )
@@ -56,8 +57,6 @@ $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } e
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.0-rc.12" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.3" }
 
-# NetBird configuration
-$INSTALL_NETBIRD = if ($env:INSTALL_NETBIRD) { $env:INSTALL_NETBIRD } else { "" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.1" }
 $WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.9.0-rc.5" }
 $WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
@@ -323,7 +322,7 @@ function DownloadVersionFile {
 }
 
 function Install-NetBirdAgent {
-    if ([string]::IsNullOrWhiteSpace($INSTALL_NETBIRD) -or $INSTALL_NETBIRD -ne "1") {
+    if (-not $InstallNetBird) {
         return
     }
 
@@ -341,13 +340,14 @@ function Install-NetBirdAgent {
 }
 
 function Show-Help {
-    Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-Help]" -ForegroundColor Cyan
+    Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-InstallNetBird] [-Help]" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "This script automates the installation of various Wazuh components and related tools." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Parameters:" -ForegroundColor Cyan
     Write-Host "  -InstallSnort      : Installs Snort. Cannot be used with -InstallSuricata." -ForegroundColor Cyan
     Write-Host "  -InstallSuricata   : Installs Suricata. Cannot be used with -InstallSnort." -ForegroundColor Cyan
+    Write-Host "  -InstallNetBird    : Optionally installs the NetBird VPN/mesh-network client." -ForegroundColor Cyan
     Write-Host "  -Help              : Displays this help message." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Environment Variables (optional):" -ForegroundColor Cyan
@@ -359,13 +359,11 @@ function Show-Help {
     Write-Host "  WAZUH_SURICATA_VERSION: Sets the Wazuh Suricata module version. Default: $WAZUH_SURICATA_VERSION" -ForegroundColor Cyan
     Write-Host "  WAZUH_AGENT_STATUS_VERSION: Sets the Wazuh Agent Status module version. Default: $WAZUH_AGENT_STATUS_VERSION" -ForegroundColor Cyan
     Write-Host "  WOPS_VERSION       : Sets the WOPS client version. Default: $WOPS_VERSION" -ForegroundColor Cyan
-    Write-Host "  INSTALL_NETBIRD    : Set to '1' to install the NetBird client (optional)." -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "  If INSTALL_NETBIRD is set, the NetBird client will be installed (without enrollment)." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Examples:" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -InstallSnort" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
+    Write-Host "  .\setup-agent.ps1 -InstallSuricata -InstallNetBird" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -Help" -ForegroundColor Cyan
     Write-Host "  $env:LOG_LEVEL='DEBUG'; .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
     Write-Host ""
@@ -447,8 +445,10 @@ try {
     SectionSeparator "Setting up Docker Monitoring"
     Install-DockerListener
 
-    SectionSeparator "Installing NetBird Agent"
-    Install-NetBirdAgent
+    if ($InstallNetBird) {
+        SectionSeparator "Installing NetBird Agent"
+        Install-NetBirdAgent
+    }
 
     SectionSeparator "Downloading Version File"
     DownloadVersionFile
