@@ -9,7 +9,7 @@ param(
 # Source shared utilities
 if (-not $env:WAZUH_AGENT_REPO_VERSION)
 {
-    $env:WAZUH_AGENT_REPO_VERSION = "1.9.0-rc.5"
+    $env:WAZUH_AGENT_REPO_VERSION = "1.8.1"
 }
 
 if (-not $env:WAZUH_AGENT_REPO_REF)
@@ -54,11 +54,11 @@ $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION 
 $OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
 $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.4.1" }
-$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.0-rc.12" }
+$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.1" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.3" }
 
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.1" }
-$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.9.0-rc.5" }
+$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.8.1" }
 $WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
 
 # Additional repo ref variables for other components
