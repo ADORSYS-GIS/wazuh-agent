@@ -69,6 +69,7 @@ WAZUH_AGENT_STATUS_REPO_REF=${WAZUH_AGENT_STATUS_REPO_REF:-"refs/tags/v$WAZUH_AG
 
 # Uninstall choice variables
 UNINSTALL_TRIVY="FALSE"
+UNINSTALL_NETBIRD="FALSE"
 
 LINUX_SCRIPT_PATH="scripts/linux/uninstall.sh"
 TMP_FOLDER="$(mktemp -d)"
@@ -101,26 +102,32 @@ help_message() {
     printf "%s\n" "    - Suricata (if installed)"
     printf "\n"
     printf "%b\n" "  ${YELLOW}CONFIGURABLE COMPONENTS (User Choice):${NORMAL}"
-    printf "%s\n" "    You can optionally include a vulnerability scanner."
+    printf "%s\n" "    You can optionally include a vulnerability scanner and a VPN/mesh client."
     printf "\n"
     printf "%b\n" "${BOLD}USAGE:${NORMAL}"
-    printf "%s\n" "  ./uninstall-agent.sh [-t] [-h]"
+    printf "%s\n" "  ./uninstall-agent.sh [-t] [-b] [-h]"
     printf "\n"
     printf "%b\n" "${BOLD}OPTIONS:${NORMAL}"
     printf "%b\n" "  ${YELLOW}-t${NORMAL}         Optionally uninstall ${BOLD}Trivy${NORMAL}."
+    printf "%b\n" "  ${YELLOW}-b${NORMAL}         Optionally uninstall ${BOLD}NetBird${NORMAL} (VPN/mesh-network client)."
     printf "%b\n" "  ${YELLOW}-h${NORMAL}         Display this help message and exit."
     printf "\n"
     printf "%b\n" "${BOLD}EXAMPLES:${NORMAL}"
     printf "%s\n" "  # Uninstall all core components + Trivy:"
     printf "%s\n" "  ./uninstall-agent.sh -t"
+    printf "%s\n" "  # Uninstall all core components + NetBird:"
+    printf "%s\n" "  ./uninstall-agent.sh -b"
     printf "\n"
 }
 
-# Only -t and -h options remain
-while getopts "th" opt; do
+# Only -t, -b and -h options remain
+while getopts "tbh" opt; do
     case ${opt} in
         t)
             UNINSTALL_TRIVY="TRUE"
+            ;;
+        b)
+            UNINSTALL_NETBIRD="TRUE"
             ;;
         h)
             help_message
@@ -204,8 +211,41 @@ else
     info_message "No Docker listener virtual environment found. Skipping."
 fi
 
-# Step 6: Uninstall Wazuh agent
-print_step 6 "Uninstalling Wazuh agent..."
+# Step 6: Uninstall NetBird if the flag is set
+if [ "$UNINSTALL_NETBIRD" = "TRUE" ]; then
+    print_step 6 "Uninstalling NetBird..."
+    if command_exists netbird; then
+        # Stop and remove the daemon via NetBird's own service CLI
+        maybe_sudo netbird service stop || warn_message "netbird service stop failed; continuing"
+        maybe_sudo netbird service uninstall || warn_message "netbird service uninstall failed; continuing"
+
+        # Detect package manager (inline; utils.sh has no detect_distro)
+        if [ -f /etc/debian_version ]; then
+            maybe_sudo apt-get remove --purge -y netbird netbird-ui || warn_message "apt netbird remove failed; continuing"
+            maybe_sudo rm -f /etc/apt/sources.list.d/netbird.list
+            maybe_sudo rm -f /usr/share/keyrings/netbird-archive-keyring.gpg
+        elif [ -f /etc/redhat-release ]; then
+            if command_exists dnf; then
+                maybe_sudo dnf remove -y netbird netbird-ui || warn_message "dnf netbird remove failed; continuing"
+            else
+                maybe_sudo yum remove -y netbird netbird-ui || warn_message "yum netbird remove failed; continuing"
+            fi
+            maybe_sudo rm -f /etc/yum.repos.d/netbird.repo
+        elif [ -f /etc/SuSE-release ] || [ -d /etc/zypp/repos.d ]; then
+            maybe_sudo zypper rm -y netbird netbird-ui || warn_message "zypper netbird remove failed; continuing"
+            maybe_sudo zypper removerepo netbird || warn_message "zypper removerepo netbird failed; continuing"
+        else
+            warn_message "Unsupported distro for NetBird package removal; removing binary if present"
+            maybe_sudo rm -f /usr/bin/netbird /usr/bin/netbird-ui
+        fi
+        success_message "NetBird uninstalled."
+    else
+        info_message "NetBird not found; skipping."
+    fi
+fi
+
+# Step 7: Uninstall Wazuh agent
+print_step 7 "Uninstalling Wazuh agent..."
 if ! (maybe_sudo bash "$TMP_FOLDER/uninstall-wazuh-agent.sh") 2>&1; then
     error_exit "Failed to uninstall wazuh-agent"
 fi

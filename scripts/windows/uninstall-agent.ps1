@@ -1,6 +1,7 @@
-# Parameters for Trivy uninstallation only
+# Parameters for Trivy and NetBird uninstallation
 param(
     [switch]$UninstallTrivy,
+    [switch]$UninstallNetBird,
     [switch]$Help
 )
 
@@ -76,11 +77,13 @@ function Cleanup-Uninstallers {
 
 # Help Function
 function Show-Help {
-    Write-Host "Usage:  .\uninstall-agent.ps1 [-UninstallTrivy] [-Help]" -ForegroundColor Cyan
+    Write-Host "Usage:  .\uninstall-agent.ps1 [-UninstallTrivy] [-UninstallNetBird] [-Help]" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "This script automates the uninstallation of various Wazuh components and related tools." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Parameters:" -ForegroundColor Cyan
+    Write-Host "  -UninstallTrivy        : Optionally uninstalls the Trivy vulnerability scanner." -ForegroundColor Cyan
+    Write-Host "  -UninstallNetBird       : Optionally uninstalls the NetBird VPN/mesh-network client." -ForegroundColor Cyan
     Write-Host "  -Help                  : Displays this help message." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Environment Variables (optional):" -ForegroundColor Cyan
@@ -161,7 +164,46 @@ function Uninstall-Suricata {
     }
 }
 
-# Step 5: Download and execute Wazuh agent uninstall script with error handling
+# Step 5: Download and Uninstall NetBird with error handling
+function Uninstall-NetBird {
+    if (-not $UninstallNetBird) { return }
+
+    SectionSeparator "Uninstalling NetBird"
+    # NetBird NSIS installer uses lowercase 'b' in registry key and install dir.
+    $regKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Netbird"
+    $uninstallExe = "C:\Program Files\Netbird\netbird_uninstall.exe"
+    $detected = $false
+
+    if (Test-Path $regKey) { $detected = $true }
+    elseif (Test-Path $uninstallExe) { $detected = $true }
+
+    if (-not $detected) {
+        InfoMessage "NetBird not found; skipping."
+        return
+    }
+
+    try {
+        # Silent uninstall via the NSIS uninstaller (/S).
+        # The uninstaller itself runs `netbird service stop` + `netbird service uninstall`.
+        if (Test-Path $uninstallExe) {
+            Start-Process -FilePath $uninstallExe -ArgumentList "/S" -Wait -ErrorAction Stop
+        } else {
+            # Fall back to the registry UninstallString
+            $uninstallStr = (Get-ItemProperty $regKey).UninstallString
+            if ($uninstallStr) { Start-Process -FilePath $uninstallStr -ArgumentList "/S" -Wait -ErrorAction Stop }
+        }
+        # Silent uninstall preserves C:\ProgramData\Netbird; purge explicitly.
+        if (Test-Path "C:\ProgramData\Netbird") {
+            Remove-Item -Recurse -Force "C:\ProgramData\Netbird" -ErrorAction SilentlyContinue
+        }
+        SuccessMessage "NetBird uninstalled successfully."
+    }
+    catch {
+        ErrorMessage "Error during NetBird uninstallation: $($_.Exception.Message)"
+    }
+}
+
+# Step 6: Download and execute Wazuh agent uninstall script with error handling
 function Uninstall-WazuhAgent {
     $UninstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/windows/uninstall.ps1"
     $UninstallerPath = "$env:TEMP\uninstall-wazuh-agent.ps1"
@@ -199,6 +241,7 @@ try {
         SectionSeparator "Uninstalling Suricata"
         Uninstall-Suricata
     }
+    Uninstall-NetBird
     SectionSeparator "Uninstalling Wazuh Agent"
     Uninstall-WazuhAgent
 }
