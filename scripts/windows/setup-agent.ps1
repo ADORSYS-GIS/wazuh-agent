@@ -1,6 +1,7 @@
 param(
     [switch]$InstallSnort,
     [switch]$InstallSuricata,
+    [switch]$InstallNetBird,
     [switch]$CaptureDockerLogs,
     [switch]$Help
 )
@@ -312,14 +313,33 @@ function DownloadVersionFile {
     }
 }
 
+function Install-NetBirdAgent {
+    if (-not $InstallNetBird) {
+        return
+    }
+
+    InfoMessage "Installing NetBird client..."
+    try {
+        $installerUrl = "https://pkgs.netbird.io/windows/x64"
+        $installerPath = "$env:TEMP\netbird-installer.exe"
+        Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing -ErrorAction Stop
+        Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait -ErrorAction Stop
+        SuccessMessage "NetBird client installed successfully."
+    }
+    catch {
+        ErrorMessage "Error during NetBird installation: $($_.Exception.Message)"
+    }
+}
+
 function Show-Help {
-    Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-Help]" -ForegroundColor Cyan
+    Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-InstallNetBird] [-Help]" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "This script automates the installation of various Wazuh components and related tools." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Parameters:" -ForegroundColor Cyan
     Write-Host "  -InstallSnort      : Installs Snort. Cannot be used with -InstallSuricata." -ForegroundColor Cyan
     Write-Host "  -InstallSuricata   : Installs Suricata. Cannot be used with -InstallSnort." -ForegroundColor Cyan
+    Write-Host "  -InstallNetBird    : Optionally installs the NetBird VPN/mesh-network client." -ForegroundColor Cyan
     Write-Host "  -Help              : Displays this help message." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Environment Variables (optional):" -ForegroundColor Cyan
@@ -335,6 +355,7 @@ function Show-Help {
     Write-Host "Examples:" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -InstallSnort" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
+    Write-Host "  .\setup-agent.ps1 -InstallSuricata -InstallNetBird" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -Help" -ForegroundColor Cyan
     Write-Host "  $env:LOG_LEVEL='DEBUG'; .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
     Write-Host ""
@@ -415,6 +436,11 @@ try {
 
     SectionSeparator "Setting up Docker Monitoring"
     Install-DockerListener
+
+    if ($InstallNetBird) {
+        SectionSeparator "Installing NetBird Agent"
+        Install-NetBirdAgent
+    }
 
     SectionSeparator "Downloading Version File"
     DownloadVersionFile
