@@ -396,7 +396,36 @@ if [ "$INSTALL_NETBIRD" = "TRUE" ]; then
     fi
 fi
 
-# Step 10: Download version file
+# Step 10: Install Velociraptor client
+install_velociraptor() {
+    info_message "Installing Velociraptor client..."
+    local VR_VERSION="v0.77.1"
+    local OS_ARCH=$(uname -m)
+    local VR_BIN_URL=""
+    
+    if [ "$OS_ARCH" = "x86_64" ]; then
+        VR_BIN_URL="https://github.com/Velocidex/velociraptor/releases/download/${VR_VERSION}/velociraptor-${VR_VERSION}-darwin-amd64"
+    elif [ "$OS_ARCH" = "arm64" ]; then
+        VR_BIN_URL="https://github.com/Velocidex/velociraptor/releases/download/${VR_VERSION}/velociraptor-${VR_VERSION}-darwin-arm64"
+    else
+        warn_message "Unsupported architecture for Velociraptor: $OS_ARCH"
+        return 0
+    fi
+
+    local VR_DIR="/opt/velociraptor"
+    maybe_sudo mkdir -p "$VR_DIR"
+    
+    if ! maybe_sudo curl -fsSL "$VR_BIN_URL" -o "$VR_DIR/velociraptor"; then
+        error_message "Failed to download Velociraptor binary"
+        return 1
+    fi
+    maybe_sudo chmod +x "$VR_DIR/velociraptor"
+    success_message "Velociraptor binary placed in $VR_DIR"
+}
+
+install_velociraptor
+
+# Step 11: Download version file
 info_message "Downloading version file..."
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_PATH/version.txt" "version.txt" "version file"
 info_message "Version file downloaded successfully."

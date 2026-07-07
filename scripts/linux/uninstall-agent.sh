@@ -240,8 +240,17 @@ if [ "$UNINSTALL_NETBIRD" = "TRUE" ]; then
     fi
 fi
 
-# Step 7: Uninstall Wazuh agent
-print_step 7 "Uninstalling Wazuh agent..."
+# Step 7: Uninstall Velociraptor
+print_step 7 "Uninstalling Velociraptor..."
+if [ -d "/opt/velociraptor" ]; then
+    maybe_sudo rm -rf /opt/velociraptor
+    info_message "Velociraptor directory removed."
+else
+    info_message "Velociraptor not found. Skipping."
+fi
+
+# Step 8: Uninstall Wazuh agent
+print_step 8 "Uninstalling Wazuh agent..."
 if ! (maybe_sudo bash "$TMP_FOLDER/uninstall-wazuh-agent.sh") 2>&1; then
     error_exit "Failed to uninstall wazuh-agent"
 fi

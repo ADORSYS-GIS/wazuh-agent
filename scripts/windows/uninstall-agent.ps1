@@ -203,7 +203,24 @@ function Uninstall-NetBird {
     }
 }
 
-# Step 6: Download and execute Wazuh agent uninstall script with error handling
+# Step 7: Uninstall Velociraptor
+function Uninstall-Velociraptor {
+    SectionSeparator "Uninstalling Velociraptor"
+    $VR_DIR = "C:\Program Files\Velociraptor"
+    if (Test-Path -Path $VR_DIR) {
+        try {
+            Remove-Item -Path $VR_DIR -Recurse -Force
+            SuccessMessage "Velociraptor directory removed successfully"
+        }
+        catch {
+            ErrorMessage "Failed to remove Velociraptor directory: $($_.Exception.Message)"
+        }
+    } else {
+        InfoMessage "Velociraptor directory not found; skipping."
+    }
+}
+
+# Step 8: Download and execute Wazuh agent uninstall script with error handling
 function Uninstall-WazuhAgent {
     $UninstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/windows/uninstall.ps1"
     $UninstallerPath = "$env:TEMP\uninstall-wazuh-agent.ps1"
@@ -242,6 +259,7 @@ try {
         Uninstall-Suricata
     }
     Uninstall-NetBird
+    Uninstall-Velociraptor
     SectionSeparator "Uninstalling Wazuh Agent"
     Uninstall-WazuhAgent
 }

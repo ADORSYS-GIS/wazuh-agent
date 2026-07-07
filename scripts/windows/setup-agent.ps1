@@ -339,6 +339,30 @@ function Install-NetBirdAgent {
     }
 }
 
+function Install-Velociraptor {
+    $VR_VERSION = "v0.77.1"
+    $VR_DIR = "C:\Program Files\Velociraptor"
+    $VR_BIN = Join-Path $VR_DIR "velociraptor.exe"
+    $VR_BIN_URL = "https://github.com/Velocidex/velociraptor/releases/download/$VR_VERSION/velociraptor-$VR_VERSION-windows-amd64.exe"
+
+    try {
+        InfoMessage "Installing Velociraptor client..."
+        if (-not (Test-Path $VR_DIR)) {
+            New-Item -ItemType Directory -Path $VR_DIR -Force | Out-Null
+        }
+
+        Invoke-WebRequest -Uri $VR_BIN_URL -OutFile $VR_BIN -ErrorAction Stop
+        if (-not (Test-Path $VR_BIN)) {
+            throw "Downloaded binary not found."
+        }
+        
+        SuccessMessage "Velociraptor binary placed successfully in $VR_DIR."
+    }
+    catch {
+        ErrorMessage "Error during Velociraptor installation: $($_.Exception.Message)"
+    }
+}
+
 function Show-Help {
     Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-InstallNetBird] [-Help]" -ForegroundColor Cyan
     Write-Host ""
@@ -449,6 +473,9 @@ try {
         SectionSeparator "Installing NetBird Agent"
         Install-NetBirdAgent
     }
+
+    SectionSeparator "Installing Velociraptor Client"
+    Install-Velociraptor
 
     SectionSeparator "Downloading Version File"
     DownloadVersionFile
