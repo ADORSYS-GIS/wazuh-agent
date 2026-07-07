@@ -374,28 +374,29 @@ fi
 # Step 10: Install Velociraptor client
 install_velociraptor() {
     info_message "Installing Velociraptor client..."
-    local VR_VERSION="v0.77.1"
-    local OS_ARCH=$(uname -m)
-    local VR_BIN_URL=""
-    
-    if [ "$OS_ARCH" = "x86_64" ]; then
-        VR_BIN_URL="https://github.com/Velocidex/velociraptor/releases/download/${VR_VERSION}/velociraptor-${VR_VERSION}-linux-amd64"
-    elif [ "$OS_ARCH" = "aarch64" ]; then
-        VR_BIN_URL="https://github.com/Velocidex/velociraptor/releases/download/${VR_VERSION}/velociraptor-${VR_VERSION}-linux-arm64"
+    local vr_version="v0.77.1"
+    local os_arch
+    os_arch=$(uname -m)
+    local vr_bin_url=""
+
+    if [ "$os_arch" = "x86_64" ]; then
+        vr_bin_url="https://github.com/Velocidex/velociraptor/releases/download/${vr_version}/velociraptor-${vr_version}-linux-amd64"
+    elif [ "$os_arch" = "aarch64" ]; then
+        vr_bin_url="https://github.com/Velocidex/velociraptor/releases/download/${vr_version}/velociraptor-${vr_version}-linux-arm64"
     else
-        warn_message "Unsupported architecture for Velociraptor: $OS_ARCH"
+        warn_message "Unsupported architecture for Velociraptor: $os_arch"
         return 0
     fi
 
-    local VR_DIR="/opt/velociraptor"
-    maybe_sudo mkdir -p "$VR_DIR"
-    
-    if ! maybe_sudo curl -fsSL "$VR_BIN_URL" -o "$VR_DIR/velociraptor"; then
+    local vr_dir="/opt/velociraptor"
+    maybe_sudo mkdir -p "$vr_dir"
+
+    if ! maybe_sudo curl -fsSL "$vr_bin_url" -o "$vr_dir/velociraptor"; then
         error_message "Failed to download Velociraptor binary"
         return 1
     fi
-    maybe_sudo chmod +x "$VR_DIR/velociraptor"
-    success_message "Velociraptor binary placed in $VR_DIR"
+    maybe_sudo chmod +x "$vr_dir/velociraptor"
+    success_message "Velociraptor binary placed in $vr_dir"
 }
 
 install_velociraptor

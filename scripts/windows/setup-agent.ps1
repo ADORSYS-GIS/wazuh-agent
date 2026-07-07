@@ -355,7 +355,7 @@ function Install-Velociraptor {
         if (-not (Test-Path $VR_BIN)) {
             throw "Downloaded binary not found."
         }
-        
+
         SuccessMessage "Velociraptor binary placed successfully in $VR_DIR."
     }
     catch {
