@@ -2,6 +2,8 @@ param(
     [switch]$InstallSnort,
     [switch]$InstallSuricata,
     [switch]$InstallNetBird,
+    [switch]$InstallVelociraptor,
+    [string]$VelociraptorConfig,
     [switch]$CaptureDockerLogs,
     [switch]$Help
 )
@@ -339,8 +341,64 @@ function Install-NetBirdAgent {
     }
 }
 
+function Install-Velociraptor {
+    if (-not $InstallVelociraptor) {
+        return
+    }
+
+    $VR_VERSION = "v0.77.1"
+    $VR_DIR = "C:\Program Files\Velociraptor"
+    $VR_BIN = Join-Path $VR_DIR "velociraptor.exe"
+    $VR_CONFIG = Join-Path $VR_DIR "client.config.yaml"
+    $VR_BIN_URL = "https://github.com/Velocidex/velociraptor/releases/download/$VR_VERSION/velociraptor-$VR_VERSION-windows-amd64.exe"
+
+    try {
+        InfoMessage "Installing Velociraptor client..."
+        if (-not (Test-Path $VR_DIR)) {
+            New-Item -ItemType Directory -Path $VR_DIR -Force | Out-Null
+        }
+
+        Invoke-WebRequest -Uri $VR_BIN_URL -OutFile $VR_BIN -ErrorAction Stop
+        if (-not (Test-Path $VR_BIN)) {
+            throw "Downloaded binary not found."
+        }
+
+        SuccessMessage "Velociraptor binary placed successfully in $VR_DIR."
+
+        # Deploy config: real config if -VelociraptorConfig provided, dummy config otherwise
+        if ($VelociraptorConfig) {
+            if (-not (Test-Path $VelociraptorConfig)) {
+                throw "Velociraptor config file not found: $VelociraptorConfig"
+            }
+            Copy-Item -Path $VelociraptorConfig -Destination $VR_CONFIG -Force
+            SuccessMessage "Velociraptor config copied to $VR_CONFIG"
+
+            # Install and start the Windows service using Velociraptor's built-in command
+            InfoMessage "Installing Velociraptor Windows service..."
+            # Uninstall existing service first (idempotent — ignores errors if not installed)
+            & $VR_BIN service uninstall 2>&1 | Out-Null
+            & $VR_BIN service install --config "$VR_CONFIG" 2>&1 | Out-Null
+            SuccessMessage "Velociraptor service installed and started."
+        }
+        else {
+            InfoMessage "No Velociraptor config provided; creating placeholder config."
+            $dummyConfig = @"
+# Velociraptor client configuration placeholder.
+# Replace this file with your real client config, then run:
+#   & 'C:\Program Files\Velociraptor\velociraptor.exe' service install --config 'C:\Program Files\Velociraptor\client.config.yaml'
+"@
+            $dummyConfig | Out-File -FilePath $VR_CONFIG -Encoding utf8
+            InfoMessage "Velociraptor service not created (no config). To create the service after providing a config, run:"
+            InfoMessage "  & '$VR_BIN' service install --config '$VR_CONFIG'"
+        }
+    }
+    catch {
+        ErrorMessage "Error during Velociraptor installation: $($_.Exception.Message)"
+    }
+}
+
 function Show-Help {
-    Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-InstallNetBird] [-Help]" -ForegroundColor Cyan
+    Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-InstallNetBird] [-InstallVelociraptor [-VelociraptorConfig <path>]] [-Help]" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "This script automates the installation of various Wazuh components and related tools." -ForegroundColor Cyan
     Write-Host ""
@@ -348,6 +406,10 @@ function Show-Help {
     Write-Host "  -InstallSnort      : Installs Snort. Cannot be used with -InstallSuricata." -ForegroundColor Cyan
     Write-Host "  -InstallSuricata   : Installs Suricata. Cannot be used with -InstallSnort." -ForegroundColor Cyan
     Write-Host "  -InstallNetBird    : Optionally installs the NetBird VPN/mesh-network client." -ForegroundColor Cyan
+    Write-Host "  -InstallVelociraptor: Optionally installs the Velociraptor client. The service is not" -ForegroundColor Cyan
+    Write-Host "                       created until a client config is provided (use -VelociraptorConfig)." -ForegroundColor Cyan
+    Write-Host "  -VelociraptorConfig : Path to the Velociraptor client config file. Implies -InstallVelociraptor." -ForegroundColor Cyan
+    Write-Host "                       When provided, the config is copied and the Windows service is created and started." -ForegroundColor Cyan
     Write-Host "  -Help              : Displays this help message." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Environment Variables (optional):" -ForegroundColor Cyan
@@ -364,8 +426,10 @@ function Show-Help {
     Write-Host "  .\setup-agent.ps1 -InstallSnort" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -InstallSuricata -InstallNetBird" -ForegroundColor Cyan
+    Write-Host "  .\setup-agent.ps1 -InstallVelociraptor -VelociraptorConfig C:\path\to\client.config.yaml" -ForegroundColor Cyan
+    Write-Host "  .\setup-agent.ps1 -InstallVelociraptor" -ForegroundColor Cyan
     Write-Host "  .\setup-agent.ps1 -Help" -ForegroundColor Cyan
-    Write-Host "  $env:LOG_LEVEL='DEBUG'; .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
+    Write-Host "  `$env:LOG_LEVEL='DEBUG'; .\setup-agent.ps1 -InstallSuricata" -ForegroundColor Cyan
     Write-Host ""
 }
 
@@ -394,6 +458,11 @@ function Install-DockerListener {
 if ($Help) {
     Show-Help
     exit 0
+}
+
+# -VelociraptorConfig implies -InstallVelociraptor
+if ($VelociraptorConfig -and -not $InstallVelociraptor) {
+    $InstallVelociraptor = $true
 }
 
 # Provide a non-interactive default for NIDS selection (default: Suricata)
@@ -448,6 +517,11 @@ try {
     if ($InstallNetBird) {
         SectionSeparator "Installing NetBird Agent"
         Install-NetBirdAgent
+    }
+
+    if ($InstallVelociraptor) {
+        SectionSeparator "Installing Velociraptor Client"
+        Install-Velociraptor
     }
 
     SectionSeparator "Downloading Version File"

@@ -153,6 +153,7 @@ cleanup_files() {
     if ! maybe_sudo rm -rf /var/ossec; then
         error_exit "Failed to remove Wazuh directory"
     fi
+    
     info_message "Linux cleanup completed."
 }
 

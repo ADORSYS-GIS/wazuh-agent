@@ -88,6 +88,8 @@ IDS_ENGINE=""
 SURICATA_MODE=""
 INSTALL_TRIVY="FALSE"
 INSTALL_NETBIRD="FALSE"
+INSTALL_VELOCIRAPTOR="FALSE"
+VELOCIRAPTOR_CONFIG=""
 
 cleanup() {
     # Remove temporary folder
@@ -117,7 +119,7 @@ help_message() {
     echo "    and can optionally include a vulnerability scanner."
     echo ""
     echo -e "${BOLD}USAGE:${NORMAL}"
-    echo "  ./setup-agent.sh [-s <mode> | -n] [-t] [-b] [-h]"
+    echo "  ./setup-agent.sh [-s <mode> | -n] [-t] [-b] [-v [-c <config_path>]] [-h]"
     echo ""
     echo -e "${BOLD}OPTIONS:${NORMAL}"
     echo -e "  ${YELLOW}-s <mode>${NORMAL}  Install ${BOLD}Suricata${NORMAL}. The <mode> must be 'ids' (detection) or 'ips' (prevention)."
@@ -126,6 +128,11 @@ help_message() {
     echo -e "              (Cannot be used with -s)"
     echo -e "  ${YELLOW}-t${NORMAL}         Optionally install ${BOLD}Trivy${NORMAL} for vulnerability scanning."
     echo -e "  ${YELLOW}-b${NORMAL}         Optionally install ${BOLD}NetBird${NORMAL} as the VPN/mesh-network client."
+    echo -e "  ${YELLOW}-v${NORMAL}         Optionally install ${BOLD}Velociraptor${NORMAL} client. The service is created but"
+    echo -e "              left inactive until a client config is provided (use -c)."
+    echo -e "  ${YELLOW}-c <path>${NORMAL}  Path to the Velociraptor client config file. Implies -v. When provided,"
+    echo -e "              the config is copied to /etc/velociraptor/client.config.yaml and the service"
+    echo -e "              is enabled and started."
     echo -e "  ${YELLOW}-h${NORMAL}         Display this help message and exit."
     echo ""
     echo -e "${BOLD}EXAMPLES:${NORMAL}"
@@ -137,6 +144,12 @@ help_message() {
     echo ""
     echo "  # Install all core components + Suricata (IDS mode) + NetBird:"
     echo "  ./setup-agent.sh -s ids -b"
+    echo ""
+    echo "  # Install all core components + Velociraptor with a client config:"
+    echo "  ./setup-agent.sh -v -c /path/to/client.config.yaml"
+    echo ""
+    echo "  # Install all core components + Velociraptor (service inactive, dummy config):"
+    echo "  ./setup-agent.sh -v"
 }
 
 # ==============================================================================
@@ -146,7 +159,7 @@ help_message() {
 # Provide a non-interactive default for NIDS selection (default: suricata)
 default_nids=$SURICATA_ENGINE
 
-while getopts "s:ntbh" opt; do
+while getopts "s:ntbc:vh" opt; do
     case ${opt} in
         s)
             IDS_ENGINE=$SURICATA_ENGINE
@@ -165,6 +178,13 @@ while getopts "s:ntbh" opt; do
             ;;
         b)
             INSTALL_NETBIRD="TRUE"
+            ;;
+        v)
+            INSTALL_VELOCIRAPTOR="TRUE"
+            ;;
+        c)
+            INSTALL_VELOCIRAPTOR="TRUE"
+            VELOCIRAPTOR_CONFIG="$OPTARG"
             ;;
         h)
             help_message
@@ -371,7 +391,84 @@ if [ "$INSTALL_NETBIRD" = "TRUE" ]; then
     fi
 fi
 
-# Step 10: Download version file
+# Step 10: Install Velociraptor client (if requested)
+if [ "$INSTALL_VELOCIRAPTOR" = "TRUE" ]; then
+    info_message "Installing Velociraptor client..."
+    vr_version="v0.77.1"
+    os_arch=$(uname -m)
+    vr_bin_url=""
+
+    if [ "$os_arch" = "x86_64" ]; then
+        vr_bin_url="https://github.com/Velocidex/velociraptor/releases/download/${vr_version}/velociraptor-${vr_version}-linux-amd64"
+    elif [ "$os_arch" = "aarch64" ]; then
+        vr_bin_url="https://github.com/Velocidex/velociraptor/releases/download/${vr_version}/velociraptor-${vr_version}-linux-arm64"
+    else
+        warn_message "Unsupported architecture for Velociraptor: $os_arch"
+    fi
+
+    if [ -n "$vr_bin_url" ]; then
+        vr_dir="/opt/velociraptor"
+        vr_config_dir="/etc/velociraptor"
+        vr_config_file="$vr_config_dir/client.config.yaml"
+        vr_service_file="/etc/systemd/system/velociraptor_client.service"
+
+        maybe_sudo mkdir -p "$vr_dir" "$vr_config_dir"
+
+        if ! maybe_sudo curl -fsSL "$vr_bin_url" -o "$vr_dir/velociraptor"; then
+            error_exit "Failed to download Velociraptor binary"
+        fi
+        maybe_sudo chmod +x "$vr_dir/velociraptor"
+        success_message "Velociraptor binary placed in $vr_dir"
+
+        # Deploy config: real config if -c provided, dummy config otherwise
+        if [ -n "$VELOCIRAPTOR_CONFIG" ]; then
+            if [ ! -f "$VELOCIRAPTOR_CONFIG" ]; then
+                error_exit "Velociraptor config file not found: $VELOCIRAPTOR_CONFIG"
+            fi
+            maybe_sudo cp "$VELOCIRAPTOR_CONFIG" "$vr_config_file"
+            success_message "Velociraptor config copied to $vr_config_file"
+        else
+            info_message "No Velociraptor config provided; creating placeholder config."
+            maybe_sudo tee "$vr_config_file" > /dev/null << 'VR_DUMMY_CONFIG'
+# Velociraptor client configuration placeholder.
+# Replace this file with your real client config, then run:
+#   sudo systemctl enable --now velociraptor_client
+VR_DUMMY_CONFIG
+        fi
+
+        # Create systemd service unit
+        maybe_sudo tee "$vr_service_file" > /dev/null << 'VR_SERVICE_UNIT'
+[Unit]
+Description=Velociraptor client
+After=syslog.target network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=120
+LimitNOFILE=20000
+Environment=LANG=en_US.UTF-8
+ExecStart=/opt/velociraptor/velociraptor --config /etc/velociraptor/client.config.yaml client --quiet
+
+[Install]
+WantedBy=multi-user.target
+VR_SERVICE_UNIT
+
+        maybe_sudo systemctl daemon-reload
+
+        if [ -n "$VELOCIRAPTOR_CONFIG" ]; then
+            maybe_sudo systemctl enable velociraptor_client
+            maybe_sudo systemctl restart velociraptor_client
+            success_message "Velociraptor service enabled and (re)started."
+        else
+            info_message "Velociraptor service created but not enabled (no config)."
+            info_message "To start the service after providing a config, run:"
+            info_message "  sudo systemctl enable --now velociraptor_client"
+        fi
+    fi
+fi
+
+# Step 11: Download version file
 info_message "Downloading version file..."
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_PATH/version.txt" "version.txt" "version file" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
 info_message "Version file downloaded successfully."
