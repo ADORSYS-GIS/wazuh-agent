@@ -66,6 +66,7 @@ WAZUH_AGENT_STATUS_REPO_REF=${WAZUH_AGENT_STATUS_REPO_REF:-"refs/tags/v$WAZUH_AG
 # Uninstall choice variables
 UNINSTALL_TRIVY="FALSE"
 UNINSTALL_NETBIRD="FALSE"
+UNINSTALL_VELOCIRAPTOR="FALSE"
 
 LINUX_SCRIPT_PATH="scripts/linux/uninstall.sh"
 TMP_FOLDER="$(mktemp -d)"
@@ -101,11 +102,12 @@ help_message() {
     printf "%s\n" "    You can optionally include a vulnerability scanner and a VPN/mesh client."
     printf "\n"
     printf "%b\n" "${BOLD}USAGE:${NORMAL}"
-    printf "%s\n" "  ./uninstall-agent.sh [-t] [-b] [-h]"
+    printf "%s\n" "  ./uninstall-agent.sh [-t] [-b] [-v] [-h]"
     printf "\n"
     printf "%b\n" "${BOLD}OPTIONS:${NORMAL}"
     printf "%b\n" "  ${YELLOW}-t${NORMAL}         Optionally uninstall ${BOLD}Trivy${NORMAL}."
     printf "%b\n" "  ${YELLOW}-b${NORMAL}         Optionally uninstall ${BOLD}NetBird${NORMAL} (VPN/mesh-network client)."
+    printf "%b\n" "  ${YELLOW}-v${NORMAL}         Optionally uninstall ${BOLD}Velociraptor${NORMAL} client."
     printf "%b\n" "  ${YELLOW}-h${NORMAL}         Display this help message and exit."
     printf "\n"
     printf "%b\n" "${BOLD}EXAMPLES:${NORMAL}"
@@ -113,17 +115,22 @@ help_message() {
     printf "%s\n" "  ./uninstall-agent.sh -t"
     printf "%s\n" "  # Uninstall all core components + NetBird:"
     printf "%s\n" "  ./uninstall-agent.sh -b"
+    printf "%s\n" "  # Uninstall all core components + Velociraptor:"
+    printf "%s\n" "  ./uninstall-agent.sh -v"
     printf "\n"
 }
 
-# Only -t, -b and -h options remain
-while getopts "tbh" opt; do
+# Only -t, -b, -v and -h options remain
+while getopts "tbvh" opt; do
     case ${opt} in
         t)
             UNINSTALL_TRIVY="TRUE"
             ;;
         b)
             UNINSTALL_NETBIRD="TRUE"
+            ;;
+        v)
+            UNINSTALL_VELOCIRAPTOR="TRUE"
             ;;
         h)
             help_message
@@ -240,13 +247,38 @@ if [ "$UNINSTALL_NETBIRD" = "TRUE" ]; then
     fi
 fi
 
-# Step 7: Uninstall Velociraptor
-print_step 7 "Uninstalling Velociraptor..."
-if [ -d "/opt/velociraptor" ]; then
-    maybe_sudo rm -rf /opt/velociraptor
-    info_message "Velociraptor directory removed."
-else
-    info_message "Velociraptor not found. Skipping."
+# Step 7: Uninstall Velociraptor if the flag is set
+if [ "$UNINSTALL_VELOCIRAPTOR" = "TRUE" ]; then
+    print_step 7 "Uninstalling Velociraptor..."
+    vr_service_file="/etc/systemd/system/velociraptor_client.service"
+
+    # Stop and disable the service if it exists
+    if maybe_sudo systemctl cat velociraptor_client >/dev/null 2>&1; then
+        maybe_sudo systemctl stop velociraptor_client || warn_message "Failed to stop velociraptor_client service; continuing"
+        maybe_sudo systemctl disable velociraptor_client || warn_message "Failed to disable velociraptor_client service; continuing"
+    fi
+
+    # Remove the systemd unit file
+    if [ -f "$vr_service_file" ]; then
+        maybe_sudo rm -f "$vr_service_file"
+        maybe_sudo systemctl daemon-reload
+        info_message "Velociraptor service file removed."
+    fi
+
+    # Remove config directory
+    if [ -d "/etc/velociraptor" ]; then
+        maybe_sudo rm -rf /etc/velociraptor
+        info_message "Velociraptor config directory removed."
+    fi
+
+    # Remove binary directory
+    if [ -d "/opt/velociraptor" ]; then
+        maybe_sudo rm -rf /opt/velociraptor
+        info_message "Velociraptor binary directory removed."
+    else
+        info_message "Velociraptor not found. Skipping."
+    fi
+    success_message "Velociraptor uninstalled."
 fi
 
 # Step 8: Uninstall Wazuh agent

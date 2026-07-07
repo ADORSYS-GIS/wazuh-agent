@@ -1,7 +1,8 @@
-# Parameters for Trivy and NetBird uninstallation
+# Parameters for Trivy, NetBird, and Velociraptor uninstallation
 param(
     [switch]$UninstallTrivy,
     [switch]$UninstallNetBird,
+    [switch]$UninstallVelociraptor,
     [switch]$Help
 )
 
@@ -77,13 +78,14 @@ function Cleanup-Uninstallers {
 
 # Help Function
 function Show-Help {
-    Write-Host "Usage:  .\uninstall-agent.ps1 [-UninstallTrivy] [-UninstallNetBird] [-Help]" -ForegroundColor Cyan
+    Write-Host "Usage:  .\uninstall-agent.ps1 [-UninstallTrivy] [-UninstallNetBird] [-UninstallVelociraptor] [-Help]" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "This script automates the uninstallation of various Wazuh components and related tools." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Parameters:" -ForegroundColor Cyan
     Write-Host "  -UninstallTrivy        : Optionally uninstalls the Trivy vulnerability scanner." -ForegroundColor Cyan
     Write-Host "  -UninstallNetBird       : Optionally uninstalls the NetBird VPN/mesh-network client." -ForegroundColor Cyan
+    Write-Host "  -UninstallVelociraptor  : Optionally uninstalls the Velociraptor client." -ForegroundColor Cyan
     Write-Host "  -Help                  : Displays this help message." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Environment Variables (optional):" -ForegroundColor Cyan
@@ -96,7 +98,8 @@ function Show-Help {
     Write-Host ""
     Write-Host "Examples:" -ForegroundColor Cyan
     Write-Host "  .\uninstall-agent.ps1 -Help" -ForegroundColor Cyan
-    Write-Host "  $env:LOG_LEVEL='DEBUG'; .\uninstall-agent.ps1" -ForegroundColor Cyan
+    Write-Host "  .\uninstall-agent.ps1 -UninstallVelociraptor" -ForegroundColor Cyan
+    Write-Host "  `$env:LOG_LEVEL='DEBUG'; .\uninstall-agent.ps1" -ForegroundColor Cyan
     Write-Host ""
 }
 
@@ -205,8 +208,44 @@ function Uninstall-NetBird {
 
 # Step 7: Uninstall Velociraptor
 function Uninstall-Velociraptor {
+    if (-not $UninstallVelociraptor) { return }
+
     SectionSeparator "Uninstalling Velociraptor"
     $VR_DIR = "C:\Program Files\Velociraptor"
+    $VR_BIN = Join-Path $VR_DIR "velociraptor.exe"
+
+    # Try to uninstall the service using Velociraptor's built-in command
+    if (Test-Path -Path $VR_BIN) {
+        try {
+            InfoMessage "Uninstalling Velociraptor Windows service..."
+            & $VR_BIN service uninstall 2>&1 | Out-Null
+            SuccessMessage "Velociraptor service uninstalled."
+        }
+        catch {
+            # Fall back to sc.exe if the built-in command fails
+            $service = Get-Service -Name "Velociraptor" -ErrorAction SilentlyContinue
+            if ($service) {
+                if ($service.Status -eq 'Running') {
+                    Stop-Service -Name "Velociraptor" -Force -ErrorAction SilentlyContinue
+                }
+                sc.exe delete Velociraptor 2>&1 | Out-Null
+                InfoMessage "Velociraptor service removed via sc.exe."
+            }
+        }
+    }
+    else {
+        # Binary not found; try sc.exe as a fallback
+        $service = Get-Service -Name "Velociraptor" -ErrorAction SilentlyContinue
+        if ($service) {
+            if ($service.Status -eq 'Running') {
+                Stop-Service -Name "Velociraptor" -Force -ErrorAction SilentlyContinue
+            }
+            sc.exe delete Velociraptor 2>&1 | Out-Null
+            InfoMessage "Velociraptor service removed via sc.exe."
+        }
+    }
+
+    # Remove the Velociraptor directory (binary + config)
     if (Test-Path -Path $VR_DIR) {
         try {
             Remove-Item -Path $VR_DIR -Recurse -Force

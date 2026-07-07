@@ -149,18 +149,6 @@ function Cleanup-Files {
     } else {
         WarningMessage "Wazuh path does not exist. No files to remove."
     }
-
-    # 3. Cleanup Velociraptor directory
-    $VR_DIR = "C:\Program Files\Velociraptor"
-    if (Test-Path -Path $VR_DIR) {
-        try {
-            Remove-Item -Path $VR_DIR -Recurse -Force
-            InfoMessage "Velociraptor directory removed successfully"
-        }
-        catch {
-            ErrorMessage "Failed to remove Velociraptor directory: $($_.Exception.Message)"
-        }
-    }
 }
 
 

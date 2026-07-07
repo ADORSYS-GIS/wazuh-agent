@@ -154,11 +154,6 @@ cleanup_files() {
         error_exit "Failed to remove Wazuh directory"
     fi
     
-    info_message "Cleaning up Velociraptor directory"
-    if [ -d "/opt/velociraptor" ]; then
-        maybe_sudo rm -rf /opt/velociraptor || warn_message "Failed to remove Velociraptor directory"
-    fi
-    
     info_message "Linux cleanup completed."
 }
 

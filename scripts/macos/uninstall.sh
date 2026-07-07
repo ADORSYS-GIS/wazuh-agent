@@ -94,11 +94,6 @@ uninstall_agent() {
         info_message "Uninstalling Wazuh agent for macOS..."
         
         maybe_sudo rm -rf /Library/Ossec
-        
-        info_message "Cleaning up Velociraptor directory..."
-        if [ -d "/opt/velociraptor" ]; then
-            maybe_sudo rm -rf /opt/velociraptor
-        fi
 
         # Remove LaunchDaemon and StartUP items
         maybe_sudo rm -f /Library/LaunchDaemons/com.wazuh.agent.plist
