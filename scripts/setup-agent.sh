@@ -282,7 +282,12 @@ fi
 # Step 6: Install Trivy if the flag is set
 if [ "$INSTALL_TRIVY" = "TRUE" ]; then
     info_message "Installing Trivy..."
-    curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/install.sh" > "$TMP_FOLDER/install-trivy.sh"
+    if [ "$(uname -s)" = "Darwin" ]; then
+        TRIVY_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/scripts/macos/install.sh"
+    else
+        TRIVY_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/scripts/linux/install.sh"
+    fi
+    curl -SL -s "$TRIVY_URL" > "$TMP_FOLDER/install-trivy.sh"
     if ! (bash "$TMP_FOLDER/install-trivy.sh") 2>&1; then
         error_message "Failed to install trivy"
         exit 1

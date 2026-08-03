@@ -134,7 +134,12 @@ curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/refs/ta
 curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/refs/tags/v$WAZUH_SNORT_VERSION/scripts/uninstall.sh > "$TMP_FOLDER/uninstall-snort.sh"
 
 if [ "$UNINSTALL_TRIVY" = "TRUE" ]; then
-    curl -SL -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/uninstall.sh > "$TMP_FOLDER/uninstall-trivy.sh"
+    if [ "$(uname -s)" = "Darwin" ]; then
+        TRIVY_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/scripts/macos/uninstall.sh"
+    else
+        TRIVY_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/main/scripts/linux/uninstall.sh"
+    fi
+    curl -SL -s "$TRIVY_URL" > "$TMP_FOLDER/uninstall-trivy.sh"
 fi
 
 # Step 1: Uninstall Wazuh agent
