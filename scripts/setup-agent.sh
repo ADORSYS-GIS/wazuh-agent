@@ -38,6 +38,7 @@ WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.2'}
 IDS_ENGINE=""
 SURICATA_MODE=""
 INSTALL_TRIVY="FALSE"
+INSTALL_NETBIRD="FALSE"
 
 TMP_FOLDER="$(mktemp -d)"
 
@@ -114,7 +115,7 @@ help_message() {
     echo "    and can optionally include a vulnerability scanner."
     echo ""
     echo -e "${BOLD}USAGE:${NORMAL}"
-    echo "  ./setup-agent.sh [-s <mode> | -n] [-t] [-h]"
+    echo "  ./setup-agent.sh [-s <mode> | -n] [-t] [-b] [-h]"
     echo ""
     echo -e "${BOLD}OPTIONS:${NORMAL}"
     echo -e "  ${YELLOW}-s <mode>${NORMAL}  Install ${BOLD}Suricata${NORMAL}. The <mode> must be 'ids' (detection) or 'ips' (prevention)."
@@ -122,6 +123,7 @@ help_message() {
     echo -e "  ${YELLOW}-n${NORMAL}         Install ${BOLD}Snort${NORMAL} as the NIDS engine."
     echo -e "              (Cannot be used with -s)"
     echo -e "  ${YELLOW}-t${NORMAL}         Optionally install ${BOLD}Trivy${NORMAL} for vulnerability scanning."
+    echo -e "  ${YELLOW}-b${NORMAL}         Optionally install ${BOLD}NetBird${NORMAL} as the VPN/mesh-network client."
     echo -e "  ${YELLOW}-h${NORMAL}         Display this help message and exit."
     echo ""
     echo -e "${BOLD}EXAMPLES:${NORMAL}"
@@ -130,6 +132,9 @@ help_message() {
     echo ""
     echo "  # Install all core components + Snort:"
     echo "  ./setup-agent.sh -n"
+    echo ""
+    echo "  # Install all core components + Suricata (IDS mode) + NetBird:"
+    echo "  ./setup-agent.sh -s ids -b"
 }
 
 # ==============================================================================
@@ -139,7 +144,7 @@ help_message() {
 # Provide a non-interactive default for NIDS selection (default: suricata)
 default_nids="suricata"
 
-while getopts "s:nth" opt; do
+while getopts "s:ntbh" opt; do
     case ${opt} in
         s)
             IDS_ENGINE="suricata"
@@ -152,6 +157,7 @@ while getopts "s:nth" opt; do
             ;;
         n) IDS_ENGINE="snort" ;;
         t) INSTALL_TRIVY="TRUE" ;;
+        b) INSTALL_NETBIRD="TRUE" ;;
         h) help_message; exit 0 ;;
         \?) error_message "Invalid option: -$OPTARG" >&2; help_message; exit 1 ;;
         :) error_message "Option -$OPTARG requires an argument." >&2; help_message; exit 1 ;;
@@ -344,7 +350,22 @@ fi
 
 success_message "USB DLP Active Response scripts installed successfully."
 
-# Step 8: Download version file
+# Step 9: Install NetBird client (if requested)
+if [ "$INSTALL_NETBIRD" = "TRUE" ]; then
+    info_message "Installing NetBird client..."
+    if command_exists netbird; then
+        success_message "NetBird client is already installed."
+    else
+        curl -SL -s "https://pkgs.netbird.io/install.sh" > "$TMP_FOLDER/netbird-install.sh"
+        if ! (sh "$TMP_FOLDER/netbird-install.sh" < /dev/null) 2>&1; then
+            error_message "Failed to install NetBird client"
+            exit 1
+        fi
+        success_message "NetBird client installed successfully."
+    fi
+fi
+
+# Step 10: Download version file
 info_message "Downloading version file..."
 if ! (maybe_sudo curl -SL -s "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/refs/heads/main/version.txt" -o "$OSSEC_PATH/version.txt") 2>&1; then
     error_message "Failed to download version file"
