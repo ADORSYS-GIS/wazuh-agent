@@ -312,7 +312,7 @@ fi
 
 # Step 8: Setup Docker monitoring (only runs if Docker is installed)
 info_message "Setting up Docker monitoring (if Docker is present)..."
-if ! (maybe_sudo env WAZUH_AGENT_REPO_VERSION=1.9.0-rc.5 bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env WAZUH_AGENT_REPO_VERSION=1.9.0-rc.5 WAZUH_AGENT_REPO_REF="refs/tags/v1.9.0-rc.5" bash "$TMP_FOLDER/setup-docker.sh" < /dev/null) 2>&1; then
     error_message "Failed to setup Docker monitoring"
 else
     info_message "Docker monitoring setup completed successfully."
