@@ -304,6 +304,7 @@ get_installed_version() {
             fi
             ;;
     esac
+    true
 }
 
 config() {
