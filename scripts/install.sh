@@ -278,7 +278,7 @@ enable_repo() {
 }
 
 get_installed_version() {
-    set +eo pipefail
+    set +e
     case "$(uname -s)" in
         Linux*)
             # Ubuntu/Debian
