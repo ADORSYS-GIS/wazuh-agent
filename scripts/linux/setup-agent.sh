@@ -351,4 +351,4 @@ info_message "Downloading version file..."
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_PATH/version.txt" "version.txt" "version file" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
 info_message "Version file downloaded successfully."
 
-success_message "Wazuh setup has been completed successfully." 
+success_message "Wazuh setup has been completed successfully."
