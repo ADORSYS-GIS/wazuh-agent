@@ -11,7 +11,7 @@ TMP_FOLDER="$(mktemp -d)"
 trap 'rm -rf "$TMP_FOLDER"' EXIT
 
 # Download utils.sh from repository
-if ! curl -fsSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$TMP_FOLDER/utils.sh"; then
+if ! curl --proto '=https' --tlsv1.2 -fsSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/shared/utils.sh" -o "$TMP_FOLDER/utils.sh"; then
     echo "Failed to download utils.sh"
     exit 1
 fi
@@ -29,7 +29,7 @@ calculate_sha256_bootstrap() {
 
 # 1. Download checksums
 echo "Downloading checksums..."
-if ! curl -fsSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" -o "$TMP_FOLDER/checksums.sha256"; then
+if ! curl --proto '=https' --tlsv1.2 -fsSL "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256" -o "$TMP_FOLDER/checksums.sha256"; then
     echo "Failed to download checksums.sha256"
     exit 1
 fi

@@ -136,12 +136,12 @@ download_file() {
         if command_exists curl; then
             # If running as root, we can use -o directly. Otherwise, we might need sudo tee.
             if [ "$(id -u)" -eq 0 ]; then
-                if curl -fsSL --retry 3 --retry-delay 2 "$url" -o "$dest"; then
+                if curl --proto '=https' --tlsv1.2 -fsSL --retry 3 --retry-delay 2 "$url" -o "$dest"; then
                     success_message "$description downloaded successfully"
                     return 0
                 fi
             else
-                if curl -fsSL --retry 3 --retry-delay 2 "$url" | maybe_sudo tee "$dest" > /dev/null; then
+                if curl --proto '=https' --tlsv1.2 -fsSL --retry 3 --retry-delay 2 "$url" | maybe_sudo tee "$dest" > /dev/null; then
                     success_message "$description downloaded successfully"
                     return 0
                 fi
