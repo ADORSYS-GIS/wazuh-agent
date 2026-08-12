@@ -74,7 +74,7 @@ jobs:
         run: |
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
-          printf 'allow-loopback-pinentry\npinentry-mode loopback\n' >> ~/.gnupg/gpg-agent.conf
+          printf 'allow-loopback-pinentry\n' >> ~/.gnupg/gpg-agent.conf
           gpgconf --kill gpg-agent
           printf '%s' "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 -o /dev/null -s /dev/null
 
@@ -506,7 +506,7 @@ jobs:
         run: |
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
-          printf 'allow-loopback-pinentry\npinentry-mode loopback\n' >> ~/.gnupg/gpg-agent.conf
+          printf 'allow-loopback-pinentry\n' >> ~/.gnupg/gpg-agent.conf
           gpgconf --kill gpg-agent
           printf '%s' "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 -o /dev/null -s /dev/null
 
