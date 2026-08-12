@@ -89,7 +89,7 @@ jobs:
           if [[ -n $(git status --porcelain checksums.sha256) ]]; then
             git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
             git add checksums.sha256
-            git commit -m "chore: update checksums [skip ci]"
+            git commit -m "chore: update checksums"
             if [[ "$TARGET_BRANCH" == "main" ]]; then
               BRANCH="bot/update-checksums-${GITHUB_RUN_ID}"
               git checkout -b "$BRANCH"
