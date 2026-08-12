@@ -51,8 +51,8 @@ fi
 # ==============================================================================
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 WOPS_VERSION=${WOPS_VERSION:-"0.4.3"}
-WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.4.1"}
-WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.2.1"}
+WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.14"}
+WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.5"}
 WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-"0.5.1"}
 WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.1-rc.1'}
 
@@ -146,10 +146,10 @@ info_message "Starting uninstallation. Using temporary directory: \"$TMP_FOLDER\
 info_message "Downloading all uninstall scripts..."
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/${MACOS_SCRIPT_PATH}" "$TMP_FOLDER/uninstall-wazuh-agent.sh" "${MACOS_SCRIPT_PATH}" "Wazuh agent uninstall script" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256"
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/${MACOS_SCRIPT_PATH}" "$TMP_FOLDER/uninstall-wazuh-agent-status.sh" "${MACOS_SCRIPT_PATH}" "Wazuh Agent Status uninstall script" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/checksums.sha256"
-download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/${MACOS_SCRIPT_PATH}" "$TMP_FOLDER/uninstall-yara.sh" "${MACOS_SCRIPT_PATH}" "Yara uninstall script" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/checksums.sha256"
+download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/uninstall.sh" "$TMP_FOLDER/uninstall-yara.sh" "Yara uninstall script"
 
 # Always download both NIDS uninstallers
-download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/${MACOS_SCRIPT_PATH}" "$TMP_FOLDER/uninstall-suricata.sh" "${MACOS_SCRIPT_PATH}" "Suricata uninstall script" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/checksums.sha256"
+download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh" "Suricata uninstall script"
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/${MACOS_SCRIPT_PATH}" "$TMP_FOLDER/uninstall-snort.sh" "${MACOS_SCRIPT_PATH}" "Snort uninstall script" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/checksums.sha256"
 
 if [ "$UNINSTALL_TRIVY" = "TRUE" ]; then

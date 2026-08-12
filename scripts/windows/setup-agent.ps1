@@ -52,10 +52,10 @@ $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.ex
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.4-1" }
 $OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
-$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.4.1" }
+$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.14" }
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.1" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.3" }
-$WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.1" }
+$WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.1.5" }
 $WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.8.1-rc.1" }
 $WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
 
@@ -150,16 +150,12 @@ function Install-OAuth2Client {
 
 # Step 3: Download and install YARA with error handling
 function Install-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/windows/install.ps1"
+    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/install.ps1"
     $YaraScript = "$env:TEMP\install_yara.ps1"
     $global:InstallerFiles += $YaraScript
 
-    $YaraChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/checksums.sha256"
-
     try {
-        if (-not (Download-And-VerifyFile -Url $YaraUrl -Destination $YaraScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "YARA installation script" -ChecksumUrl $YaraChecksumUrl)) {
-            throw "Failed to download and verify YARA installation script"
-        }
+        Download-File -Url $YaraUrl -Destination $YaraScript -Description "YARA installation script"
 
         & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
     }
@@ -213,16 +209,12 @@ function Uninstall-Snort {
 
 # Step 5: Download and install Suricata with error handling
 function Install-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/install.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/install.ps1"
     $SuricataScript = "$env:TEMP\suricata.ps1"
     $global:InstallerFiles += $SuricataScript
 
-    $SuricataChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/checksums.sha256"
-
     try {
-        if (-not (Download-And-VerifyFile -Url $SuricataUrl -Destination $SuricataScript -ChecksumPattern "scripts/windows/install.ps1" -FileName "Suricata installation script" -ChecksumUrl $SuricataChecksumUrl)) {
-            throw "Failed to download and verify Suricata installation script"
-        }
+        Download-File -Url $SuricataUrl -Destination $SuricataScript -Description "Suricata installation script"
 
         & powershell.exe -ExecutionPolicy Bypass -File $SuricataScript -ErrorAction Stop
     }
@@ -232,7 +224,7 @@ function Install-Suricata {
 }
 
 function Uninstall-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/uninstall.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/uninstall.ps1"
     $UninstallSuricataScript = "$env:TEMP\uninstall_suricata.ps1"
     $global:InstallerFiles += $UninstallSuricataScript
     $TaskName = "SuricataStartup"
@@ -240,10 +232,7 @@ function Uninstall-Suricata {
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     if ($task) {
         try {
-            $SuricataChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/checksums.sha256"
-            if (-not (Download-And-VerifyFile -Url $SuricataUrl -Destination $UninstallSuricataScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Suricata uninstallation script" -ChecksumUrl $SuricataChecksumUrl)) {
-                throw "Failed to download and verify Suricata uninstallation script"
-            }
+            Download-File -Url $SuricataUrl -Destination $UninstallSuricataScript -Description "Suricata uninstallation script"
 
             & powershell.exe -ExecutionPolicy Bypass -File $UninstallSuricataScript -ErrorAction Stop
         }

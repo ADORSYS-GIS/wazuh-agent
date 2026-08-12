@@ -46,8 +46,8 @@ Set-StrictMode -Version Latest
 
 # Variables (default log level, app details, paths)
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
-$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.4.1" }
-$WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.1" }
+$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.14" }
+$WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.1.5" }
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.1" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.4-1" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.3" }
@@ -121,11 +121,11 @@ function Uninstall-AgentStatus {
 
 # Step 2: Download and Uninstall YARA with error handling
 function Uninstall-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/windows/uninstall.ps1"
+    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/uninstall.ps1"
     $YaraScript = "$env:TEMP\uninstall-yara.ps1"
     $global:UninstallerFiles += $YaraScript
     try {
-        Download-And-VerifyFile -Url $YaraUrl -Destination $YaraScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "YARA uninstall script" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/checksums.sha256"
+        Download-File -Url $YaraUrl -Destination $YaraScript -Description "YARA uninstall script"
         & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
     }
     catch {
@@ -149,11 +149,11 @@ function Uninstall-Snort {
 
 # Step 4: Download and Uninstall Suricata with error handling
 function Uninstall-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/uninstall.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/uninstall.ps1"
     $SuricataScript = "$env:TEMP\uninstall-suricata.ps1"
     $global:UninstallerFiles += $SuricataScript
     try {
-        Download-And-VerifyFile -Url $SuricataUrl -Destination $SuricataScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Suricata uninstall script" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/checksums.sha256"
+        Download-File -Url $SuricataUrl -Destination $SuricataScript -Description "Suricata uninstall script"
         & powershell.exe -ExecutionPolicy Bypass -File $SuricataScript -ErrorAction Stop
     }
     catch {

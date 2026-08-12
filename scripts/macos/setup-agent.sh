@@ -58,8 +58,8 @@ fi
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
 WOPS_VERSION=${WOPS_VERSION:-"0.4.3"}
-WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.4.1"}
-WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.2.1"}
+WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.14"}
+WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.5"}
 SURICATA_ENGINE="suricata"
 YARA_INSTALLATION_TYPE=${YARA_INSTALLATION_TYPE:-"desktop"}
 
@@ -215,7 +215,7 @@ uninstall_snort() {
 uninstall_suricata() {
     if command_exists suricata; then
         info_message "Uninstalling Suricata..."
-        download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/macos/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh" "scripts/macos/uninstall.sh" "uninstall-suricata.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/checksums.sha256"
+        download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh" "Suricata uninstall script"
         if ! (bash "$TMP_FOLDER/uninstall-suricata.sh") 2>&1; then
             error_exit "Failed to uninstall 'suricata'"
         fi
@@ -243,7 +243,7 @@ download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-ce
 
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/${MACOS_SCRIPT_PATH}" "$TMP_FOLDER/install-wazuh-agent-status.sh" "${MACOS_SCRIPT_PATH}" "install-wazuh-agent-status.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/checksums.sha256"
 
-download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/${MACOS_SCRIPT_PATH}" "$TMP_FOLDER/install-yara.sh" "${MACOS_SCRIPT_PATH}" "install-yara.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/checksums.sha256"
+download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-yara.sh" "Yara install script"
 
 # Step 0: Install dependencies
 info_message "Installing dependencies"
@@ -280,7 +280,7 @@ info_message "Selected IDS engine: $IDS_ENGINE"
 if [ "$IDS_ENGINE" = "$SURICATA_ENGINE" ]; then
     uninstall_snort
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
-    download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/${MACOS_SCRIPT_PATH}" "$TMP_FOLDER/install-suricata.sh" "${MACOS_SCRIPT_PATH}" "install-suricata.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/checksums.sha256"
+    download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-suricata.sh" "Suricata install script"
     # Pass the selected mode to the suricata install script
     if ! (maybe_sudo env bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
         error_exit "Failed to install 'suricata'"
