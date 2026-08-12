@@ -70,6 +70,14 @@ jobs:
           git_user_signingkey: true
           git_commit_gpgsign: true
 
+      - name: Cache GPG passphrase for headless signing
+        run: |
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          printf 'allow-loopback-pinentry\npinentry-mode loopback\n' >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent
+          printf '%s' "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 -o /dev/null -s /dev/null
+
       - name: Commit and push checksums
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         env:
@@ -493,6 +501,14 @@ jobs:
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
           git_user_signingkey: true
           git_commit_gpgsign: true
+
+      - name: Cache GPG passphrase for headless signing
+        run: |
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          printf 'allow-loopback-pinentry\npinentry-mode loopback\n' >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent
+          printf '%s' "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 -o /dev/null -s /dev/null
 
       - name: Update checksums in repository
         if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
