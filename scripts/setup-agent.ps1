@@ -6,7 +6,7 @@ param(
 
 # Repository ref
 if (-not $Ref) {
-    if (-not $RepoVersion) { $RepoVersion = '1.8.1-rc.1' }
+    if (-not $RepoVersion) { $RepoVersion = '1.8.1-rc.2' }
     $Ref = "refs/tags/v${RepoVersion}"
 }
 
