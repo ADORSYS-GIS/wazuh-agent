@@ -50,6 +50,7 @@ jobs:
           fetch-depth: "0"
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.head_ref || github.ref_name }}
+          persist-credentials: 'false'
 
       - name: Configure git user
         run: |
@@ -58,16 +59,47 @@ jobs:
 
       - name: Generate script checksums
         run: |
-          find scripts lib assets files version.txt -type f -exec sha256sum {} + > checksums.sha256
+          find scripts lib assets files version.txt -type f -exec sha256sum {} + | sort -k2 > checksums.sha256
           cat checksums.sha256
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+
+      - name: Cache GPG passphrase for headless signing
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          printf 'allow-loopback-pinentry\n' >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent
+          printf '%s' "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 -o /dev/null -s /dev/null
 
       - name: Commit and push checksums
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
           if [[ -n $(git status --porcelain checksums.sha256) ]]; then
+            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
             git add checksums.sha256
-            git commit -m "chore: update checksums [skip ci]"
-            git push origin ${{ github.head_ref || github.ref_name }}
+            git commit -m "chore: update checksums"
+            if [[ "$TARGET_BRANCH" == "main" ]]; then
+              BRANCH="bot/update-checksums-${GITHUB_RUN_ID}"
+              git checkout -b "$BRANCH"
+              git push origin "$BRANCH"
+              gh pr create --base main --head "$BRANCH" \
+                --title "chore: update checksums" \
+                --body "Automated update of checksums.sha256"
+            else
+              git push origin "$TARGET_BRANCH"
+            fi
           else
             echo "No checksum changes to commit"
           fi
@@ -442,6 +474,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          persist-credentials: 'false'
 
       - name: Determine tag name
         id: tag
@@ -462,9 +496,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+
+      - name: Cache GPG passphrase for headless signing
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          printf 'allow-loopback-pinentry\n' >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent
+          printf '%s' "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 -o /dev/null -s /dev/null
+
       - name: Update checksums in repository
         if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add checksums.sha256
