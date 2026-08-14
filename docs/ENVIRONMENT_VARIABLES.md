@@ -23,7 +23,7 @@ This document describes all environment variables used by the Wazuh Agent instal
 | ---------------------------- | ---------------- | ------------------------------------ |
 | `WAZUH_AGENT_REPO_VERSION`   | `main`     | Version of this installer repository |
 | `WOPS_VERSION`               | `0.4.3`          | Wazuh Cert OAuth2 client version     |
-| `WAZUH_AGENT_STATUS_VERSION` | `0.5.1-rc.4`          | Wazuh Agent Status tool version      |
+| `WAZUH_AGENT_STATUS_VERSION` | `0.5.2`          | Wazuh Agent Status tool version      |
 | `WAZUH_YARA_VERSION`         | `0.3.14`          | Wazuh Yara integration version       |
 | `WAZUH_SURICATA_VERSION`     | `0.1.5`          | Wazuh Suricata integration version   |
 
