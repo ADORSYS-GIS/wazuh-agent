@@ -38,7 +38,7 @@ Please be respectful and professional in all interactions. We aim to maintain a 
 
 ### Branch Strategy
 
-- `main` - Stable production releases
+- `v1.8.1-rc.2` - Stable production releases
 - `develop` - Integration branch for features (no automatic releases)
 - `feature/*` - Feature development branches
 - `hotfix/*` - Emergency fixes for production
@@ -119,7 +119,7 @@ Pre-releases (release candidates, beta versions) are created **manually** by pus
 
 ### When to Create a Pre-Release
 
-- Before merging to `main` for final release
+- Before merging to `v1.8.1-rc.2` for final release
 - To test features in production-like environment
 - To share experimental builds with testers
 - For milestone checkpoints during development
@@ -128,7 +128,7 @@ Pre-releases (release candidates, beta versions) are created **manually** by pus
 
 Tags should follow semantic versioning with pre-release identifiers:
 
-- **Release Candidate**: `vmain`, `v1.9.0-rc.2`, etc.
+- **Release Candidate**: `v1.9.0-rc.1`, `v1.9.0-rc.2`, etc.
 - **Beta**: `v1.9.0-beta.1`, `v1.9.0-beta.2`, etc.
 - **Alpha**: `v1.9.0-alpha.1`, `v1.9.0-alpha.2`, etc.
 
@@ -152,13 +152,13 @@ Tags should follow semantic versioning with pre-release identifiers:
 3. **Create and push the tag**:
    ```bash
    # Create the tag locally
-   git tag vmain -m "Release Candidate 1 for v1.9.0"
+   git tag v1.8.1-rc.2 -m "Release Candidate 1 for v1.9.0"
 
    # Push the tag to trigger CI/CD
-   git push upstream vmain
+   git push upstream v1.8.1-rc.2
    ```
 
-   > **Note**: Replace `vmain` with your desired version
+   > **Note**: Replace `v1.8.1-rc.2` with your desired version
 
 4. **What happens automatically**:
    - ✅ All tests run (lint, security, Unix, Windows, integration)
@@ -178,12 +178,12 @@ Users can test pre-releases by specifying the tag:
 
 ```bash
 # Linux/macOS
-export WAZUH_AGENT_REPO_REF=refs/tags/vmain
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/vmain/install.sh | bash
+export WAZUH_AGENT_REPO_REF=refs/tags/v1.8.1-rc.2
+curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/v1.8.1-rc.2/install.sh | bash
 
 # Windows
-$env:WAZUH_AGENT_REPO_REF = "refs/tags/vmain"
-irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/vmain/install.ps1 | iex
+$env:WAZUH_AGENT_REPO_REF = "refs/tags/v1.8.1-rc.2"
+irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/v1.8.1-rc.2/install.ps1 | iex
 ```
 
 ### Incrementing RC Versions
@@ -202,9 +202,9 @@ git push upstream v1.9.0-rc.3
 
 ### Promoting RC to Stable Release
 
-Once testing is complete, merge to `main` for automatic stable release:
+Once testing is complete, merge to `v1.8.1-rc.2` for automatic stable release:
 
-1. Create PR from `develop` to `main`
+1. Create PR from `develop` to `v1.8.1-rc.2`
 2. Get approvals and merge
 3. Release Please will automatically create a stable release PR
 4. Merge the Release Please PR to create the stable release
@@ -244,7 +244,7 @@ Closes #123
 
 ### Review Process
 
-1. At least one maintainer approval required
+1. At least one v1.8.1-rc.2tainer approval required
 2. All CI/CD checks must pass
 3. Code should follow existing style conventions
 4. Changes should include appropriate tests
