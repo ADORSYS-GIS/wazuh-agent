@@ -90,12 +90,12 @@ import_keys() {
     # Import GPG key and set up the repository for Linux
   GPG_KEY_URL="https://packages.wazuh.com/key/GPG-KEY-WAZUH"
 
-    if [[ "$PACKAGE_MANAGER" = "$YUM_PACKAGE" ]] && ! rpm -q gpg-pubkey --qf '%{SUMMARY}\n' | grep -q "Wazuh"; then
+    if [ "$PACKAGE_MANAGER" = "$YUM_PACKAGE" ] && ! rpm -q gpg-pubkey --qf '%{SUMMARY}\n' | grep -q "Wazuh"; then
         curl -s $GPG_KEY_URL | $GPG_IMPORT_CMD
         info_message "GPG key imported successfully."
     fi
 
-    if [[ "$PACKAGE_MANAGER" = "$APT_PACKAGE" ]] && ! [[ -f $GPG_KEYRING ]]; then
+    if [ "$PACKAGE_MANAGER" = "$APT_PACKAGE" ] && ! [ -f "$GPG_KEYRING" ]; then
         curl -s $GPG_KEY_URL | gpg --no-default-keyring --keyring $GPG_KEYRING --import && chmod 644 $GPG_KEYRING
         info_message "GPG key imported successfully."
     fi
@@ -104,8 +104,7 @@ import_keys() {
         info_message "Wazuh repository configured successfully."
     fi
 
-    if [[ "$PACKAGE_MANAGER" != "$YUM_PACKAGE" &&
-        "$PACKAGE_MANAGER" != "$ZYPPER_PACKAGE" ]]; then
+    if [ "$PACKAGE_MANAGER" != "$YUM_PACKAGE" ] && [ "$PACKAGE_MANAGER" != "$ZYPPER_PACKAGE" ]; then
         return
     fi
 

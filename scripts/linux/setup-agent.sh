@@ -278,7 +278,7 @@ fi
 
 # Step 5: Install the selected IDS Engine (Snort or Suricata)
 info_message "Selected IDS engine: $IDS_ENGINE"
-if [[ "$IDS_ENGINE" = "$SURICATA_ENGINE" ]]; then
+if [ "$IDS_ENGINE" = "$SURICATA_ENGINE" ]; then
     uninstall_snort
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
     download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-suricata.sh" "Suricata install script"

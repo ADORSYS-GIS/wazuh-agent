@@ -144,7 +144,7 @@ cleanup_repo() {
         error_exit "Failed to remove repository file"
     fi
 
-    if [[ "$PACKAGE_MANAGER" = "apt" ]] && ! maybe_sudo rm -f "$GPG_KEY_FILE"; then
+    if [ "$PACKAGE_MANAGER" = "apt" ] && ! maybe_sudo rm -f "$GPG_KEY_FILE"; then
         error_exit "Failed to remove GPG key"
     fi
 
