@@ -244,7 +244,7 @@ Closes #123
 
 ### Review Process
 
-1. At least one v1.8.1-rc.2tainer approval required
+1. At least one maintainer approval required
 2. All CI/CD checks must pass
 3. Code should follow existing style conventions
 4. Changes should include appropriate tests
