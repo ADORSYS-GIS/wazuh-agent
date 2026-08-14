@@ -8,12 +8,16 @@ param(
 # Source shared utilities
 if (-not $env:WAZUH_AGENT_REPO_VERSION)
 {
-    $env:WAZUH_AGENT_REPO_VERSION = "1.8.1-rc.2"
+    $env:WAZUH_AGENT_REPO_VERSION = "main"
 }
 
 if (-not $env:WAZUH_AGENT_REPO_REF)
 {
-    $env:WAZUH_AGENT_REPO_REF = "refs/tags/v$env:WAZUH_AGENT_REPO_VERSION"
+    if ($env:WAZUH_AGENT_REPO_VERSION -eq "main") {
+        $env:WAZUH_AGENT_REPO_REF = "main"
+    } else {
+        $env:WAZUH_AGENT_REPO_REF = "refs/tags/v$env:WAZUH_AGENT_REPO_VERSION"
+    }
 }
 
 $UtilsTmp = Join-Path -Path $env:TEMP -ChildPath "wazuh_utils_$((Get-Date).Ticks)"
@@ -56,8 +60,8 @@ $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } e
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.1-rc.4" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.3" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.1.5" }
-$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.8.1-rc.2" }
-$WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
+$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "main" }
+$WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } elseif ($WAZUH_AGENT_REPO_VERSION -eq "main") { "main" } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
 
 # Additional repo ref variables for other components
 $WAZUH_CERT_OAUTH2_REPO_REF = if ($env:WAZUH_CERT_OAUTH2_REPO_REF) { $env:WAZUH_CERT_OAUTH2_REPO_REF } else { "refs/tags/v$WOPS_VERSION" }

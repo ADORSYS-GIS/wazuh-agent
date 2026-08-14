@@ -119,7 +119,7 @@ download_file() {
 
     info_message "Downloading $description..."
 
-    if [[ -z "$url" ]] || [[ -z "$dest" ]]; then
+    if [ -z "$url" ] || [ -z "$dest" ]; then
         error_exit "Usage: download_file <url> <destination> [description] [max_retries]"
     fi
     
@@ -132,7 +132,7 @@ download_file() {
         }
     fi
 
-    while [[ "$retry_count" -lt "$max_retries" ]]; do
+    while [ "$retry_count" -lt "$max_retries" ]; do
         if command_exists curl; then
             # If running as root, we can use -o directly. Otherwise, we might need sudo tee.
             if [ "$(id -u)" -eq 0 ]; then
@@ -190,7 +190,7 @@ download_and_verify_file() {
         error_exit "Failed to download $name from $url"
     fi
 
-    if [[ -n "$checksum_url" ]]; then
+    if [ -n "$checksum_url" ]; then
         local temp_checksum_file
         temp_checksum_file=$(mktemp)
         if ! download_file "$checksum_url" "$temp_checksum_file" "checksum file for $name"; then
@@ -199,11 +199,11 @@ download_and_verify_file() {
         checksum_file="$temp_checksum_file"
     fi
 
-    if [[ -f "$checksum_file" ]]; then
+    if [ -f "$checksum_file" ]; then
         local expected
         expected=$(grep -E "[[:space:]]${pattern}$" "$checksum_file" | awk '{print $1}')
 
-        if [[ -n "$expected" ]]; then
+        if [ -n "$expected" ]; then
             if ! verify_checksum "$dest" "$expected"; then
                 error_exit "$name checksum verification failed"
             fi
@@ -213,7 +213,7 @@ download_and_verify_file() {
         fi
 
         # Cleanup temporary checksum file if it was downloaded from a URL
-        if [[ -n "$checksum_url" ]] && [[ -f "$checksum_file" ]]; then
+        if [ -n "$checksum_url" ] && [ -f "$checksum_file" ]; then
             rm -f "$checksum_file"
         fi
     else

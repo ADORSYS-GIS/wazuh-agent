@@ -3,8 +3,12 @@
 set -eu
 
 # Repository ref
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.1-rc.2'}
-WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'main'}
+if [ "${WAZUH_AGENT_REPO_VERSION}" = "main" ]; then
+    WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"main"}
+else
+    WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
+fi
 
 # Create a secure temporary directory for utilities
 TMP_FOLDER="$(mktemp -d)"
@@ -285,7 +289,7 @@ if [ "$IDS_ENGINE" = "$SURICATA_ENGINE" ]; then
     if ! (maybe_sudo env bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
         error_exit "Failed to install 'suricata'"
     fi
-elif [[ "$IDS_ENGINE" = "snort" ]]; then
+elif [ "$IDS_ENGINE" = "snort" ]; then
     uninstall_suricata
     info_message "Installing Snort..."
     download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/${MACOS_SCRIPT_PATH}" "$TMP_FOLDER/install-snort.sh" "${MACOS_SCRIPT_PATH}" "install-snort.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/${WAZUH_SNORT_REPO_REF}/checksums.sha256"
@@ -295,7 +299,7 @@ elif [[ "$IDS_ENGINE" = "snort" ]]; then
 fi
 
 # Step 6: Install Trivy if the flag is set
-if [[ "$INSTALL_TRIVY" = "TRUE" ]]; then
+if [ "$INSTALL_TRIVY" = "TRUE" ]; then
     info_message "Installing Trivy..."
     download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/${MACOS_SCRIPT_PATH}" "$TMP_FOLDER/install-trivy.sh" "${MACOS_SCRIPT_PATH}" "install-trivy.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-trivy/${WAZUH_TRIVY_REPO_REF}/checksums.sha256"
     if ! (env WAZUH_TRIVY_REPO_REF="$WAZUH_TRIVY_REPO_REF" bash "$TMP_FOLDER/install-trivy.sh" < /dev/null) 2>&1; then

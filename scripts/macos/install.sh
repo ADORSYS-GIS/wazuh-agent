@@ -3,8 +3,12 @@
 set -eu
 
 # Repository ref
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.1-rc.2'}
-WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'main'}
+if [ "${WAZUH_AGENT_REPO_VERSION}" = "main" ]; then
+    WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"main"}
+else
+    WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"refs/tags/v${WAZUH_AGENT_REPO_VERSION}"}
+fi
 
 # Download utils.sh from repository
 # Create a secure temporary directory for utilities

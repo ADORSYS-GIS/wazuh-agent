@@ -38,7 +38,7 @@ Please be respectful and professional in all interactions. We aim to maintain a 
 
 ### Branch Strategy
 
-- `main` - Stable production releases
+- `v1.8.1-rc.2` - Stable production releases
 - `develop` - Integration branch for features (no automatic releases)
 - `feature/*` - Feature development branches
 - `hotfix/*` - Emergency fixes for production
@@ -119,7 +119,7 @@ Pre-releases (release candidates, beta versions) are created **manually** by pus
 
 ### When to Create a Pre-Release
 
-- Before merging to `main` for final release
+- Before merging to `v1.8.1-rc.2` for final release
 - To test features in production-like environment
 - To share experimental builds with testers
 - For milestone checkpoints during development
@@ -128,7 +128,7 @@ Pre-releases (release candidates, beta versions) are created **manually** by pus
 
 Tags should follow semantic versioning with pre-release identifiers:
 
-- **Release Candidate**: `v1.8.1-rc.2`, `v1.9.0-rc.2`, etc.
+- **Release Candidate**: `v1.9.0-rc.1`, `v1.9.0-rc.2`, etc.
 - **Beta**: `v1.9.0-beta.1`, `v1.9.0-beta.2`, etc.
 - **Alpha**: `v1.9.0-alpha.1`, `v1.9.0-alpha.2`, etc.
 
@@ -202,9 +202,9 @@ git push upstream v1.9.0-rc.3
 
 ### Promoting RC to Stable Release
 
-Once testing is complete, merge to `main` for automatic stable release:
+Once testing is complete, merge to `v1.8.1-rc.2` for automatic stable release:
 
-1. Create PR from `develop` to `main`
+1. Create PR from `develop` to `v1.8.1-rc.2`
 2. Get approvals and merge
 3. Release Please will automatically create a stable release PR
 4. Merge the Release Please PR to create the stable release
