@@ -50,7 +50,7 @@ fi
 # 3. Source utils.sh only after verification
 . "$UTILS_TMP/utils.sh"
 
-LOGGED_IN_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/ && ! /loginwindow/ {print $3}')
+LOGGED_IN_USER=$(echo "show State:/Users/ConsoleUser" | scutil | awk '/Name :/ && ! /loginwindow/ {print $3}')
 
 #Get the logged-in user on macOS
 brew_command() {
