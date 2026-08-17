@@ -7,7 +7,7 @@ set -eu
 # downloaded to a temporary location and is executed remotely.
 
 REPO_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent"
-REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'main'}
+REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.1'}
 if [ "${REPO_VERSION}" = "main" ]; then
     REF=${WAZUH_AGENT_REPO_REF:-"main"}
 else
