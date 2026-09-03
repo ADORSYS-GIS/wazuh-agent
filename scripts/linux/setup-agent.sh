@@ -368,7 +368,7 @@ if [ "$INSTALL_NETBIRD" = "TRUE" ]; then
         if ! download_file "https://pkgs.netbird.io/install.sh" "$TMP_FOLDER/netbird-install.sh" "NetBird install script"; then
             error_exit "Failed to download NetBird install script"
         fi
-        if ! sh "$TMP_FOLDER/netbird-install.sh" < /dev/null; then
+        if ! env USE_BIN_INSTALL=true sh "$TMP_FOLDER/netbird-install.sh" < /dev/null; then
             error_exit "Failed to install NetBird client"
         fi
         success_message "NetBird client installed successfully."
