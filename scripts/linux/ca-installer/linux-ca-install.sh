@@ -19,9 +19,13 @@
 
 set -euo pipefail
 
-SCRIPT_BRANCH="${SCRIPT_BRANCH:-feat/adguard-helm-prod}"
-REPO_RAW="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-helm/${SCRIPT_BRANCH}/charts/adguard/block-proxy/scripts"
-REPO_API="https://api.github.com/repos/ADORSYS-GIS/wazuh-helm/contents/charts/adguard/block-proxy/scripts"
+# BASH_SOURCE is unset when bash reads via stdin/pipe — must init before set -u
+# is evaluated.
+: "${BASH_SOURCE:=['']}"
+
+SCRIPT_BRANCH="${SCRIPT_BRANCH:-dns-block}"
+REPO_RAW="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${SCRIPT_BRANCH}/scripts/linux/ca-installer"
+REPO_API="https://api.github.com/repos/ADORSYS-GIS/wazuh-agent/contents/scripts/linux/ca-installer"
 
 info()  { echo -e "\033[1;32m[INFO]\033[0m  $*"; }
 warn()  { echo -e "\033[1;33m[WARN]\033[0m  $*" >&2; }
@@ -42,7 +46,12 @@ if [ -n "${1:-}" ] && [ -f "${1}" ]; then
 elif [ -n "${CA_CRT:-}" ] && [ -f "${CA_CRT}" ]; then
   CA_FILE="${CA_CRT}"
 else
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || SCRIPT_DIR=""
+  SCRIPT_DIR=""
+  if [ -n "${BASH_SOURCE+x}" ] && [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  elif [ -n "${0}" ] && [ "${0}" != "-bash" ] && [ "${0}" != "bash" ] && [ -f "${0}" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${0}")" && pwd)"
+  fi
   for candidate in \
     "${SCRIPT_DIR}/adorsys-block-page-ca.crt" \
     "${SCRIPT_DIR}/../adorsys-block-page-ca.crt" \
