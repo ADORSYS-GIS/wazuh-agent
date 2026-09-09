@@ -2,6 +2,7 @@
 
 [![CI/CD Pipeline](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/release.yaml/badge.svg?branch=main)](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/release.yaml)
 [![CI/CD Pipeline](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/release.yaml/badge.svg?branch=main)](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/release.yaml)
+[![SonarQube](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/sonarqube.yml/badge.svg)](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/sonarqube.yml)
 
 This repository provides an automated, **verified** setup script for installing the Wazuh Agent along with essential security tools. The installer verifies script integrity using SHA256 checksums before execution.
 
