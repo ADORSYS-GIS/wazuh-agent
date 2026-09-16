@@ -228,7 +228,7 @@ uninstall_snort() {
 uninstall_suricata() {
     if command_exists suricata; then
         info_message "Uninstalling Suricata..."
-        download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh" "Suricata uninstall script"
+        download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/macos/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh" "Suricata uninstall script"
         if ! (bash "$TMP_FOLDER/uninstall-suricata.sh") 2>&1; then
             error_exit "Failed to uninstall 'suricata'"
         fi
@@ -293,7 +293,7 @@ info_message "Selected IDS engine: $IDS_ENGINE"
 if [ "$IDS_ENGINE" = "$SURICATA_ENGINE" ]; then
     uninstall_snort
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
-    download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-suricata.sh" "Suricata install script"
+    download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/macos/install.sh" "$TMP_FOLDER/install-suricata.sh" "Suricata install script"
     # Pass the selected mode to the suricata install script
     if ! (maybe_sudo env bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
         error_exit "Failed to install 'suricata'"

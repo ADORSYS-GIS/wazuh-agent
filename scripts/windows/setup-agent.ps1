@@ -214,7 +214,7 @@ function Uninstall-Snort {
 
 # Step 5: Download and install Suricata with error handling
 function Install-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/install.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/install.ps1"
     $SuricataScript = "$env:TEMP\suricata.ps1"
     $global:InstallerFiles += $SuricataScript
 
@@ -229,7 +229,7 @@ function Install-Suricata {
 }
 
 function Uninstall-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/uninstall.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/uninstall.ps1"
     $UninstallSuricataScript = "$env:TEMP\uninstall_suricata.ps1"
     $global:InstallerFiles += $UninstallSuricataScript
     $TaskName = "SuricataStartup"
