@@ -253,7 +253,7 @@ download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-ce
 
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/${LINUX_SCRIPT_PATH}" "$TMP_FOLDER/install-wazuh-agent-status.sh" "${LINUX_SCRIPT_PATH}" "install-wazuh-agent-status.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/checksums.sha256"
 
-download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-yara.sh" "Yara install script"
+download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-yara.sh" "Yara install script"
 
 # Step 0: Install dependencies
 info_message "Installing dependencies"
