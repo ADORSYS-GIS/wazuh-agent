@@ -174,6 +174,8 @@ fi
 
 # Step 2: Uninstall yara
 print_step 2 "Uninstalling yara..."
+# Safeguard: Remove potentially dangling YARA symlink from previous broken installations
+maybe_sudo rm -f /usr/local/bin/yara
 if ! (bash "$TMP_FOLDER/uninstall-yara.sh") 2>&1; then
     error_exit "Failed to uninstall 'yara'"
 fi
