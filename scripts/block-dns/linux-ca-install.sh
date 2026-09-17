@@ -27,6 +27,9 @@
 #
 # NOTE: Browser NSS databases are always created WITHOUT a password
 # (empty password + explicit -f pwfile), so certutil never prompts.
+#
+# NOTE: Firefox is NOT supported for now (not allowed in the company).
+# Firefox uses its own NSS store and would need separate handling — revisit later.
 # =============================================================================
 
 set -euo pipefail
@@ -265,69 +268,7 @@ else
   _own "${SNAP_NSSDB}"
 fi
 
-# -----------------------------------------------------------------------------
-# 5. Firefox NSS store (snap / apt / Mozilla tarball — all install types)
-# -----------------------------------------------------------------------------
-info "Checking Firefox..."
-
-FIREFOX_BASE="${REAL_USER_HOME}/snap/firefox"
-FIREFOX_FOUND=0
-
-_ff_add_profile() {
-  _dir="$1"
-  [ -d "${_dir}" ] || return 1
-  _nssdb="${_dir}cert9.db"
-
-  if [ ! -f "${_nssdb}" ]; then
-    certutil -N -d sql:"${_dir}" --empty-password -f "${PWFILE}" 2>/dev/null || true
-  fi
-
-  certutil -d sql:"${_dir}" -D -n "AdORSYS Block Page Root CA" \
-    -f "${PWFILE}" 2>/dev/null || true
-
-  certutil -d sql:"${_dir}" -A \
-    -t "CT,," \
-    -n "AdORSYS Block Page Root CA" \
-    -i "${CA_FILE}" \
-    -f "${PWFILE}" \
-    || {
-      warn "Firefox profile $(basename "${_dir}") import failed"
-      return 1
-    }
-
-  if certutil -d sql:"${_dir}" -L -f "${PWFILE}" 2>/dev/null | grep -qi "adorsys"; then
-    info "Firefox profile: $(basename "${_dir}") ✔"
-    FIREFOX_FOUND=1
-  fi
-
-  _own "${_dir}"
-}
-
-# snap Firefox
-if [ -d "${FIREFOX_BASE}/common/.mozilla/firefox" ]; then
-  for PROFILE_DIR in "${FIREFOX_BASE}/common/.mozilla/firefox"/*/; do
-    _ff_add_profile "${PROFILE_DIR}" || true
-  done
-fi
-
-# apt / Mozilla DEB Firefox
-APT_FIREFOX_BASE="${REAL_USER_HOME}/.mozilla/firefox"
-if [ -d "${APT_FIREFOX_BASE}" ]; then
-  for PROFILE_DIR in "${APT_FIREFOX_BASE}"/*/; do
-    _ff_add_profile "${PROFILE_DIR}" || true
-  done
-fi
-
-# Mozilla official tarball / Firefox Download
-CONFIG_FIREFOX_BASE="${REAL_USER_HOME}/.config/mozilla/firefox"
-if [ -d "${CONFIG_FIREFOX_BASE}" ]; then
-  for PROFILE_DIR in "${CONFIG_FIREFOX_BASE}"/*/; do
-    _ff_add_profile "${PROFILE_DIR}" || true
-  done
-fi
-
-if [ "${FIREFOX_FOUND}" -eq 0 ]; then
-  info "Firefox not found or no profiles — skipping. Install and re-run to enable."
-fi
+# NOTE: Firefox is NOT supported for now (not allowed in the company).
+# Firefox uses its own NSS store and would need separate handling — revisit later.
 
 info "AdORSYS Block-Page CA installed successfully ✔"

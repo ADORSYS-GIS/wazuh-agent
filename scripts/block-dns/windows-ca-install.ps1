@@ -5,10 +5,8 @@
 # (Local Machine > Trusted Root Certification Authorities), which is the trust
 # store used by Chrome, Edge and most system TLS consumers.
 #
-# NOTE: Firefox on Windows uses its own NSS store (profile folder) and does
-# NOT read the Windows certificate store. Import the cert manually in
-# Firefox (Settings > Privacy & Security > Certificates > View Certificates
-# > Authorities > Import) if needed.
+# NOTE: Firefox is NOT supported for now (not allowed in the company).
+# Firefox uses its own NSS store and would need separate handling — revisit later.
 #
 # Requirements:
 #   - Windows PowerShell 5.1+ (or PowerShell 7+)

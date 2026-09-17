@@ -21,6 +21,9 @@
 #                passed through:  sudo CA_BRANCH=<branch> ./macos-ca-install.sh
 #                (or: export CA_BRANCH=<branch> && sudo -E ./macos-ca-install.sh)
 #   CA_CRT     — Path to a local .crt file (skips fetch if set)
+#
+# NOTE: Firefox is NOT supported for now (not allowed in the company).
+# Firefox uses its own NSS store and would need separate handling — revisit later.
 # =============================================================================
 
 set -euo pipefail
