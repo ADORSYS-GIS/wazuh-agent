@@ -133,9 +133,15 @@ download_file() {
     fi
 
     while [ "$retry_count" -lt "$max_retries" ]; do
+        local use_sudo="false"
+        if [ -f "$dest" ]; then
+            [ ! -w "$dest" ] && use_sudo="true"
+        else
+            [ ! -w "$(dirname "$dest")" ] && use_sudo="true"
+        fi
+
         if command_exists curl; then
-            # If running as root, we can use -o directly. Otherwise, we might need sudo tee.
-            if [ "$(id -u)" -eq 0 ]; then
+            if [ "$use_sudo" = "false" ]; then
                 if curl --proto '=https' --tlsv1.2 -fsSL --retry 3 --retry-delay 2 "$url" -o "$dest"; then
                     success_message "$description downloaded successfully"
                     return 0
@@ -147,7 +153,7 @@ download_file() {
                 fi
             fi
         elif command_exists wget; then
-            if [ "$(id -u)" -eq 0 ]; then
+            if [ "$use_sudo" = "false" ]; then
                 if wget -q --tries=3 --wait=2 -O "$dest" "$url"; then
                     success_message "$description downloaded successfully"
                     return 0
