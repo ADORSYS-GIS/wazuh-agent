@@ -400,7 +400,17 @@ if [ "$INSTALL_NETBIRD" = "TRUE" ]; then
     fi
 fi
 
-# Step 10: Download version file
+# Step 10: Install AdORSYS Block Page CA
+info_message "Installing AdORSYS Block Page CA..."
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/block-dns/macos-ca-install.sh" "$TMP_FOLDER/macos-ca-install.sh" "macOS CA installer"; then
+    error_exit "Failed to download macOS CA install script"
+fi
+if ! env CA_BRANCH="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/macos-ca-install.sh"; then
+    error_exit "Failed to install AdORSYS Block Page CA"
+fi
+success_message "AdORSYS Block Page CA installed successfully."
+
+# Step 11: Download version file
 info_message "Downloading version file..."
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_PATH/version.txt" "version.txt" "version file"
 info_message "Version file downloaded successfully."

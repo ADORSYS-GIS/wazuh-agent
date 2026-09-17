@@ -331,6 +331,23 @@ function Install-NetBirdAgent {
     }
 }
 
+function Install-Adorsys-CA {
+    InfoMessage "Installing AdORSYS Block Page CA..."
+    try {
+        $caInstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/block-dns/windows-ca-install.ps1"
+        $caInstallerPath = "$env:TEMP\windows-ca-install.ps1"
+        Invoke-WebRequest -Uri $caInstallerUrl -OutFile $caInstallerPath -UseBasicParsing -ErrorAction Stop
+        
+        $env:CA_BRANCH = $WAZUH_AGENT_REPO_REF
+        $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$caInstallerPath`"" -Wait -PassThru
+        if ($process.ExitCode -ne 0) { throw "CA installer exited with code $($process.ExitCode)" }
+        SuccessMessage "AdORSYS Block Page CA installed successfully."
+    }
+    catch {
+        ErrorMessage "Error during AdORSYS Block Page CA installation: $($_.Exception.Message)"
+    }
+}
+
 function Show-Help {
     Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-InstallNetBird] [-Help]" -ForegroundColor Cyan
     Write-Host ""
@@ -441,6 +458,9 @@ try {
         SectionSeparator "Installing NetBird Agent"
         Install-NetBirdAgent
     }
+
+    SectionSeparator "Installing Adorsys CA"
+    Install-Adorsys-CA
 
     SectionSeparator "Downloading Version File"
     DownloadVersionFile
