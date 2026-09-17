@@ -141,16 +141,4 @@ else
   warn "Could not verify certificate in system keychain."
 fi
 
-# -----------------------------------------------------------------------------
-# Done
-# -----------------------------------------------------------------------------
-echo ""
-info "============================================"
-info "  AdORSYS Block-Page CA installed          "
-info "============================================"
-info ""
-info "  Keychain  : ${KEYCHAIN}"
-info "  Label     : ${CERT_LABEL}"
-info ""
-info "Restart Safari to pick up the new root CA."
-echo ""
+info "AdORSYS Block-Page CA installed successfully ✔"

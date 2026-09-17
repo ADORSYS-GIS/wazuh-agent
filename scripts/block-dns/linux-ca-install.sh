@@ -185,7 +185,7 @@ mkdir -p "${NSSDB}"
 if [ -e "${NSSDB}/cert9.db" ]; then
   BAK="${NSSDB}.bak.$(date +%Y%m%d%H%M%S)"
   cp -r "${NSSDB}" "${BAK}"
-  warn "Backed up existing NSS DB to ${BAK}"
+  info "Backed up existing NSS DB to ${BAK}"
   rm -rf "${NSSDB:?}"
   mkdir -p "${NSSDB}"
 fi
@@ -235,7 +235,7 @@ else
   if [ -e "${SNAP_NSSDB}/cert9.db" ]; then
     SNAP_BAK="${SNAP_NSSDB}.bak.$(date +%Y%m%d%H%M%S)"
     cp -r "${SNAP_NSSDB}" "${SNAP_BAK}"
-    warn "Backed up snap Chromium NSS DB to ${SNAP_BAK}"
+    info "Backed up snap Chromium NSS DB to ${SNAP_BAK}"
     rm -rf "${SNAP_NSSDB:?}"
     mkdir -p "${SNAP_NSSDB}"
   fi
@@ -330,19 +330,4 @@ if [ "${FIREFOX_FOUND}" -eq 0 ]; then
   info "Firefox not found or no profiles — skipping. Install and re-run to enable."
 fi
 
-# -----------------------------------------------------------------------------
-# 6. Restart nudge
-# -----------------------------------------------------------------------------
-echo ""
-info "============================================"
-info "  AdORSYS Block-Page CA installed          "
-info "============================================"
-info ""
-info "  System store  : ${DEST}"
-info "  Browser NSS   : ${NSSDB}"
-[ -n "${SNAP_CURRENT}" ] && info "  snap Chromium: $(basename "${SNAP_CURRENT}")"
-[ "${FIREFOX_FOUND}" -eq 1 ] && info "  Firefox      : all profiles updated"
-info ""
-info "Restart browsers (Chrome, Edge, Firefox) to pick up the new root CA."
-info "All Chromium-based browsers share the NSS store — restart Chrome once."
-info ""
+info "AdORSYS Block-Page CA installed successfully ✔"
