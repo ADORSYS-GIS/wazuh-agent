@@ -283,6 +283,15 @@ fi
 info_message "Installing yara"
 # Safeguard: Remove potentially dangling YARA symlink from previous broken installations
 maybe_sudo rm -f /usr/local/bin/yara
+
+# Safeguard: If YARA deb package is installed but rules are missing (half-installed state), remove it
+if command_exists dpkg && dpkg -s yara >/dev/null 2>&1; then
+    if [ ! -f "/var/ossec/active-response/bin/yara.sh" ] || [ ! -f "/var/ossec/ruleset/yara/rules/yara_rules.yar" ]; then
+        warn_message "Found half-installed YARA state. Cleaning up..."
+        maybe_sudo apt-get remove -y yara >/dev/null 2>&1 || true
+    fi
+fi
+
 if ! (maybe_sudo env INSTALLATION_TYPE=$YARA_INSTALLATION_TYPE WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" bash "$TMP_FOLDER/install-yara.sh" < /dev/null) 2>&1; then
     error_exit "Failed to install 'yara'"
 fi
