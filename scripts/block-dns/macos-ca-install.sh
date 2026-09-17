@@ -12,11 +12,14 @@
 #
 # Usage:
 #   sudo ./macos-ca-install.sh
-#   CA_BRANCH=dns-block sudo ./macos-ca-install.sh
+#   sudo CA_BRANCH=dns-block ./macos-ca-install.sh
 #   sudo ./macos-ca-install.sh /path/to/ca.crt   # override: local file
 #
 # Environment variables:
-#   CA_BRANCH  — Git branch to fetch the cert from (default: main)
+#   CA_BRANCH  — Git branch to fetch the cert from (default: main).
+#                NOTE: when running via sudo, set it AFTER sudo so it is
+#                passed through:  sudo CA_BRANCH=<branch> ./macos-ca-install.sh
+#                (or: export CA_BRANCH=<branch> && sudo -E ./macos-ca-install.sh)
 #   CA_CRT     — Path to a local .crt file (skips fetch if set)
 # =============================================================================
 
