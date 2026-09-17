@@ -16,8 +16,8 @@ WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.4-1'}
 WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.1'}
 WOPS_VERSION=${WOPS_VERSION:-'0.4.3'}
 APP_NAME=${APP_NAME:-'wazuh-cert-oauth2-client'}
-WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-'0.1.5'}
-WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-'0.3.14'}
+WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-'0.2.2'}
+WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-'0.4.2'}
 
 # Repository references (can be overridden for testing)
 if [ "${WAZUH_AGENT_REPO_VERSION}" = "main" ]; then
@@ -76,9 +76,9 @@ while getopts ":hcsytb" opt; do
        echo "  WAZUH_AGENT_REPO_REF       Full repository reference (default: refs/tags/v\${WAZUH_AGENT_REPO_VERSION})"
        echo "  WOPS_VERSION               cert-oauth2 client version (default: 0.4.3)"
        echo "  WAZUH_CERT_OAUTH2_REPO_REF cert-oauth2 repository reference (default: refs/tags/v\${WOPS_VERSION})"
-       echo "  WAZUH_SURICATA_VERSION     Suricata version (default: 0.1.5)"
+       echo "  WAZUH_SURICATA_VERSION     Suricata version (default: 0.2.2)"
        echo "  WAZUH_SURICATA_REPO_REF    Suricata repository reference (default: refs/tags/v\${WAZUH_SURICATA_VERSION})"
-       echo "  WAZUH_YARA_VERSION         Yara version (default: 0.3.14)"
+       echo "  WAZUH_YARA_VERSION         Yara version (default: 0.4.2)"
        echo "  WAZUH_YARA_REPO_REF        Yara repository reference (default: refs/tags/v\${WAZUH_YARA_VERSION})"
        echo "  WAZUH_TRIVY_REPO_REF       Trivy repository reference (default: main)"
        echo ""

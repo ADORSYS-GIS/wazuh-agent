@@ -83,9 +83,9 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/script
 | `WAZUH_AGENT_REPO_REF` | Full repository reference | `refs/tags/v${WAZUH_AGENT_REPO_VERSION}` |
 | `WOPS_VERSION` | cert-oauth2 client version | `0.4.3` |
 | `WAZUH_CERT_OAUTH2_REPO_REF` | cert-oauth2 repository reference | `refs/tags/v${WOPS_VERSION}` |
-| `WAZUH_SURICATA_VERSION` | Suricata version | `0.1.5` |
+| `WAZUH_SURICATA_VERSION` | Suricata version | `0.2.2` |
 | `WAZUH_SURICATA_REPO_REF` | Suricata repository reference | `refs/tags/v${WAZUH_SURICATA_VERSION}` |
-| `WAZUH_YARA_VERSION` | Yara version | `0.3.14` |
+| `WAZUH_YARA_VERSION` | Yara version | `0.4.2` |
 | `WAZUH_YARA_REPO_REF` | Yara repository reference | `refs/tags/v${WAZUH_YARA_VERSION}` |
 | `WAZUH_TRIVY_REPO_REF` | Trivy repository reference | `main` |
 | `INSTALL_CERT_OAUTH2` | Install cert-oauth2 (`TRUE`/`FALSE`) | `FALSE` |
