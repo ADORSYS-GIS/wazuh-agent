@@ -93,25 +93,21 @@ try {
     }
 
     # --- Step 3: Install into Local Machine > Trusted Root Certification Authorities ---
-    Write-Info "Installing into $CertStore using certutil..."
-
-    # Remove any previous copy to avoid duplicates
-    try {
-        # We suppress errors here because if the cert isn't found, certutil will output an error which is fine
-        & certutil.exe -delstore root $CertLabel *>&1 | Out-Null
-    } catch {}
+    Write-Info "Installing into $CertStore ..."
 
     # Import the certificate into the store
-    $importOutput = & certutil.exe -addstore root $CertFile 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Die "Failed to import certificate: $importOutput"
+    try {
+        Import-Certificate -FilePath $CertFile -CertStoreLocation $CertStore | Out-Null
+        Write-Info "Certificate successfully imported."
+    }
+    catch {
+        Write-Die "Failed to import certificate into $CertStore. Run as Administrator. Details: $($_.Exception.Message)"
     }
 
-    Write-Info "Certificate successfully imported."
-
     # --- Step 4: Verify ---
-    $verifyOutput = & certutil.exe -store root $CertLabel 2>&1
-    if ($LASTEXITCODE -eq 0 -and $verifyOutput -match $CertLabel) {
+    $found = Get-ChildItem $CertStore | Where-Object { $_.Subject -like "*$CertLabel*" }
+
+    if ($found) {
         Write-Info "Verified in $CertStore : $CertLabel"
     }
     else {
