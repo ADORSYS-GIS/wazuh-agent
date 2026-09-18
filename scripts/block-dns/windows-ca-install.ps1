@@ -93,36 +93,25 @@ try {
     }
 
     # --- Step 3: Install into Local Machine > Trusted Root Certification Authorities ---
-    Write-Info "Installing into $CertStore ..."
+    Write-Info "Installing into $CertStore using certutil..."
 
-    # Open the LocalMachine Root certificate store
-    $store = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "LocalMachine")
-    $store.Open("ReadWrite")
-
+    # Remove any previous copy to avoid duplicates
     try {
-        # Remove any previous copy of the same-named CA to avoid duplicate entries
-        $store.Certificates | Where-Object { $_.Subject -like "*$CertLabel*" } | ForEach-Object { 
-            $store.Remove($_) 
-        }
+        # We suppress errors here because if the cert isn't found, certutil will output an error which is fine
+        & certutil.exe -delstore root $CertLabel *>&1 | Out-Null
+    } catch {}
 
-        # Import the certificate into the store
-        $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CertFile)
-        $store.Add($cert)
-        
-        Write-Info "Certificate imported into Trusted Root Certification Authorities."
-    } catch {
-        Write-Die "Could not manage CA certificates: $($_.Exception.Message)"
-    } finally {
-        $store.Close()
+    # Import the certificate into the store
+    $importOutput = & certutil.exe -addstore root $CertFile 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Die "Failed to import certificate: $importOutput"
     }
 
-    # --- Step 4: Verify ---
-    $store = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "LocalMachine")
-    $store.Open("ReadOnly")
-    $found = $store.Certificates | Where-Object { $_.Subject -like "*$CertLabel*" }
-    $store.Close()
+    Write-Info "Certificate successfully imported."
 
-    if ($found) {
+    # --- Step 4: Verify ---
+    $verifyOutput = & certutil.exe -store root $CertLabel 2>&1
+    if ($LASTEXITCODE -eq 0 -and $verifyOutput -match $CertLabel) {
         Write-Info "Verified in $CertStore : $CertLabel"
     }
     else {
