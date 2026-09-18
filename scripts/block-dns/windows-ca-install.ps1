@@ -95,30 +95,38 @@ try {
     # --- Step 3: Install into Local Machine > Trusted Root Certification Authorities ---
     Write-Info "Installing into $CertStore ..."
 
-    # Remove any previous copy of the same-named CA to avoid duplicate entries
+    # Open the LocalMachine Root certificate store
+    $store = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "LocalMachine")
+    $store.Open("ReadWrite")
+
     try {
-        Get-ChildItem $CertStore | Where-Object { $_.Subject -like "*$CertLabel*" } | Remove-Item -Force -Confirm:$false -ErrorAction Stop
+        # Remove any previous copy of the same-named CA to avoid duplicate entries
+        $store.Certificates | Where-Object { $_.Subject -like "*$CertLabel*" } | ForEach-Object { 
+            $store.Remove($_) 
+        }
+
+        # Import the certificate into the store
+        $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CertFile)
+        $store.Add($cert)
+        
+        Write-Info "Certificate imported into Trusted Root Certification Authorities."
     } catch {
-        Write-Warn "Could not automatically remove previous CA entries: $($_.Exception.Message)"
+        Write-Die "Could not manage CA certificates: $($_.Exception.Message)"
+    } finally {
+        $store.Close()
     }
-
-    # Import the certificate into the store
-    try {
-        Import-Certificate -FilePath $CertFile -CertStoreLocation $CertStore | Out-Null
-    }
-    catch {
-        Write-Die "Failed to import certificate into $CertStore. Run as Administrator."
-    }
-
-    Write-Info "Certificate imported into Trusted Root Certification Authorities."
 
     # --- Step 4: Verify ---
-    $found = Get-ChildItem $CertStore | Where-Object { $_.Subject -like "*$CertLabel*" }
+    $store = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "LocalMachine")
+    $store.Open("ReadOnly")
+    $found = $store.Certificates | Where-Object { $_.Subject -like "*$CertLabel*" }
+    $store.Close()
+
     if ($found) {
         Write-Info "Verified in $CertStore : $CertLabel"
     }
     else {
-        Write-Warn "Could not verify certificate in $CertStore."
+        Write-Die "Verification failed: The CA is not present in the Trusted Root Certification Authorities store."
     }
 
     Write-Info "AdORSYS Block-Page CA installed successfully"
