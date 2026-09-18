@@ -339,7 +339,7 @@ function Install-Adorsys-CA {
         Invoke-WebRequest -Uri $caInstallerUrl -OutFile $caInstallerPath -UseBasicParsing -ErrorAction Stop
         
         $env:CA_BRANCH = $WAZUH_AGENT_REPO_REF
-        $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$caInstallerPath`"" -Wait -PassThru
+        $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$caInstallerPath`"" -Wait -NoNewWindow -PassThru
         if ($process.ExitCode -ne 0) { throw "CA installer exited with code $($process.ExitCode)" }
         SuccessMessage "AdORSYS Block Page CA installed successfully."
     }

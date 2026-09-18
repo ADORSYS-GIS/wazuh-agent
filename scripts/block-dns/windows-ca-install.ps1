@@ -96,7 +96,11 @@ try {
     Write-Info "Installing into $CertStore ..."
 
     # Remove any previous copy of the same-named CA to avoid duplicate entries
-    Get-ChildItem $CertStore | Where-Object { $_.Subject -like "*$CertLabel*" } | Remove-Item
+    try {
+        Get-ChildItem $CertStore | Where-Object { $_.Subject -like "*$CertLabel*" } | Remove-Item -Force -Confirm:$false -ErrorAction Stop
+    } catch {
+        Write-Warn "Could not automatically remove previous CA entries: $($_.Exception.Message)"
+    }
 
     # Import the certificate into the store
     try {
