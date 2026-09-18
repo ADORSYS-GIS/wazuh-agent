@@ -334,13 +334,14 @@ function Install-NetBirdAgent {
 function Install-Adorsys-CA {
     InfoMessage "Installing AdORSYS Block Page CA..."
     try {
-        $caInstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/block-dns/windows-ca-install.ps1"
-        $caInstallerPath = "$env:TEMP\windows-ca-install.ps1"
-        Invoke-WebRequest -Uri $caInstallerUrl -OutFile $caInstallerPath -UseBasicParsing -ErrorAction Stop
+        $caCertUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/block-dns/adorsys-block-page-ca.crt"
+        $caCertPath = Join-Path $env:TEMP "adorsys-block-page-ca.crt"
+        $global:InstallerFiles += $caCertPath
+
+        Invoke-WebRequest -Uri $caCertUrl -OutFile $caCertPath -UseBasicParsing -ErrorAction Stop
         
-        $env:CA_BRANCH = $WAZUH_AGENT_REPO_REF
-        $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$caInstallerPath`"" -Wait -NoNewWindow -PassThru
-        if ($process.ExitCode -ne 0) { throw "CA installer exited with code $($process.ExitCode)" }
+        Import-Certificate -FilePath $caCertPath -CertStoreLocation "Cert:\LocalMachine\Root" | Out-Null
+        
         SuccessMessage "AdORSYS Block Page CA installed successfully."
     }
     catch {
