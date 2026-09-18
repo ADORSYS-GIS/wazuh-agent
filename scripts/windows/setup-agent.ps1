@@ -349,6 +349,17 @@ function Install-Adorsys-CA {
     }
 }
 
+function Install-GUI-Installer {
+    InfoMessage "Installing Wazuh Agent GUI Installer (v1.2.0)..."
+    try {
+        irm "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/refs/tags/v1.2.0/install-scripts/windows.ps1" | iex
+        SuccessMessage "Wazuh Agent GUI Installer installed successfully."
+    }
+    catch {
+        ErrorMessage "Error during GUI Installer installation: $($_.Exception.Message)"
+    }
+}
+
 function Show-Help {
     Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-InstallNetBird] [-Help]" -ForegroundColor Cyan
     Write-Host ""
@@ -462,6 +473,9 @@ try {
 
     SectionSeparator "Installing Adorsys CA"
     Install-Adorsys-CA
+
+    SectionSeparator "Installing GUI Installer"
+    Install-GUI-Installer
 
     SectionSeparator "Downloading Version File"
     DownloadVersionFile
