@@ -59,8 +59,8 @@ fi
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 APP_NAME=${APP_NAME:-"wazuh-cert-oauth2-client"}
 WOPS_VERSION=${WOPS_VERSION:-"0.4.3"}
-WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.3.14"}
-WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.1.5"}
+WAZUH_YARA_VERSION=${WAZUH_YARA_VERSION:-"0.4.2"}
+WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-"0.2.2"}
 YARA_INSTALLATION_TYPE=${YARA_INSTALLATION_TYPE:-"desktop"}
 SURICATA_ENGINE="suricata"
 
@@ -74,8 +74,8 @@ GROUP=${GROUP:-"wazuh"}
 LINUX_SCRIPT_PATH="scripts/linux/install.sh"
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.4-1'}
-WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.5.3'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.6-1'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.5.4'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-'test-agent-name'}
 
 
@@ -225,7 +225,7 @@ uninstall_snort() {
 uninstall_suricata() {
     if command_exists suricata; then
         info_message "Uninstalling Suricata..."
-        download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh" "Suricata uninstall script"
+        download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/linux/uninstall.sh" "$TMP_FOLDER/uninstall-suricata.sh" "Suricata uninstall script"
         if ! (bash "$TMP_FOLDER/uninstall-suricata.sh") 2>&1; then
             error_exit "Failed to uninstall 'suricata'"
         fi
@@ -253,7 +253,7 @@ download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-ce
 
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/${LINUX_SCRIPT_PATH}" "$TMP_FOLDER/install-wazuh-agent-status.sh" "${LINUX_SCRIPT_PATH}" "install-wazuh-agent-status.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/${WAZUH_AGENT_STATUS_REPO_REF}/checksums.sha256"
 
-download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-yara.sh" "Yara install script"
+download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/${WAZUH_YARA_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-yara.sh" "Yara install script"
 
 # Step 0: Install dependencies
 info_message "Installing dependencies"
@@ -281,6 +281,17 @@ fi
 
 # Step 4: Download and install yara
 info_message "Installing yara"
+# Safeguard: Remove potentially dangling YARA symlink from previous broken installations
+maybe_sudo rm -f /usr/local/bin/yara
+
+# Safeguard: If YARA deb package is installed but rules are missing (half-installed state), remove it
+if command_exists dpkg && dpkg -s yara >/dev/null 2>&1; then
+    if [ ! -f "/var/ossec/active-response/bin/yara.sh" ] || [ ! -f "/var/ossec/ruleset/yara/rules/yara_rules.yar" ]; then
+        warn_message "Found half-installed YARA state. Cleaning up..."
+        maybe_sudo apt-get remove -y yara >/dev/null 2>&1 || true
+    fi
+fi
+
 if ! (maybe_sudo env INSTALLATION_TYPE=$YARA_INSTALLATION_TYPE WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" bash "$TMP_FOLDER/install-yara.sh" < /dev/null) 2>&1; then
     error_exit "Failed to install 'yara'"
 fi
@@ -290,7 +301,7 @@ info_message "Selected IDS engine: $IDS_ENGINE"
 if [ "$IDS_ENGINE" = "$SURICATA_ENGINE" ]; then
     uninstall_snort
     info_message "Installing Suricata in ${BOLD}${SURICATA_MODE}${NORMAL} mode..."
-    download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/install.sh" "$TMP_FOLDER/install-suricata.sh" "Suricata install script"
+    download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/${WAZUH_SURICATA_REPO_REF}/scripts/linux/install.sh" "$TMP_FOLDER/install-suricata.sh" "Suricata install script"
     # Pass the selected mode to the suricata install script
     if ! (maybe_sudo env bash "$TMP_FOLDER/install-suricata.sh" --mode "$SURICATA_MODE" < /dev/null) 2>&1; then
         error_exit "Failed to install 'suricata'"
@@ -375,9 +386,27 @@ if [ "$INSTALL_NETBIRD" = "TRUE" ]; then
     fi
 fi
 
-# Step 10: Download version file
+# Step 10: Install AdORSYS Block Page CA
+info_message "Installing AdORSYS Block Page CA..."
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/block-dns/linux-ca-install.sh" "$TMP_FOLDER/linux-ca-install.sh" "Linux CA installer"; then
+    error_exit "Failed to download Linux CA install script"
+fi
+if ! env CA_BRANCH="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/linux-ca-install.sh"; then
+    error_exit "Failed to install AdORSYS Block Page CA"
+fi
+success_message "AdORSYS Block Page CA installed successfully."
+
+# Step 11: Download version file
 info_message "Downloading version file..."
 download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/version.txt" "$OSSEC_PATH/version.txt" "version.txt" "version file" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
 info_message "Version file downloaded successfully."
+
+# Step 12: Install GUI Installer
+info_message "Installing Wazuh Agent GUI Installer (v1.2.0)..."
+if ! curl -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/refs/tags/v1.2.0/install-scripts/ubuntu.sh | bash -s latest; then
+    warn_message "Failed to install GUI Installer. It may require manual installation."
+else
+    success_message "Wazuh Agent GUI Installer installed successfully."
+fi
 
 success_message "Wazuh setup has been completed successfully."
