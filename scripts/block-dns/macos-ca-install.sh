@@ -1,9 +1,20 @@
 #!/usr/bin/env bash
 # =============================================================================
-# AdORSYS Block-Page CA — macOS device installer (Safari)
+# Company Root CA — macOS device installer (Safari)
 #
-# Installs the AdORSYS Block Page Root CA into the macOS system keychain,
-# which is the trust store used by Safari (and other system TLS consumers).
+# Installs the Company Root CA (CN=root-ca, O=Company) into the macOS system
+# keychain (the trust store used by Safari and other system TLS consumers),
+# and REMOVES any retired block-page root CA it finds there.
+#
+# Safety model:
+#   * The expected SHA-256 fingerprint is PINNED below. The script refuses to
+#     install anything that does not match it (fail-closed).
+#   * The keychain is verified AFTER install — the fingerprint of what actually
+#     landed in the store must match the pin.
+#   * Retired CAs (old AdORSYS block-page root, previous company roots) are
+#     removed by FINGERPRINT/SUBJECT (via their SHA-1 hash), not by label, so
+#     they are always cleaned up even if installed under a different name.
+#   * Idempotent: re-running is a no-op when the pinned CA is already present.
 #
 # Requirements:
 #   - macOS
@@ -14,6 +25,7 @@
 #   sudo ./macos-ca-install.sh
 #   sudo CA_BRANCH=dns-block ./macos-ca-install.sh
 #   sudo ./macos-ca-install.sh /path/to/ca.crt   # override: local file
+#   ./macos-ca-install.sh --check [path/to/ca.crt]  # validate only, no install
 #
 # Environment variables:
 #   CA_BRANCH  — Git branch to fetch the cert from (default: main).
@@ -28,120 +40,202 @@
 
 set -euo pipefail
 
+# --- Pinned trust anchor -----------------------------------------------------
+# SHA-256 fingerprint (lowercase, no colons) of the ONLY root CA we install.
+# When the CA is rotated, update this pin AND add the old fingerprint to
+# RETIRED_SHA256 below — the script then replaces old with new everywhere.
+EXPECTED_SHA256="3bcd29906e384d66452171fc37f61d74b02ce22c407e5dcd6da85ce7dd2a5477"
+EXPECTED_CN="root-ca"
+
+# Retired block-page root CAs — removed from the keychain, by fingerprint.
+RETIRED_SHA256=(
+  "43623b8212aaedd1045317b7a17257f11082b36969e1d78ceeff76f3cfcc3885"  # AdORSYS Block Page Root CA
+)
+# Retired subjects (substring match, lowercase) — belt & braces for CAs whose
+# fingerprint is not in the list above.
+RETIRED_SUBJECTS=(
+  "adorsys block page root ca"
+)
+
 info()  { echo -e "\033[1;32m[INFO]\033[0m  $*"; }
 warn()  { echo -e "\033[1;33m[WARN]\033[0m  $*" >&2; }
 die()   { echo -e "\033[1;31m[ERROR]\033[0m $*" >&2; exit 1; }
 
 # GitHub raw content base URL for the certificate
 GITHUB_RAW_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent"
-CERT_PATH_IN_REPO="scripts/block-dns/adorsys-block-page-ca.crt"
+CERT_PATH_IN_REPO="scripts/block-dns/company-root-ca.crt"
 
 # -----------------------------------------------------------------------------
 # 0. Real user (works via sudo) + keychain paths
 # -----------------------------------------------------------------------------
 REAL_USER=$(logname 2>/dev/null || echo "${SUDO_USER:-${USER:-}}")
-REAL_USER_HOME=$(dscl . -read "/Users/${REAL_USER}" NFSHomeDirectory 2>/dev/null | cut -d: -f2)
+REAL_USER_HOME=$(dscl . -read "/Users/${REAL_USER}" NFSHomeDirectory 2>/dev/null | cut -d: -f2 || true)
 REAL_USER_HOME="${REAL_USER_HOME:-${HOME}}"
 
 KEYCHAIN="/Library/Keychains/System.keychain"
-CERT_LABEL="AdORSYS Block Page Root CA"
 
 # Temp file for the fetched certificate
-CERT_TMPFILE=$(mktemp /tmp/adorsys-block-ca.XXXXXX.crt)
+CERT_TMPFILE=$(mktemp /tmp/company-root-ca.XXXXXX.crt)
 trap 'rm -f "${CERT_TMPFILE}"' EXIT
 
-# -----------------------------------------------------------------------------
-# 1. Obtain the CA certificate
-# -----------------------------------------------------------------------------
+# --- Fingerprint / subject helpers -------------------------------------------
+norm_fp() {
+  tr -d ':' | tr '[:upper:]' '[:lower:]' | sed 's/^sha256 fingerprint=//'
+}
+
+cert_fp() {
+  openssl x509 -in "$1" -noout -fingerprint -sha256 2>/dev/null | norm_fp || true
+}
+
+cert_subject() {
+  openssl x509 -in "$1" -noout -subject 2>/dev/null \
+    | sed 's/^subject=//' | tr '[:upper:]' '[:lower:]' | tr -s ' ' || true
+}
+
+is_ca() {
+  openssl x509 -in "$1" -noout -text 2>/dev/null | grep -q "CA:TRUE"
+}
+
+is_retired_fp() {
+  local fp="$1" r
+  [ -n "$fp" ] || return 1
+  for r in "${RETIRED_SHA256[@]}"; do
+    [ "$fp" = "$r" ] && return 0
+  done
+  return 1
+}
+
+is_retired_subject() {
+  local subj="$1" s
+  [ -n "$subj" ] || return 1
+  for s in "${RETIRED_SUBJECTS[@]}"; do
+    [[ "$subj" == *"$s"* ]] && return 0
+  done
+  return 1
+}
+
+# Full gate: the file must be a CA cert whose SHA-256 matches the pin.
+check_cert() {
+  local file="$1" fp
+  [ -f "${file}" ] || die "File not found: ${file}"
+  [ -s "${file}" ] || die "File is empty: ${file}"
+  head -1 "${file}" | grep -q "BEGIN CERTIFICATE" || die "Not a PEM certificate: ${file}"
+  openssl x509 -in "${file}" -noout >/dev/null 2>&1 || die "Not a valid X.509 certificate: ${file}"
+  is_ca "${file}" || die "Not a CA certificate (basicConstraints CA:TRUE missing): ${file}"
+  fp=$(cert_fp "${file}")
+  [ -n "${fp}" ] || die "Could not compute fingerprint: ${file}"
+  if [ "${fp}" != "${EXPECTED_SHA256}" ]; then
+    die "Fingerprint mismatch — refusing to install.
+  expected : ${EXPECTED_SHA256}  (${EXPECTED_CN})
+  got      : ${fp}
+If the CA was rotated, update EXPECTED_SHA256 in this script."
+  fi
+  info "Fingerprint verified ✔  ${fp}"
+}
+
+# --- Input: mode + CA certificate --------------------------------------------
+MODE="install"
+CA_FILE=""
+if [ "${1:-}" = "--check" ] || [ "${1:-}" = "-c" ]; then
+  MODE="check"
+  CA_FILE="${2:-}"
+elif [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+  sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'
+  exit 0
+fi
+
 CA_BRANCH="${CA_BRANCH:-main}"
 
-if [ -n "${1:-}" ]; then
-  # User provided a local file as argument
-  CA_FILE="${1}"
-  case "${CA_FILE}" in
-    /*) ;;
-    *) CA_FILE="${REAL_USER_HOME}/${CA_FILE}" ;;
-  esac
-elif [ -n "${CA_CRT:-}" ]; then
-  # User provided a local file via env
-  CA_FILE="${CA_CRT}"
+if [ -n "${CA_FILE}" ] || [ -n "${CA_CRT:-}" ]; then
+  CA_FILE="${CA_FILE:-${CA_CRT}}"
+  info "Using local certificate file: ${CA_FILE}"
   case "${CA_FILE}" in
     /*) ;;
     *) CA_FILE="${REAL_USER_HOME}/${CA_FILE}" ;;
   esac
 else
-  # Fetch from GitHub
   FETCH_URL="${GITHUB_RAW_URL}/${CA_BRANCH}/${CERT_PATH_IN_REPO}"
   info "Fetching certificate from GitHub (branch: ${CA_BRANCH})..."
   info "URL: ${FETCH_URL}"
-
   if ! command -v curl >/dev/null 2>&1; then
     die "curl is required but not installed. Please install curl and retry."
   fi
-
   HTTP_CODE=$(curl -sS -w "%{http_code}" -o "${CERT_TMPFILE}" "${FETCH_URL}" 2>/dev/null) || true
-
   if [ "${HTTP_CODE}" != "200" ]; then
     die "Failed to fetch certificate (HTTP ${HTTP_CODE}). Check branch '${CA_BRANCH}' and try again."
   fi
-
-  # Validate the downloaded file
-  [ -s "${CERT_TMPFILE}" ] || die "Downloaded certificate is empty."
-
-  info "Certificate fetched successfully ✔"
-  info "Stored temporarily at: ${CERT_TMPFILE}"
-
-  # Use the tmp file as the source for the keychain import below
   CA_FILE="${CERT_TMPFILE}"
 fi
 
-[ -f "${CA_FILE}" ] || die "CA file not found: ${CA_FILE}"
-[ -s "${CA_FILE}" ] || die "CA file is empty: ${CA_FILE}"
+check_cert "${CA_FILE}"
 
-# -----------------------------------------------------------------------------
-# 2. Validate it looks like a certificate
-# -----------------------------------------------------------------------------
-if ! grep -q 'BEGIN CERTIFICATE' "${CA_FILE}"; then
-  die "File does not look like a certificate: ${CA_FILE}"
+if [ "${MODE}" = "check" ]; then
+  info "OK — ${CA_FILE} is the pinned Company Root CA (${EXPECTED_CN})"
+  exit 0
 fi
 
-CA_CN=$(openssl x509 -in "${CA_FILE}" -noout -subject 2>/dev/null \
-  | tr -d ' ' | grep -o 'CN=[^,]*' | sed 's/CN=//')
-
-info "CA subject : ${CA_CN}"
-info "CA file    : ${CA_FILE}"
+# -----------------------------------------------------------------------------
+# Keychain scan: remove retired CAs (by SHA-1 hash), detect the pinned CA.
+# Sets PINNED_FOUND=1 when a cert matching the pin is already trusted.
+# -----------------------------------------------------------------------------
+PINNED_FOUND=0
+keychain_scan() {
+  PINNED_FOUND=0
+  local sha1="" pem="" fp="" subj="" line="" in_pem=0
+  while IFS= read -r line; do
+    case "${line}" in
+      "SHA-1 hash:"*) sha1="${line#SHA-1 hash: }" ;;
+      "-----BEGIN CERTIFICATE-----"*) pem="${line}"$'\n'; in_pem=1 ;;
+      "-----END CERTIFICATE-----"*)
+        pem="${pem}${line}"$'\n'
+        fp=$(printf '%s' "${pem}" | openssl x509 -noout -fingerprint -sha256 2>/dev/null | norm_fp || true)
+        subj=$(printf '%s' "${pem}" | openssl x509 -noout -subject 2>/dev/null \
+          | sed 's/^subject=//' | tr -d ' ' | tr '[:upper:]' '[:lower:]' || true)
+        if [ "${fp}" = "${EXPECTED_SHA256}" ]; then PINNED_FOUND=1; fi
+        if is_retired_fp "${fp}" || is_retired_subject "${subj}"; then
+          warn "Removing retired CA from keychain (SHA-1 ${sha1})"
+          security delete-certificate -Z "${sha1}" "${KEYCHAIN}" >/dev/null 2>&1 \
+            || warn "Failed to delete ${sha1} — is the keychain locked?"
+        fi
+        pem=""
+        in_pem=0
+        ;;
+      *) [ "${in_pem}" = "1" ] && pem="${pem}${line}"$'\n' ;;
+    esac
+  done < <(security find-certificate -a -Z -p "${KEYCHAIN}" 2>/dev/null)
+}
 
 # -----------------------------------------------------------------------------
-# 3. Install into the macOS system keychain
+# Install into the macOS system keychain
 # -----------------------------------------------------------------------------
 info "Installing into system keychain (${KEYCHAIN})..."
 
-# Remove any previous copy of the same-named CA to avoid duplicate entries
-security delete-certificate -c "${CERT_LABEL}" "${KEYCHAIN}" >/dev/null 2>&1 \
-  || true
+keychain_scan
 
-# Import the certificate into the system keychain
-if ! security import "${CA_FILE}" -k "${KEYCHAIN}" -t cert >/dev/null 2>&1; then
-  die "Failed to import certificate into system keychain. Run with sudo."
-fi
-
-# Set full server trust for the imported CA
-if ! security add-trusted-cert -d \
-  -r trustRoot \
-  -k "${KEYCHAIN}" \
-  "${CA_FILE}" >/dev/null 2>&1; then
-  die "Failed to mark certificate as trusted. Run with sudo."
-fi
-
-info "Certificate imported and marked as trusted root. ✔"
-
-# -----------------------------------------------------------------------------
-# 4. Verify
-# -----------------------------------------------------------------------------
-if security find-certificate -c "${CERT_LABEL}" "${KEYCHAIN}" >/dev/null 2>&1; then
-  info "Verified in system keychain: ${CERT_LABEL} ✔"
+if [ "${PINNED_FOUND}" -eq 1 ]; then
+  info "Company Root CA already trusted in system keychain ✔"
 else
-  warn "Could not verify certificate in system keychain."
+  if ! security import "${CA_FILE}" -k "${KEYCHAIN}" -t cert >/dev/null 2>&1; then
+    die "Failed to import certificate into system keychain. Run with sudo."
+  fi
+  if ! security add-trusted-cert -d \
+    -r trustRoot \
+    -k "${KEYCHAIN}" \
+    "${CA_FILE}" >/dev/null 2>&1; then
+    die "Failed to mark certificate as trusted. Run with sudo."
+  fi
+  info "Certificate imported and marked as trusted root. ✔"
 fi
 
-info "AdORSYS Block-Page CA installed successfully ✔"
+# -----------------------------------------------------------------------------
+# Verify AFTER install
+# -----------------------------------------------------------------------------
+keychain_scan
+
+if [ "${PINNED_FOUND}" -eq 1 ]; then
+  info "Verified in system keychain (fingerprint match) ✔"
+else
+  die "Verification failed: pinned CA not found in system keychain"
+fi
+
+info "Company Root CA installed successfully ✔"
