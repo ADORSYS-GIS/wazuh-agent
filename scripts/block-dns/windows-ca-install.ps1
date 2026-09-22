@@ -145,7 +145,7 @@ try {
         Write-Info "Fetching certificate from GitHub (branch: $CABranch)..."
         Write-Info "URL: $FetchUrl"
 
-        $TempFile = [System.IO.Path]::GetTempFileName() + ".crt"
+        $TempFile = Join-Path ([IO.Path]::GetTempPath()) ("company-root-ca-" + [guid]::NewGuid() + ".crt")
         try {
             Invoke-WebRequest -Uri $FetchUrl -OutFile $TempFile -UseBasicParsing
         }

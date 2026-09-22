@@ -79,7 +79,7 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/script
 | -------- | ----------- | ------- |
 | `WAZUH_MANAGER` | Wazuh manager hostname or IP | `wazuh.example.com` |
 | `WAZUH_AGENT_VERSION` | Wazuh agent version to install | `4.14.4-1` |
-| `WAZUH_AGENT_REPO_VERSION` | Repository tag for agent scripts | `1.8.1` |
+| `WAZUH_AGENT_REPO_VERSION` | Repository tag for agent scripts | `1.8.2` |
 | `WAZUH_AGENT_REPO_REF` | Full repository reference | `refs/tags/v${WAZUH_AGENT_REPO_VERSION}` |
 | `WOPS_VERSION` | cert-oauth2 client version | `0.4.3` |
 | `WAZUH_CERT_OAUTH2_REPO_REF` | cert-oauth2 repository reference | `refs/tags/v${WOPS_VERSION}` |
@@ -95,7 +95,7 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/script
 | `INSTALL_NETBIRD` | Install NetBird (`TRUE`/`FALSE`) | `FALSE` |
 | `NETBIRD_SETUP_KEY` | NetBird setup key for automated enrollment | *(empty)* |
 
-You can pass either a tag (e.g. `1.8.1`) or a full repo ref (e.g. `refs/tags/v1.8.1` or `refs/heads/main`).
+You can pass either a tag (e.g. `1.8.2`) or a full repo ref (e.g. `refs/tags/v1.8.2` or `refs/heads/main`).
 
 ### Passing environment variables remotely
 

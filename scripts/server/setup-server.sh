@@ -13,7 +13,7 @@ fi
 OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.4-1'}
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.1'}
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.2'}
 WOPS_VERSION=${WOPS_VERSION:-'0.4.3'}
 APP_NAME=${APP_NAME:-'wazuh-cert-oauth2-client'}
 WAZUH_SURICATA_VERSION=${WAZUH_SURICATA_VERSION:-'0.2.2'}
@@ -72,7 +72,7 @@ while getopts ":hcsytb" opt; do
        echo "  NETBIRD_SETUP_KEY        NetBird setup key for automated enrollment (optional)"
        echo "  WAZUH_MANAGER              Wazuh manager hostname (default: wazuh.example.com)"
        echo "  WAZUH_AGENT_VERSION        Wazuh agent version (default: 4.14.4-1)"
-       echo "  WAZUH_AGENT_REPO_VERSION   Repository tag for agent scripts (default: 1.8.1)"
+       echo "  WAZUH_AGENT_REPO_VERSION   Repository tag for agent scripts (default: 1.8.2)"
        echo "  WAZUH_AGENT_REPO_REF       Full repository reference (default: refs/tags/v\${WAZUH_AGENT_REPO_VERSION})"
        echo "  WOPS_VERSION               cert-oauth2 client version (default: 0.4.3)"
        echo "  WAZUH_CERT_OAUTH2_REPO_REF cert-oauth2 repository reference (default: refs/tags/v\${WOPS_VERSION})"
@@ -82,8 +82,8 @@ while getopts ":hcsytb" opt; do
        echo "  WAZUH_YARA_REPO_REF        Yara repository reference (default: refs/tags/v\${WAZUH_YARA_VERSION})"
        echo "  WAZUH_TRIVY_REPO_REF       Trivy repository reference (default: main)"
        echo ""
-       echo "  Note: You can pass either tags (e.g., '1.8.1') or full repo refs"
-       echo "        (e.g., 'refs/tags/v1.8.1' or 'refs/heads/main')"
+       echo "  Note: You can pass either tags (e.g., '1.8.2') or full repo refs"
+       echo "        (e.g., 'refs/tags/v1.8.2' or 'refs/heads/main')"
        echo ""
        echo "Examples:"
        echo "  $0                    # Core installation only"

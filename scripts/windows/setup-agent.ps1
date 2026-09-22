@@ -9,7 +9,7 @@ param(
 # Source shared utilities
 if (-not $env:WAZUH_AGENT_REPO_VERSION)
 {
-    $env:WAZUH_AGENT_REPO_VERSION = "1.8.1"
+    $env:WAZUH_AGENT_REPO_VERSION = "1.8.2"
 }
 
 if (-not $env:WAZUH_AGENT_REPO_REF)
@@ -61,7 +61,7 @@ $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } e
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.4" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.3" }
 $WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.2" }
-$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.8.1" }
+$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.8.2" }
 $WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } elseif ($WAZUH_AGENT_REPO_VERSION -eq "main") { "main" } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
 
 # Additional repo ref variables for other components
@@ -334,8 +334,8 @@ function Install-NetBirdAgent {
 function Install-Adorsys-CA {
     InfoMessage "Installing AdORSYS Block Page CA..."
     try {
-        $caCertUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/block-dns/adorsys-block-page-ca.crt"
-        $caCertPath = Join-Path $env:TEMP "adorsys-block-page-ca.crt"
+        $caCertUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/block-dns/company-root-ca.crt"
+        $caCertPath = Join-Path $env:TEMP "company-root-ca.crt"
         $global:InstallerFiles += $caCertPath
 
         Invoke-WebRequest -Uri $caCertUrl -OutFile $caCertPath -UseBasicParsing -ErrorAction Stop
@@ -352,6 +352,7 @@ function Install-Adorsys-CA {
 function Install-GUI-Installer {
     InfoMessage "Installing Wazuh Agent GUI Installer (v1.2.0)..."
     try {
+        # TODO: revisit this once the installer update feature is implemented
         irm "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/refs/tags/v1.2.0/install-scripts/windows.ps1" | iex
         SuccessMessage "Wazuh Agent GUI Installer installed successfully."
     }
