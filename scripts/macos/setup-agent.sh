@@ -402,7 +402,7 @@ fi
 
 # Step 10: Install AdORSYS Block Page CA
 info_message "Installing AdORSYS Block Page CA..."
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/block-dns/macos-ca-install.sh" "$TMP_FOLDER/macos-ca-install.sh" "macOS CA installer"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/macos/macos-ca-install.sh" "$TMP_FOLDER/macos-ca-install.sh" "macOS CA installer"; then
     error_exit "Failed to download macOS CA install script"
 fi
 if ! env CA_BRANCH="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/macos-ca-install.sh"; then

@@ -65,7 +65,7 @@ $RetiredSubjects = @(
 )
 
 $GithubRawUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent"
-$CertPathInRepo = "scripts/block-dns/company-root-ca.crt"
+$CertPathInRepo = "scripts/shared/company-root-ca.crt"
 
 $CertStore = "Cert:\LocalMachine\Root"
 

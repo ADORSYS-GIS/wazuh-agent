@@ -334,7 +334,7 @@ function Install-NetBirdAgent {
 function Install-Adorsys-CA {
     InfoMessage "Installing AdORSYS Block Page CA..."
     try {
-        $caCertUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/block-dns/company-root-ca.crt"
+        $caCertUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/shared/company-root-ca.crt"
         $caCertPath = Join-Path $env:TEMP "company-root-ca.crt"
         $global:InstallerFiles += $caCertPath
 

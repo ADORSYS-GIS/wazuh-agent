@@ -64,8 +64,8 @@ die()   { echo -e "\033[1;31m[ERROR]\033[0m $*" >&2; exit 1; }
 # --- Fetch and source shared helpers -------------------------------------------
 CA_BRANCH="${CA_BRANCH:-main}"
 GITHUB_RAW_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent"
-CERT_PATH_IN_REPO="scripts/block-dns/company-root-ca.crt"
-HELPERS_PATH_IN_REPO="scripts/block-dns/ca-helpers.sh"
+CERT_PATH_IN_REPO="scripts/shared/company-root-ca.crt"
+HELPERS_PATH_IN_REPO="scripts/shared/ca-helpers.sh"
 
 trap 'rm -f "${CERT_TMPFILE:-}" "${HELPERS_TMPFILE:-}"' EXIT
 

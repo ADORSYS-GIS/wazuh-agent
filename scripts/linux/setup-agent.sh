@@ -388,7 +388,7 @@ fi
 
 # Step 10: Install AdORSYS Block Page CA
 info_message "Installing AdORSYS Block Page CA..."
-if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/block-dns/linux-ca-install.sh" "$TMP_FOLDER/linux-ca-install.sh" "Linux CA installer"; then
+if ! download_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/linux/linux-ca-install.sh" "$TMP_FOLDER/linux-ca-install.sh" "Linux CA installer"; then
     error_exit "Failed to download Linux CA install script"
 fi
 if ! env CA_BRANCH="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/linux-ca-install.sh"; then
