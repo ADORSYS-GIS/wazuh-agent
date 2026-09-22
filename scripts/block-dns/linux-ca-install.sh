@@ -46,11 +46,17 @@
 
 set -euo pipefail
 
+info()  { echo -e "\033[1;32m[INFO]\033[0m  $*"; }
+warn()  { echo -e "\033[1;33m[WARN]\033[0m  $*" >&2; }
+die()   { echo -e "\033[1;31m[ERROR]\033[0m $*" >&2; exit 1; }
+
 # --- Fetch and source shared helpers -------------------------------------------
 CA_BRANCH="${CA_BRANCH:-main}"
 GITHUB_RAW_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent"
 CERT_PATH_IN_REPO="scripts/block-dns/company-root-ca.crt"
 HELPERS_PATH_IN_REPO="scripts/block-dns/ca-helpers.sh"
+
+trap 'rm -f "${PWFILE:-}" "${CERT_TMPFILE:-}" "${HELPERS_TMPFILE:-}"' EXIT
 
 if ! command -v curl >/dev/null 2>&1; then
   die "curl is required but not installed. Please install curl and retry."
@@ -58,7 +64,6 @@ fi
 
 # Fetch the helper script
 HELPERS_TMPFILE=$(mktemp /tmp/ca-helpers.XXXXXX.sh)
-trap 'rm -f "${PWFILE}" "${CERT_TMPFILE}" "${HELPERS_TMPFILE}"' EXIT
 
 FETCH_HELPERS_URL="${GITHUB_RAW_URL}/${CA_BRANCH}/${HELPERS_PATH_IN_REPO}"
 HTTP_CODE=$(curl -sS -w "%{http_code}" -o "${HELPERS_TMPFILE}" "${FETCH_HELPERS_URL}" 2>/dev/null) || true
@@ -69,10 +74,6 @@ source "${HELPERS_TMPFILE}"
 
 CERT_NICKNAME="Company Root CA"          # NSS nickname
 CERT_FILENAME="company-root-ca.crt"      # system-store filename
-
-info()  { echo -e "\033[1;32m[INFO]\033[0m  $*"; }
-warn()  { echo -e "\033[1;33m[WARN]\033[0m  $*" >&2; }
-die()   { echo -e "\033[1;31m[ERROR]\033[0m $*" >&2; exit 1; }
 
 # Run a command with sudo only if not already root
 if [ "$(id -u)" -eq 0 ]; then
@@ -93,9 +94,6 @@ PWFILE=$(mktemp /tmp/nss-pw.XXXXXX)
 
 # Temp file for the fetched certificate
 CERT_TMPFILE=$(mktemp /tmp/company-root-ca.XXXXXX.crt)
-
-# Cleanup temp files on exit
-trap 'rm -f "${PWFILE}" "${CERT_TMPFILE}" "${HELPERS_TMPFILE}"' EXIT
 
 # --- Detect real user home (works even via sudo) ---
 # sudo resets $HOME to /root; we need the actual user's HOME for browser NSS paths

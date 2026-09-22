@@ -67,6 +67,8 @@ GITHUB_RAW_URL="https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent"
 CERT_PATH_IN_REPO="scripts/block-dns/company-root-ca.crt"
 HELPERS_PATH_IN_REPO="scripts/block-dns/ca-helpers.sh"
 
+trap 'rm -f "${CERT_TMPFILE:-}" "${HELPERS_TMPFILE:-}"' EXIT
+
 if ! command -v curl >/dev/null 2>&1; then
   die "curl is required but not installed. Please install curl and retry."
 fi
@@ -74,7 +76,6 @@ fi
 # Fetch the helper script
 HELPERS_TMPFILE=$(mktemp /tmp/ca-helpers.XXXXXX.sh)
 CERT_TMPFILE=$(mktemp /tmp/company-root-ca.XXXXXX.crt)
-trap 'rm -f "${CERT_TMPFILE}" "${HELPERS_TMPFILE}"' EXIT
 
 FETCH_HELPERS_URL="${GITHUB_RAW_URL}/${CA_BRANCH}/${HELPERS_PATH_IN_REPO}"
 HTTP_CODE=$(curl -sS -w "%{http_code}" -o "${HELPERS_TMPFILE}" "${FETCH_HELPERS_URL}" 2>/dev/null) || true
