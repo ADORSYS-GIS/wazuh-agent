@@ -334,11 +334,13 @@ function Install-NetBirdAgent {
 function Install-Adorsys-CA {
     InfoMessage "Installing AdORSYS Block Page CA..."
     try {
-        $caScriptUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/windows/windows-ca-install.ps1"
-        $caScriptPath = Join-Path $env:TEMP "windows-ca-install.ps1"
+        $caScriptUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/windows/ca-install.ps1"
+        $caScriptPath = Join-Path $env:TEMP "ca-install.ps1"
         $global:InstallerFiles += $caScriptPath
 
-        Invoke-WebRequest -Uri $caScriptUrl -OutFile $caScriptPath -UseBasicParsing -ErrorAction Stop
+        if (-not (Download-And-VerifyFile -Url $caScriptUrl -Destination $caScriptPath -ChecksumPattern "scripts/windows/ca-install.ps1" -FileName "Windows CA installer" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256")) {
+            throw "Failed to download or verify CA install script"
+        }
         
         & $caScriptPath -CABranch $WAZUH_AGENT_REPO_REF
         
