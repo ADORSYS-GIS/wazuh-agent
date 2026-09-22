@@ -13,7 +13,7 @@ This document describes all environment variables used by the Wazuh Agent instal
 | Variable              | Default             | Description                            |
 | --------------------- | ------------------- | -------------------------------------- |
 | `WAZUH_MANAGER`       | `wazuh.example.com` | Wazuh Manager address (hostname or IP) |
-| `WAZUH_AGENT_VERSION` | `4.14.4-1`          | Wazuh Agent version to install         |
+| `WAZUH_AGENT_VERSION` | `4.14.6-1`          | Wazuh Agent version to install         |
 | `WAZUH_AGENT_NAME`    | `$(hostname)`       | Agent registration name                |
 | `WAZUH_AGENT_GROUP`   | _(none)_            | Agent group for enrollment             |
 
@@ -21,7 +21,7 @@ This document describes all environment variables used by the Wazuh Agent instal
 
 | Variable                     | Default          | Description                          |
 | ---------------------------- | ---------------- | ------------------------------------ |
-| `WAZUH_AGENT_REPO_VERSION`   | `main`     | Version of this installer repository |
+| `WAZUH_AGENT_REPO_VERSION`   | `1.8.2`      | Version of this installer repository |
 | `WOPS_VERSION`               | `0.4.3`          | Wazuh Cert OAuth2 client version     |
 | `WAZUH_AGENT_STATUS_VERSION` | `0.5.4`          | Wazuh Agent Status tool version      |
 | `WAZUH_YARA_VERSION`         | `0.4.2`          | Wazuh Yara integration version       |
@@ -77,7 +77,7 @@ $env:WAZUH_MANAGER = "wazuh.mycompany.com"
 
 ```bash
 export WAZUH_MANAGER="wazuh.mycompany.com"
-export WAZUH_AGENT_VERSION="4.14.4-1"
+export WAZUH_AGENT_VERSION="4.14.6-1"
 export WAZUH_YARA_VERSION="0.4.2"
 ./scripts/linux/setup-agent.sh  # or ./scripts/macos/setup-agent.sh
 ```
@@ -94,7 +94,7 @@ export LOG_LEVEL="DEBUG"
 
 ```powershell
 $env:WAZUH_MANAGER = "wazuh.mycompany.com"
-$env:WAZUH_AGENT_VERSION = "4.14.4-1"
+$env:WAZUH_AGENT_VERSION = "4.14.6-1"
 .\scripts\windows\setup-agent.ps1 -InstallSuricata
 ```
 
@@ -182,5 +182,5 @@ ERROR: Invalid version format: v4.13.1
 **Solution:** Remove 'v' prefix:
 
 ```bash
-export WAZUH_AGENT_VERSION="4.14.4-1"  # Correct
+export WAZUH_AGENT_VERSION="4.14.6-1"  # Correct
 ```

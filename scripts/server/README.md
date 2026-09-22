@@ -78,7 +78,7 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/script
 | Variable | Description | Default |
 | -------- | ----------- | ------- |
 | `WAZUH_MANAGER` | Wazuh manager hostname or IP | `wazuh.example.com` |
-| `WAZUH_AGENT_VERSION` | Wazuh agent version to install | `4.14.4-1` |
+| `WAZUH_AGENT_VERSION` | Wazuh agent version to install | `4.14.6-1` |
 | `WAZUH_AGENT_REPO_VERSION` | Repository tag for agent scripts | `1.8.2` |
 | `WAZUH_AGENT_REPO_REF` | Full repository reference | `refs/tags/v${WAZUH_AGENT_REPO_VERSION}` |
 | `WOPS_VERSION` | cert-oauth2 client version | `0.4.3` |
@@ -103,7 +103,7 @@ Environment variables are passed **before** the `sudo -E bash` part of the comma
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/server/setup-server.sh | \
-  WAZUH_MANAGER='wazuh.company.com' WAZUH_AGENT_VERSION='4.14.4-1' sudo -E bash
+  WAZUH_MANAGER='wazuh.company.com' WAZUH_AGENT_VERSION='4.14.6-1' sudo -E bash
 ```
 
 ## Help
