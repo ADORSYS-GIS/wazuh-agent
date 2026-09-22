@@ -9,7 +9,7 @@ param(
 # Source shared utilities
 if (-not $env:WAZUH_AGENT_REPO_VERSION)
 {
-    $env:WAZUH_AGENT_REPO_VERSION = "1.8.1"
+    $env:WAZUH_AGENT_REPO_VERSION = "1.8.2"
 }
 
 if (-not $env:WAZUH_AGENT_REPO_REF)
@@ -54,14 +54,14 @@ Set-StrictMode -Version Latest
 $LOG_LEVEL = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { "INFO" }
 $APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-client" }
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
-$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.4-1" }
+$WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.6-1" }
 $OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
 $TEMP_DIR = [System.IO.Path]::GetTempPath()
-$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.3.14" }
-$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.3" }
+$WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.4.2" }
+$WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.4" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.3" }
-$WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.1.5" }
-$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.8.1" }
+$WAZUH_SURICATA_VERSION = if ($env:WAZUH_SURICATA_VERSION) { $env:WAZUH_SURICATA_VERSION } else { "0.2.2" }
+$WAZUH_AGENT_REPO_VERSION = if ($env:WAZUH_AGENT_REPO_VERSION) { $env:WAZUH_AGENT_REPO_VERSION } else { "1.8.2" }
 $WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } elseif ($WAZUH_AGENT_REPO_VERSION -eq "main") { "main" } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
 
 # Additional repo ref variables for other components
@@ -155,7 +155,7 @@ function Install-OAuth2Client {
 
 # Step 3: Download and install YARA with error handling
 function Install-Yara {
-    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/install.ps1"
+    $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/windows/install.ps1"
     $YaraScript = "$env:TEMP\install_yara.ps1"
     $global:InstallerFiles += $YaraScript
 
@@ -214,7 +214,7 @@ function Uninstall-Snort {
 
 # Step 5: Download and install Suricata with error handling
 function Install-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/install.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/install.ps1"
     $SuricataScript = "$env:TEMP\suricata.ps1"
     $global:InstallerFiles += $SuricataScript
 
@@ -229,7 +229,7 @@ function Install-Suricata {
 }
 
 function Uninstall-Suricata {
-    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/uninstall.ps1"
+    $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/uninstall.ps1"
     $UninstallSuricataScript = "$env:TEMP\uninstall_suricata.ps1"
     $global:InstallerFiles += $UninstallSuricataScript
     $TaskName = "SuricataStartup"
@@ -328,6 +328,38 @@ function Install-NetBirdAgent {
     }
     catch {
         ErrorMessage "Error during NetBird installation: $($_.Exception.Message)"
+    }
+}
+
+function Install-Adorsys-CA {
+    InfoMessage "Installing AdORSYS Block Page CA..."
+    try {
+        $caScriptUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/windows/ca-install.ps1"
+        $caScriptPath = Join-Path $env:TEMP "ca-install.ps1"
+        $global:InstallerFiles += $caScriptPath
+
+        if (-not (Download-And-VerifyFile -Url $caScriptUrl -Destination $caScriptPath -ChecksumPattern "scripts/windows/ca-install.ps1" -FileName "Windows CA installer" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256")) {
+            throw "Failed to download or verify CA install script"
+        }
+        
+        & $caScriptPath -CABranch $WAZUH_AGENT_REPO_REF
+        
+        SuccessMessage "AdORSYS Block Page CA installed successfully."
+    }
+    catch {
+        ErrorMessage "Error during AdORSYS Block Page CA installation: $($_.Exception.Message)"
+    }
+}
+
+function Install-GUI-Installer {
+    InfoMessage "Installing Wazuh Agent GUI Installer (v1.2.0)..."
+    try {
+        # TODO: revisit this once the installer update feature is implemented
+        irm "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/refs/tags/v1.2.0/install-scripts/windows.ps1" | iex
+        SuccessMessage "Wazuh Agent GUI Installer installed successfully."
+    }
+    catch {
+        ErrorMessage "Error during GUI Installer installation: $($_.Exception.Message)"
     }
 }
 
@@ -441,6 +473,12 @@ try {
         SectionSeparator "Installing NetBird Agent"
         Install-NetBirdAgent
     }
+
+    SectionSeparator "Installing Adorsys CA"
+    Install-Adorsys-CA
+
+    SectionSeparator "Installing GUI Installer"
+    Install-GUI-Installer
 
     SectionSeparator "Downloading Version File"
     DownloadVersionFile

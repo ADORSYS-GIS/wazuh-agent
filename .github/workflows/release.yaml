@@ -22,9 +22,9 @@ on:
 
 env:
   WAZUH_AGENT_REPO_REF: ${{ github.head_ref || github.ref_name }}
-  WAZUH_AGENT_STATUS_REPO_REF: refs/tags/v0.4.3
-  WAZUH_YARA_REPO_REF: refs/tags/v0.3.14
-  WAZUH_SURICATA_REPO_REF: refs/tags/v0.1.5
+  WAZUH_AGENT_STATUS_REPO_REF: refs/tags/v0.5.4
+  WAZUH_YARA_REPO_REF: refs/tags/v0.4.2
+  WAZUH_SURICATA_REPO_REF: refs/tags/v0.2.2
   WAZUH_SNORT_REPO_REF: main
   WAZUH_TRIVY_REPO_REF: main
   WAZUH_CERT_OAUTH2_REPO_REF: refs/tags/v0.4.3

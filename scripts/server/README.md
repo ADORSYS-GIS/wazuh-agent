@@ -78,14 +78,14 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/script
 | Variable | Description | Default |
 | -------- | ----------- | ------- |
 | `WAZUH_MANAGER` | Wazuh manager hostname or IP | `wazuh.example.com` |
-| `WAZUH_AGENT_VERSION` | Wazuh agent version to install | `4.14.4-1` |
-| `WAZUH_AGENT_REPO_VERSION` | Repository tag for agent scripts | `1.8.1` |
+| `WAZUH_AGENT_VERSION` | Wazuh agent version to install | `4.14.6-1` |
+| `WAZUH_AGENT_REPO_VERSION` | Repository tag for agent scripts | `1.8.2` |
 | `WAZUH_AGENT_REPO_REF` | Full repository reference | `refs/tags/v${WAZUH_AGENT_REPO_VERSION}` |
 | `WOPS_VERSION` | cert-oauth2 client version | `0.4.3` |
 | `WAZUH_CERT_OAUTH2_REPO_REF` | cert-oauth2 repository reference | `refs/tags/v${WOPS_VERSION}` |
-| `WAZUH_SURICATA_VERSION` | Suricata version | `0.1.5` |
+| `WAZUH_SURICATA_VERSION` | Suricata version | `0.2.2` |
 | `WAZUH_SURICATA_REPO_REF` | Suricata repository reference | `refs/tags/v${WAZUH_SURICATA_VERSION}` |
-| `WAZUH_YARA_VERSION` | Yara version | `0.3.14` |
+| `WAZUH_YARA_VERSION` | Yara version | `0.4.2` |
 | `WAZUH_YARA_REPO_REF` | Yara repository reference | `refs/tags/v${WAZUH_YARA_VERSION}` |
 | `WAZUH_TRIVY_REPO_REF` | Trivy repository reference | `main` |
 | `INSTALL_CERT_OAUTH2` | Install cert-oauth2 (`TRUE`/`FALSE`) | `FALSE` |
@@ -95,7 +95,7 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/script
 | `INSTALL_NETBIRD` | Install NetBird (`TRUE`/`FALSE`) | `FALSE` |
 | `NETBIRD_SETUP_KEY` | NetBird setup key for automated enrollment | *(empty)* |
 
-You can pass either a tag (e.g. `1.8.1`) or a full repo ref (e.g. `refs/tags/v1.8.1` or `refs/heads/main`).
+You can pass either a tag (e.g. `1.8.2`) or a full repo ref (e.g. `refs/tags/v1.8.2` or `refs/heads/main`).
 
 ### Passing environment variables remotely
 
@@ -103,7 +103,7 @@ Environment variables are passed **before** the `sudo -E bash` part of the comma
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/server/setup-server.sh | \
-  WAZUH_MANAGER='wazuh.company.com' WAZUH_AGENT_VERSION='4.14.4-1' sudo -E bash
+  WAZUH_MANAGER='wazuh.company.com' WAZUH_AGENT_VERSION='4.14.6-1' sudo -E bash
 ```
 
 ## Help
