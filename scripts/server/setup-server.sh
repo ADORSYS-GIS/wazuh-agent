@@ -12,7 +12,7 @@ fi
 # ==============================================================================
 OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.4-1'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.6-1'}
 WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.2'}
 WOPS_VERSION=${WOPS_VERSION:-'0.4.3'}
 APP_NAME=${APP_NAME:-'wazuh-cert-oauth2-client'}
