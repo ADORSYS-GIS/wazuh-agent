@@ -69,6 +69,8 @@ fi
 installation() {
   info_message "Installing Wazuh agent for macOS"
       # Detect architecture (Intel or Apple Silicon)
+      BASE_URL="https://packages.wazuh.com/4.x/macos"
+      
       # We check hw.optional.arm64 via sysctl because uname -m will falsely report x86_64
       # if the script is executed by a terminal or app running under Rosetta 2 translation!
       if [ "$(sysctl -in hw.optional.arm64)" = "1" ]; then
