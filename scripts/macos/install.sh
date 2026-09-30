@@ -53,7 +53,7 @@ fi
 # Variables
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
-WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.4-1'}
+WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.6-1'}
 
 # macOS-specific paths
 OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
@@ -69,17 +69,16 @@ fi
 installation() {
   info_message "Installing Wazuh agent for macOS"
       # Detect architecture (Intel or Apple Silicon)
-      ARCH=$(uname -m)
       BASE_URL="https://packages.wazuh.com/4.x/macos"
       
-      if [ "$ARCH" = "x86_64" ]; then
-          # Intel architecture
-          PKG_NAME="wazuh-agent-$WAZUH_AGENT_VERSION.intel64.pkg"
-      elif [ "$ARCH" = "arm64" ]; then
-          # Apple Silicon chip
+      # We check hw.optional.arm64 via sysctl because uname -m will falsely report x86_64
+      # if the script is executed by a terminal or app running under Rosetta 2 translation!
+      if [ "$(sysctl -in hw.optional.arm64)" = "1" ]; then
+          # Apple Silicon chip (even if under Rosetta 2)
           PKG_NAME="wazuh-agent-$WAZUH_AGENT_VERSION.arm64.pkg"
       else
-          error_exit "Unsupported architecture: $ARCH"
+          # Intel architecture
+          PKG_NAME="wazuh-agent-$WAZUH_AGENT_VERSION.intel64.pkg"
       fi
 
       PKG_URL="$BASE_URL/$PKG_NAME"

@@ -128,7 +128,7 @@ export WAZUH_MANAGER="wazuh.mycompany.com"
 
 - **Format:** `X.Y.Z` or `X.Y.Z-N` where X, Y, Z, N are integers
 - **Examples:**
-  - Valid: `4.14.4-1`, `0.3.11`, `1.0.0`
+  - Valid: `4.14.6-1`, `0.3.11`, `1.0.0`
   - Invalid: `v4.13.1`, `4.13`, `latest`
 
 ### LOG_LEVEL

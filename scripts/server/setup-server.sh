@@ -71,7 +71,7 @@ while getopts ":hcsytb" opt; do
        echo "  INSTALL_NETBIRD          Set to 'TRUE' to install NetBird (default: false)"
        echo "  NETBIRD_SETUP_KEY        NetBird setup key for automated enrollment (optional)"
        echo "  WAZUH_MANAGER              Wazuh manager hostname (default: wazuh.example.com)"
-       echo "  WAZUH_AGENT_VERSION        Wazuh agent version (default: 4.14.4-1)"
+       echo "  WAZUH_AGENT_VERSION        Wazuh agent version (default: 4.14.6-1)"
        echo "  WAZUH_AGENT_REPO_VERSION   Repository tag for agent scripts (default: 1.8.2)"
        echo "  WAZUH_AGENT_REPO_REF       Full repository reference (default: refs/tags/v\${WAZUH_AGENT_REPO_VERSION})"
        echo "  WOPS_VERSION               cert-oauth2 client version (default: 0.4.3)"
