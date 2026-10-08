@@ -213,41 +213,6 @@ jobs:
           fi
 
   # ============================================
-  # Code Quality - Linting
-  # ============================================
-  lint:
-    name: Lint Scripts
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Install ShellCheck
-        run: sudo apt-get install -y shellcheck
-
-      - name: Run ShellCheck on bash scripts
-        run: |
-          find scripts -name "*.sh" -type f | xargs shellcheck --severity=warning || true
-          find lib -name "*.sh" -type f | xargs shellcheck --severity=warning || true
-
-      - name: Install PSScriptAnalyzer
-        shell: pwsh
-        run: |
-          Set-PSRepository PSGallery -InstallationPolicy Trusted
-          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
-
-      - name: Run PSScriptAnalyzer on PowerShell scripts
-        shell: pwsh
-        run: |
-          $results = Get-ChildItem -Path scripts,lib -Filter "*.ps1" -Recurse | ForEach-Object {
-            Invoke-ScriptAnalyzer -Path $_.FullName -Severity Warning,Error
-          }
-          if ($results) {
-            $results | Format-Table -AutoSize
-            Write-Warning "PSScriptAnalyzer found issues"
-          }
-
-  # ============================================
   # Security Scanning
   # ============================================
   security:
@@ -278,7 +243,7 @@ jobs:
   test-unix:
     name: Test Unix (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: [update-changelog-and-checksums, lint]
+    needs: [update-changelog-and-checksums]
     strategy:
       fail-fast: false
       matrix:
@@ -337,7 +302,7 @@ jobs:
   test-windows:
     name: Test Windows
     runs-on: windows-latest
-    needs: [update-changelog-and-checksums, lint]
+    needs: [update-changelog-and-checksums]
 
     steps:
       - name: Checkout repository

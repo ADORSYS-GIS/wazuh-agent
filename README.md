@@ -1,4 +1,4 @@
-# Wazuh Agent Setup
+# Wazuh Agent Setup 
 
 [![CI/CD Pipeline](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/release.yaml/badge.svg?branch=main)](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/release.yaml)
 [![CI/CD Pipeline](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/release.yaml/badge.svg?branch=main)](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/release.yaml)
