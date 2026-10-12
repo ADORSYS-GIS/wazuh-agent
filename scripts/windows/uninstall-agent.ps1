@@ -1,4 +1,7 @@
 # Parameters for Trivy and NetBird uninstallation
+# UninstallTrivy/UninstallNetBird are part of the documented CLI contract (see
+# -Help); they are not referenced at script scope, hence the suppression below.
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '')]
 param(
     [switch]$UninstallTrivy,
     [switch]$UninstallNetBird,
@@ -15,7 +18,7 @@ try {
     $ChecksumsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/checksums.sha256"
     $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/shared/utils.ps1"
 
-    $global:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $script:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
     $UtilsPath = Join-Path $UtilsTmp "utils.ps1"
 
     Invoke-WebRequest -Uri $ChecksumsURL -OutFile $ChecksumsPath -ErrorAction Stop
@@ -63,11 +66,13 @@ $WAZUH_TRIVY_REPO_REF = if ($env:WAZUH_TRIVY_REPO_REF) { $env:WAZUH_TRIVY_REPO_R
 $WAZUH_AGENT_STATUS_REPO_REF = if ($env:WAZUH_AGENT_STATUS_REPO_REF) { $env:WAZUH_AGENT_STATUS_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_STATUS_VERSION" }
 $WAZUH_AGENT_REPO_REF = if ($env:WAZUH_AGENT_REPO_REF) { $env:WAZUH_AGENT_REPO_REF } elseif ($WAZUH_AGENT_REPO_VERSION -eq "main") { "main" } else { "refs/tags/v$WAZUH_AGENT_REPO_VERSION" }
 # Global array to track uninstaller files
-$global:UninstallerFiles = @()
+$script:UninstallerFiles = @()
 
 # Cleanup function to remove uninstaller files at the end
-function Cleanup-Uninstallers {
-    foreach ($file in $global:UninstallerFiles) {
+function Remove-UninstallerFile {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
+    param()
+    foreach ($file in $script:UninstallerFiles) {
         if (Test-Path $file) {
             Remove-Item $file -Force
             InfoMessage "Removed uninstaller file: $file"
@@ -112,7 +117,7 @@ if ($Help) {
 function Uninstall-AgentStatus {
     $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/$WAZUH_AGENT_STATUS_REPO_REF/scripts/windows/uninstall.ps1"
     $AgentStatusScript = "$env:TEMP\uninstall-agent-status.ps1"
-    $global:UninstallerFiles += $AgentStatusScript
+    $script:UninstallerFiles += $AgentStatusScript
     try {
         Download-And-VerifyFile -Url $AgentStatusUrl -Destination $AgentStatusScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Wazuh Agent Status uninstall script" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/$WAZUH_AGENT_STATUS_REPO_REF/checksums.sha256"
         & powershell.exe -ExecutionPolicy Bypass -File $AgentStatusScript -ErrorAction Stop
@@ -126,7 +131,7 @@ function Uninstall-AgentStatus {
 function Uninstall-Yara {
     $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/windows/uninstall.ps1"
     $YaraScript = "$env:TEMP\uninstall-yara.ps1"
-    $global:UninstallerFiles += $YaraScript
+    $script:UninstallerFiles += $YaraScript
     try {
         Download-File -Url $YaraUrl -Destination $YaraScript -Description "YARA uninstall script"
         & powershell.exe -ExecutionPolicy Bypass -File $YaraScript -ErrorAction Stop
@@ -140,7 +145,7 @@ function Uninstall-Yara {
 function Uninstall-Snort {
     $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/scripts/windows/uninstall.ps1"
     $SnortScript = "$env:TEMP\uninstall-snort.ps1"
-    $global:UninstallerFiles += $SnortScript
+    $script:UninstallerFiles += $SnortScript
     try {
         Download-And-VerifyFile -Url $SnortUrl -Destination $SnortScript -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Snort uninstall script" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/checksums.sha256"
         & powershell.exe -ExecutionPolicy Bypass -File $SnortScript -ErrorAction Stop
@@ -154,7 +159,7 @@ function Uninstall-Snort {
 function Uninstall-Suricata {
     $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/uninstall.ps1"
     $SuricataScript = "$env:TEMP\uninstall-suricata.ps1"
-    $global:UninstallerFiles += $SuricataScript
+    $script:UninstallerFiles += $SuricataScript
     try {
         Download-File -Url $SuricataUrl -Destination $SuricataScript -Description "Suricata uninstall script"
         & powershell.exe -ExecutionPolicy Bypass -File $SuricataScript -ErrorAction Stop
@@ -207,7 +212,7 @@ function Uninstall-NetBird {
 function Uninstall-WazuhAgent {
     $UninstallerURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/windows/uninstall.ps1"
     $UninstallerPath = "$env:TEMP\uninstall-wazuh-agent.ps1"
-    $global:UninstallerFiles += $UninstallerPath
+    $script:UninstallerFiles += $UninstallerPath
     try {
         Download-And-VerifyFile -Url $UninstallerURL -Destination $UninstallerPath -ChecksumPattern "scripts/windows/uninstall.ps1" -FileName "Wazuh agent uninstall script" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
         & powershell.exe -ExecutionPolicy Bypass -File $UninstallerPath -ErrorAction Stop
@@ -218,11 +223,11 @@ function Uninstall-WazuhAgent {
 }
 
 # Helper functions to check if Snort/Suricata are installed
-function Is-SnortInstalled {
+function Test-SnortInstalled {
     $TaskName = "SnortStartup"
     return (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue)
 }
-function Is-SuricataInstalled {
+function Test-SuricataInstalled {
     $TaskName = "SuricataStartup"
     return (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue)
 }
@@ -233,11 +238,11 @@ try {
     Uninstall-AgentStatus
     SectionSeparator "Uninstalling Yara"
     Uninstall-Yara
-    if (Is-SnortInstalled) {
+    if (Test-SnortInstalled) {
         SectionSeparator "Uninstalling Snort"
         Uninstall-Snort
     }
-    if (Is-SuricataInstalled) {
+    if (Test-SuricataInstalled) {
         SectionSeparator "Uninstalling Suricata"
         Uninstall-Suricata
     }
@@ -247,6 +252,6 @@ try {
 }
 finally {
     InfoMessage "Cleaning up uninstaller files..."
-    Cleanup-Uninstallers
+    Remove-UninstallerFile
     SuccessMessage "Wazuh Agent Uninstallation Completed Successfully"
 }
