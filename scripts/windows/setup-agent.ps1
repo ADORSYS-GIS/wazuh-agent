@@ -1,4 +1,3 @@
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '')]
 param(
     [switch]$InstallSnort,
     [switch]$InstallSuricata,
@@ -71,6 +70,8 @@ $WAZUH_SNORT_REPO_REF = if ($env:WAZUH_SNORT_REPO_REF) { $env:WAZUH_SNORT_REPO_R
 $WAZUH_SURICATA_REPO_REF = if ($env:WAZUH_SURICATA_REPO_REF) { $env:WAZUH_SURICATA_REPO_REF } else { "refs/tags/v$WAZUH_SURICATA_VERSION" }
 $WAZUH_TRIVY_REPO_REF = if ($env:WAZUH_TRIVY_REPO_REF) { $env:WAZUH_TRIVY_REPO_REF } else { "main" }
 $WAZUH_AGENT_STATUS_REPO_REF = if ($env:WAZUH_AGENT_STATUS_REPO_REF) { $env:WAZUH_AGENT_STATUS_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_STATUS_VERSION" }
+$WAZUH_AGENT_INSTALLER_VERSION = if ($env:WAZUH_AGENT_INSTALLER_VERSION) { $env:WAZUH_AGENT_INSTALLER_VERSION } else { "1.2.0" }
+$WAZUH_AGENT_INSTALLER_REPO_REF = if ($env:WAZUH_AGENT_INSTALLER_REPO_REF) { $env:WAZUH_AGENT_INSTALLER_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_INSTALLER_VERSION" }
 $RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF"
 $VERSION_FILE_URL = "$RepoUrl/version.txt"
 $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
@@ -357,11 +358,12 @@ function Install-Adorsys-CA {
 }
 
 function Install-GUI-Installer {
-    InfoMessage "Installing Wazuh Agent GUI Installer (v1.2.0)..."
+    InfoMessage "Installing Wazuh Agent GUI Installer (v$WAZUH_AGENT_INSTALLER_VERSION)..."
     try {
         # TODO: revisit this once the installer update feature is implemented
-        $guiInstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/refs/tags/v1.2.0/install-scripts/windows.ps1"
+        $guiInstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/$WAZUH_AGENT_INSTALLER_REPO_REF/install-scripts/windows.ps1"
         $guiInstallerPath = "$env:TEMP\wazuh-agent-gui-installer.ps1"
+        $script:InstallerFiles += $guiInstallerPath
         Invoke-RestMethod -Uri $guiInstallerUrl -OutFile $guiInstallerPath
         & $guiInstallerPath
         SuccessMessage "Wazuh Agent GUI Installer installed successfully."
@@ -406,6 +408,7 @@ function Show-Help {
 
 # Step 8: Setup Docker monitoring (only runs if Docker is installed)
 function Install-DockerListener {
+    param([switch]$CaptureDockerLogs)
     $DockerSetupUrl = "$RepoUrl/scripts/windows/setup-docker.ps1"
     $DockerSetupScript = "$env:TEMP\setup-docker.ps1"
     $script:InstallerFiles += $DockerSetupScript
@@ -478,7 +481,7 @@ try {
     Install-USBDLPScript
 
     SectionSeparator "Setting up Docker Monitoring"
-    Install-DockerListener
+    Install-DockerListener -CaptureDockerLogs:$CaptureDockerLogs
 
     if ($InstallNetBird) {
         SectionSeparator "Installing NetBird Agent"

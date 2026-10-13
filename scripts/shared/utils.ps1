@@ -3,16 +3,12 @@
 # script-scope variables. They are consumed by other scripts in this repo that
 # dot-source this file (setup-agent.ps1, install.ps1, setup-docker.ps1), so they
 # are NOT unused even though PSScriptAnalyzer cannot see the cross-file usage.
+# The suppression below is scoped to the variables only.
 $OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
 $OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
 $APP_DATA = "C:\ProgramData\ossec-agent\"
-
-# Private helper: returns the shared path for dot-sourcing callers.
-# Keeps $OSSEC_CONF_PATH / $APP_DATA referenced locally so PSScriptAnalyzer
-# treats them as used (see note above).
-function Get-SharedPath {
-    return @{ OSSECPath = $OSSEC_PATH; OSSECConfPath = $OSSEC_CONF_PATH; AppData = $APP_DATA }
-}
 
 # Function for logging with timestamp
 # Write-Host is intentional here for colored console output; suppression below.
