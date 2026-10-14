@@ -14,6 +14,10 @@
     To restore USB access, run: Set-ItemProperty -Path $usbStorPath -Name "Start" -Value 3
 #>
 
+# The $user and $srcip parameters are part of the Wazuh active-response
+# positional argument contract (action, user, srcip, alertid, ruleid).
+# They must remain so that $alertid and $ruleid bind to the correct positions.
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '')]
 param (
     [string]$action,
     [string]$user,
@@ -25,7 +29,7 @@ param (
 $logFile = "C:\Program Files (x86)\ossec-agent\active-response\active-responses.log"
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
-function Write-Log {
+function Write-AgentLog {
     param([string]$message)
     "$timestamp - USB-DLP - $message" | Out-File -Append -FilePath $logFile
 }
@@ -35,19 +39,19 @@ $usbStorPath = "HKLM:\SYSTEM\CurrentControlSet\Services\USBSTOR"
 
 try {
     if ($action -eq "add") {
-        Write-Log "ACTION: Disabling USB Mass Storage (Rule: $ruleid, Alert: $alertid)"
+        Write-AgentLog "ACTION: Disabling USB Mass Storage (Rule: $ruleid, Alert: $alertid)"
 
         # Disable USB Storage by setting Start value to 4 (Disabled)
         Set-ItemProperty -Path $usbStorPath -Name "Start" -Value 4 -ErrorAction Stop
 
         # Log the action
-        Write-Log "SUCCESS: USB Mass Storage disabled via registry"
+        Write-AgentLog "SUCCESS: USB Mass Storage disabled via registry"
 
         # Get list of current USB storage devices
-        $usbDevices = Get-WmiObject Win32_DiskDrive | Where-Object { $_.InterfaceType -eq "USB" }
+        $usbDevices = Get-CimInstance Win32_DiskDrive | Where-Object { $_.InterfaceType -eq "USB" }
 
         foreach ($device in $usbDevices) {
-            Write-Log "WARNING: USB Storage device present: $($device.Model) - $($device.DeviceID)"
+            Write-AgentLog "WARNING: USB Storage device present: $($device.Model) - $($device.DeviceID)"
 
             # Attempt to eject the device (optional - requires additional tools)
             # Note: Full ejection requires third-party tools or device-specific commands
@@ -69,12 +73,12 @@ try {
         Write-EventLog @eventParams -ErrorAction SilentlyContinue
 
     } elseif ($action -eq "delete") {
-        Write-Log "ACTION: Re-enabling USB Mass Storage (Rule: $ruleid)"
+        Write-AgentLog "ACTION: Re-enabling USB Mass Storage (Rule: $ruleid)"
 
         # Re-enable USB Storage by setting Start value to 3 (Manual/Enabled)
         Set-ItemProperty -Path $usbStorPath -Name "Start" -Value 3 -ErrorAction Stop
 
-        Write-Log "SUCCESS: USB Mass Storage re-enabled via registry"
+        Write-AgentLog "SUCCESS: USB Mass Storage re-enabled via registry"
 
         # Create Windows Event Log entry
         $eventParams = @{
@@ -90,6 +94,6 @@ try {
     exit 0
 
 } catch {
-    Write-Log "ERROR: Failed to modify USB settings - $($_.Exception.Message)"
+    Write-AgentLog "ERROR: Failed to modify USB settings - $($_.Exception.Message)"
     exit 1
 }

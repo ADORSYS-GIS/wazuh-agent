@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # Company Root CA — Windows device installer
 #
 # Installs the Company Root CA (CN=root-ca, O=Company) into the Windows
@@ -43,9 +43,22 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-function Write-Info  { Write-Host "[INFO]  $args" -ForegroundColor Green }
-function Write-Warn  { Write-Host "[WARN]  $args" -ForegroundColor Yellow }
-function Write-Die   { Write-Host "[ERROR] $args" -ForegroundColor Red; exit 1 }
+function Write-Info {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    param()
+    Write-Host "[INFO]  $args" -ForegroundColor Green
+}
+function Write-Warn {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    param()
+    Write-Host "[WARN]  $args" -ForegroundColor Yellow
+}
+function Write-Die {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    param()
+    Write-Host "[ERROR] $args" -ForegroundColor Red
+    exit 1
+}
 
 # --- Pinned trust anchor -----------------------------------------------------
 # SHA-256 fingerprint (lowercase, no colons) of the ONLY root CA we install.
