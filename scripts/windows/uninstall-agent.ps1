@@ -1,9 +1,5 @@
-# Parameters for Trivy and NetBird uninstallation
-# UninstallTrivy/UninstallNetBird are part of the documented CLI contract (see
-# -Help); they are not referenced at script scope, hence the suppression below.
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '')]
+# Parameters for NetBird and Wazuh Agent uninstallation.
 param(
-    [switch]$UninstallTrivy,
     [switch]$UninstallNetBird,
     [switch]$Help
 )
@@ -82,12 +78,11 @@ function Remove-UninstallerFile {
 
 # Help Function
 function Show-Help {
-    Write-Host "Usage:  .\uninstall-agent.ps1 [-UninstallTrivy] [-UninstallNetBird] [-Help]" -ForegroundColor Cyan
+    Write-Host "Usage:  .\uninstall-agent.ps1 [-UninstallNetBird] [-Help]" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "This script automates the uninstallation of various Wazuh components and related tools." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Parameters:" -ForegroundColor Cyan
-    Write-Host "  -UninstallTrivy        : Optionally uninstalls the Trivy vulnerability scanner." -ForegroundColor Cyan
     Write-Host "  -UninstallNetBird       : Optionally uninstalls the NetBird VPN/mesh-network client." -ForegroundColor Cyan
     Write-Host "  -Help                  : Displays this help message." -ForegroundColor Cyan
     Write-Host ""
@@ -171,8 +166,6 @@ function Uninstall-Suricata {
 
 # Step 5: Download and Uninstall NetBird with error handling
 function Uninstall-NetBird {
-    if (-not $UninstallNetBird) { return }
-
     SectionSeparator "Uninstalling NetBird"
     # NetBird NSIS installer uses lowercase 'b' in registry key and install dir.
     $regKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Netbird"
@@ -246,7 +239,9 @@ try {
         SectionSeparator "Uninstalling Suricata"
         Uninstall-Suricata
     }
-    Uninstall-NetBird
+    if ($UninstallNetBird) {
+        Uninstall-NetBird
+    }
     SectionSeparator "Uninstalling Wazuh Agent"
     Uninstall-WazuhAgent
 }
