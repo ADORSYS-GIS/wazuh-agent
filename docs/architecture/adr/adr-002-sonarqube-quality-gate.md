@@ -55,6 +55,6 @@ The enforcement mechanism operates via `.github/workflows/sonarqube.yml`:
 ---
 
 ## References
-- Workflow Definition: `.github/workflows/sonarqube.yml`
-- SonarQube Server: `https://sonarqube.sol-adorsys.com`
-- Master Security Specification: `wazuh-playbook/SOC-Documentation/sast-integration.md`
+- Workflow Definition: [`.github/workflows/sonarqube.yml`](../../../.github/workflows/sonarqube.yml)
+- SonarQube Server: [https://sonarqube.sol-adorsys.com](https://sonarqube.sol-adorsys.com)
+- Master Security Specification: [Wazuh SAST Integration Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sast-integration.md)

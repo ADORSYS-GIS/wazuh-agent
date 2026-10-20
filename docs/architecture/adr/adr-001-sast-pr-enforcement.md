@@ -67,8 +67,9 @@ The enforcement mechanism operates via `.github/workflows/sast.yml`:
 ---
 
 ## References
-- Reusable CI Templates: `ADORSYS-GIS/adorsys-ci-cd-templates`
-- Master Security Specification: `wazuh-playbook/SOC-Documentation/sast-integration.md`
+- Workflow Definition: [`.github/workflows/sast.yml`](../../../.github/workflows/sast.yml)
+- Reusable CI Templates: [ADORSYS-GIS/adorsys-ci-cd-templates](https://github.com/ADORSYS-GIS/adorsys-ci-cd-templates)
+- Master Security Specification: [Wazuh SAST Integration Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sast-integration.md)
 
 ---
 
