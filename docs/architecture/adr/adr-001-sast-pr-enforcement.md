@@ -69,3 +69,10 @@ The enforcement mechanism operates via `.github/workflows/sast.yml`:
 ## References
 - Reusable CI Templates: `ADORSYS-GIS/adorsys-ci-cd-templates`
 - Master Security Specification: `wazuh-playbook/SOC-Documentation/sast-integration.md`
+
+---
+
+## Visual Verification
+The automated SAST workflow executes on pull requests, running the multi-language matrix and reporting results inline:
+
+![SAST GitHub Actions Workflow Execution](../../images/workflows/01-github-actions-sast-pass.png)
