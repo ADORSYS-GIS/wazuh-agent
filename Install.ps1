@@ -48,6 +48,7 @@ $ChecksumsFile = "checksums.sha256"
 # =============================================================================
 
 function Log {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param (
         [string]$Level,
         [string]$Message,
@@ -59,22 +60,22 @@ function Log {
 
 function InfoMessage {
     param([string]$Message)
-    Log "[INFO]" $Message "Cyan"
+    Log -Level "[INFO]" -Message $Message -Color "Cyan"
 }
 
 function SuccessMessage {
     param([string]$Message)
-    Log "[SUCCESS]" $Message "Green"
+    Log -Level "[SUCCESS]" -Message $Message -Color "Green"
 }
 
 function WarningMessage {
     param([string]$Message)
-    Log "[WARNING]" $Message "Yellow"
+    Log -Level "[WARNING]" -Message $Message -Color "Yellow"
 }
 
 function ErrorMessage {
     param([string]$Message)
-    Log "[ERROR]" $Message "Red"
+    Log -Level "[ERROR]" -Message $Message -Color "Red"
 }
 
 function Get-FileChecksum {
@@ -152,7 +153,7 @@ if ($Help) {
 
 InfoMessage "Wazuh Agent Bootstrap Installer"
 InfoMessage "================================"
-Write-Host ""
+Write-Output ""
 
 # Check for WAZUH_MANAGER
 $WazuhManager = $env:WAZUH_MANAGER
@@ -160,7 +161,7 @@ if ([string]::IsNullOrWhiteSpace($WazuhManager) -or $WazuhManager -eq "wazuh.exa
     WarningMessage "WAZUH_MANAGER is not set or using default placeholder"
     WarningMessage "Please set WAZUH_MANAGER environment variable:"
     WarningMessage '  $env:WAZUH_MANAGER = "your-wazuh-manager.com"'
-    Write-Host ""
+    Write-Output ""
 }
 
 # Create temporary directory
@@ -259,9 +260,9 @@ try {
 
     # Execute setup script
     InfoMessage "Executing $ScriptName..."
-    Write-Host ""
-    Write-Host "==============================================" -ForegroundColor Magenta
-    Write-Host ""
+    Write-Output ""
+    Write-Output "=============================================="
+    Write-Output ""
 
     # Run with elevated privileges if needed
     $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)

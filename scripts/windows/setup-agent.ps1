@@ -27,7 +27,7 @@ New-Item -ItemType Directory -Path $UtilsTmp -Force | Out-Null
 try {
     $ChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/checksums.sha256"
     $UtilsUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$($env:WAZUH_AGENT_REPO_REF)/scripts/shared/utils.ps1"
-    $global:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $script:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
 
     Invoke-WebRequest -Uri $ChecksumUrl -OutFile $ChecksumsPath -ErrorAction Stop
     Invoke-WebRequest -Uri $UtilsUrl -OutFile "$UtilsTmp\utils.ps1" -ErrorAction Stop
@@ -56,7 +56,6 @@ $APP_NAME = if ($env:APP_NAME) { $env:APP_NAME } else { "wazuh-cert-oauth2-clien
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.6-1" }
 $OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
-$TEMP_DIR = [System.IO.Path]::GetTempPath()
 $WAZUH_YARA_VERSION = if ($env:WAZUH_YARA_VERSION) { $env:WAZUH_YARA_VERSION } else { "0.4.2" }
 $WAZUH_AGENT_STATUS_VERSION = if ($env:WAZUH_AGENT_STATUS_VERSION) { $env:WAZUH_AGENT_STATUS_VERSION } else { "0.5.4" }
 $WOPS_VERSION = if ($env:WOPS_VERSION) { $env:WOPS_VERSION } else { "0.4.3" }
@@ -71,37 +70,44 @@ $WAZUH_SNORT_REPO_REF = if ($env:WAZUH_SNORT_REPO_REF) { $env:WAZUH_SNORT_REPO_R
 $WAZUH_SURICATA_REPO_REF = if ($env:WAZUH_SURICATA_REPO_REF) { $env:WAZUH_SURICATA_REPO_REF } else { "refs/tags/v$WAZUH_SURICATA_VERSION" }
 $WAZUH_TRIVY_REPO_REF = if ($env:WAZUH_TRIVY_REPO_REF) { $env:WAZUH_TRIVY_REPO_REF } else { "main" }
 $WAZUH_AGENT_STATUS_REPO_REF = if ($env:WAZUH_AGENT_STATUS_REPO_REF) { $env:WAZUH_AGENT_STATUS_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_STATUS_VERSION" }
+$WAZUH_AGENT_INSTALLER_VERSION = if ($env:WAZUH_AGENT_INSTALLER_VERSION) { $env:WAZUH_AGENT_INSTALLER_VERSION } else { "1.2.0" }
+$WAZUH_AGENT_INSTALLER_REPO_REF = if ($env:WAZUH_AGENT_INSTALLER_REPO_REF) { $env:WAZUH_AGENT_INSTALLER_REPO_REF } else { "refs/tags/v$WAZUH_AGENT_INSTALLER_VERSION" }
 $RepoUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF"
 $VERSION_FILE_URL = "$RepoUrl/version.txt"
 $VERSION_FILE_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "version.txt"
 
 # Global array to track installer files
-$global:InstallerFiles = @()
+$script:InstallerFiles = @()
 
 
 # Cleanup function to remove installer files at the end
-function Cleanup-Installers {
-    foreach ($file in $global:InstallerFiles) {
+function Remove-InstallerFile {
+    [CmdletBinding(SupportsShouldProcess)]
+    param()
+
+    foreach ($file in $script:InstallerFiles) {
         if (Test-Path $file) {
-            Remove-Item $file -Force
-            InfoMessage "Removed installer file: $file"
+            if ($PSCmdlet.ShouldProcess($file, 'Remove installer file')) {
+                Remove-Item $file -Force
+                InfoMessage "Removed installer file: $file"
+            }
         }
     }
 }
 
 # Step 0: Download and execute core scripts
-function Download-CoreScripts {
+function Get-CoreScript {
     $CoreScripts = @("deps.ps1", "install.ps1")
     $env:WAZUH_AGENT_REPO_REF = $WAZUH_AGENT_REPO_REF
 
     # We already have utils.ps1 verified in the bootstrap phase, let's copy it to TEMP
     Copy-Item -Path "$UtilsTmp\utils.ps1" -Destination "$env:TEMP\utils.ps1" -Force
-    $global:InstallerFiles += "$env:TEMP\utils.ps1"
+    $script:InstallerFiles += "$env:TEMP\utils.ps1"
 
     foreach ($script in $CoreScripts) {
         $url = "$RepoUrl/scripts/windows/$script"
         $dest = "$env:TEMP\$script"
-        $global:InstallerFiles += $dest
+        $script:InstallerFiles += $dest
 
         if (-not (Download-And-VerifyFile -Url $url -Destination $dest -ChecksumPattern "scripts/windows/$script" -FileName $script -ChecksumUrl "$RepoUrl/checksums.sha256")) {
             exit 1
@@ -110,7 +116,7 @@ function Download-CoreScripts {
 }
 
 # Step 0.1: Execute dependencies
-function Install-Dependencies {
+function Install-Dependency {
     $InstallerPath = "$env:TEMP\deps.ps1"
     try {
         InfoMessage "Installing dependencies..."
@@ -137,7 +143,7 @@ function Install-WazuhAgent {
 function Install-OAuth2Client {
     $OAuth2Url = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/$WAZUH_CERT_OAUTH2_REPO_REF/scripts/windows/install.ps1"
     $OAuth2Script = "$env:TEMP\wazuh-cert-oauth2-client-install.ps1"
-    $global:InstallerFiles += $OAuth2Script
+    $script:InstallerFiles += $OAuth2Script
 
     $OAuth2ChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-cert-oauth2/$WAZUH_CERT_OAUTH2_REPO_REF/checksums.sha256"
 
@@ -157,7 +163,7 @@ function Install-OAuth2Client {
 function Install-Yara {
     $YaraUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-yara/$WAZUH_YARA_REPO_REF/scripts/windows/install.ps1"
     $YaraScript = "$env:TEMP\install_yara.ps1"
-    $global:InstallerFiles += $YaraScript
+    $script:InstallerFiles += $YaraScript
 
     try {
         Download-File -Url $YaraUrl -Destination $YaraScript -Description "YARA installation script"
@@ -173,7 +179,7 @@ function Install-Yara {
 function Install-Snort {
     $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/scripts/windows/snort.ps1"
     $SnortScript = "$env:TEMP\snort.ps1"
-    $global:InstallerFiles += $SnortScript
+    $script:InstallerFiles += $SnortScript
 
     $SnortChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/checksums.sha256"
 
@@ -193,7 +199,7 @@ function Install-Snort {
 function Uninstall-Snort {
     $SnortUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-snort/$WAZUH_SNORT_REPO_REF/scripts/windows/uninstall.ps1"
     $UninstallSnortScript = "$env:TEMP\uninstall_snort.ps1"
-    $global:InstallerFiles += $UninstallSnortScript
+    $script:InstallerFiles += $UninstallSnortScript
     $TaskName = "SnortStartup"
 
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
@@ -216,7 +222,7 @@ function Uninstall-Snort {
 function Install-Suricata {
     $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/install.ps1"
     $SuricataScript = "$env:TEMP\suricata.ps1"
-    $global:InstallerFiles += $SuricataScript
+    $script:InstallerFiles += $SuricataScript
 
     try {
         Download-File -Url $SuricataUrl -Destination $SuricataScript -Description "Suricata installation script"
@@ -231,7 +237,7 @@ function Install-Suricata {
 function Uninstall-Suricata {
     $SuricataUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-suricata/$WAZUH_SURICATA_REPO_REF/scripts/windows/uninstall.ps1"
     $UninstallSuricataScript = "$env:TEMP\uninstall_suricata.ps1"
-    $global:InstallerFiles += $UninstallSuricataScript
+    $script:InstallerFiles += $UninstallSuricataScript
     $TaskName = "SuricataStartup"
 
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
@@ -251,7 +257,7 @@ function Uninstall-Suricata {
 function Install-AgentStatus {
     $AgentStatusUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/$WAZUH_AGENT_STATUS_REPO_REF/scripts/windows/install.ps1"
     $AgentStatusScript = "$env:TEMP\install-agent-status.ps1"
-    $global:InstallerFiles += $AgentStatusScript
+    $script:InstallerFiles += $AgentStatusScript
 
     $AgentStatusChecksumUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-status/$WAZUH_AGENT_STATUS_REPO_REF/checksums.sha256"
 
@@ -268,7 +274,7 @@ function Install-AgentStatus {
 }
 
 # Step 7: Install USB DLP Active Response scripts
-function Install-USBDLPScripts {
+function Install-USBDLPScript {
     $AR_BIN_DIR = Join-Path -Path $OSSEC_PATH -ChildPath "active-response\bin"
     $USB_DLP_BASE_URL = "$RepoUrl/files/active-response/windows"
 
@@ -336,14 +342,14 @@ function Install-Adorsys-CA {
     try {
         $caScriptUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/windows/ca-install.ps1"
         $caScriptPath = Join-Path $env:TEMP "ca-install.ps1"
-        $global:InstallerFiles += $caScriptPath
+        $script:InstallerFiles += $caScriptPath
 
         if (-not (Download-And-VerifyFile -Url $caScriptUrl -Destination $caScriptPath -ChecksumPattern "scripts/windows/ca-install.ps1" -FileName "Windows CA installer" -ChecksumUrl "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256")) {
             throw "Failed to download or verify CA install script"
         }
-        
+
         & $caScriptPath -CABranch $WAZUH_AGENT_REPO_REF
-        
+
         SuccessMessage "AdORSYS Block Page CA installed successfully."
     }
     catch {
@@ -352,10 +358,14 @@ function Install-Adorsys-CA {
 }
 
 function Install-GUI-Installer {
-    InfoMessage "Installing Wazuh Agent GUI Installer (v1.2.0)..."
+    InfoMessage "Installing Wazuh Agent GUI Installer (v$WAZUH_AGENT_INSTALLER_VERSION)..."
     try {
         # TODO: revisit this once the installer update feature is implemented
-        irm "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/refs/tags/v1.2.0/install-scripts/windows.ps1" | iex
+        $guiInstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/$WAZUH_AGENT_INSTALLER_REPO_REF/install-scripts/windows.ps1"
+        $guiInstallerPath = "$env:TEMP\wazuh-agent-gui-installer.ps1"
+        $script:InstallerFiles += $guiInstallerPath
+        Invoke-RestMethod -Uri $guiInstallerUrl -OutFile $guiInstallerPath
+        & $guiInstallerPath
         SuccessMessage "Wazuh Agent GUI Installer installed successfully."
     }
     catch {
@@ -364,6 +374,9 @@ function Install-GUI-Installer {
 }
 
 function Show-Help {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    param()
+
     Write-Host "Usage:  .\setup-agent.ps1 [-InstallSnort] [-InstallSuricata] [-InstallNetBird] [-Help]" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "This script automates the installation of various Wazuh components and related tools." -ForegroundColor Cyan
@@ -395,9 +408,10 @@ function Show-Help {
 
 # Step 8: Setup Docker monitoring (only runs if Docker is installed)
 function Install-DockerListener {
+    param([switch]$CaptureDockerLogs)
     $DockerSetupUrl = "$RepoUrl/scripts/windows/setup-docker.ps1"
     $DockerSetupScript = "$env:TEMP\setup-docker.ps1"
-    $global:InstallerFiles += $DockerSetupScript
+    $script:InstallerFiles += $DockerSetupScript
 
     try {
         InfoMessage "Downloading and executing Docker listener setup script..."
@@ -436,9 +450,9 @@ if ($InstallSnort -and $InstallSuricata) {
 # Main Execution wrapped in a try-finally to ensure cleanup runs even if errors occur.
 try {
     SectionSeparator "Downloading Core Scripts"
-    Download-CoreScripts
+    Get-CoreScript
     SectionSeparator "Installing Dependencies"
-    Install-Dependencies
+    Install-Dependency
     SectionSeparator "Installing Wazuh Agent"
     Install-WazuhAgent
     SectionSeparator "Installing OAuth2Client"
@@ -464,10 +478,10 @@ try {
     }
 
     SectionSeparator "Installing USB DLP Scripts"
-    Install-USBDLPScripts
+    Install-USBDLPScript
 
     SectionSeparator "Setting up Docker Monitoring"
-    Install-DockerListener
+    Install-DockerListener -CaptureDockerLogs:$CaptureDockerLogs
 
     if ($InstallNetBird) {
         SectionSeparator "Installing NetBird Agent"
@@ -485,6 +499,6 @@ try {
 }
 finally {
     InfoMessage "Cleaning up installer files..."
-    Cleanup-Installers
+    Remove-InstallerFile
     SuccessMessage "Wazuh Agent Setup Completed Successfully"
 }
