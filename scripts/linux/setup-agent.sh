@@ -65,9 +65,9 @@ YARA_INSTALLATION_TYPE=${YARA_INSTALLATION_TYPE:-"desktop"}
 SURICATA_ENGINE="suricata"
 
 # Linux-specific OSSEC configuration path
-OSSEC_PATH="/var/ossec/etc"
-OSSEC_CONF_PATH="$OSSEC_PATH/ossec.conf"
-AR_BIN_DIR="/var/ossec/active-response/bin"
+OSSEC_PATH=${OSSEC_PATH:-"/var/ossec/etc"}
+OSSEC_CONF_PATH=${OSSEC_CONF_PATH:-"$OSSEC_PATH/ossec.conf"}
+AR_BIN_DIR=${AR_BIN_DIR:-"/var/ossec/active-response/bin"}
 
 USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
@@ -175,12 +175,12 @@ while getopts "s:ntbh" opt; do
             exit 0
             ;;
         \?)
-            error_message "Invalid option: -$OPTARG" >&2
+            error_message "Invalid option: -${OPTARG:-?}" >&2
             help_message
             exit 1
             ;;
         :)
-            error_message "Option -$OPTARG requires an argument." >&2
+            error_message "Option -${OPTARG:-?} requires an argument." >&2
             help_message
             exit 1
             ;;
