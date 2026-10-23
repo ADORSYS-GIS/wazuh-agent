@@ -1,2 +1,5 @@
 .idea
 .code
+coverage/
+coverage.xml
+sonar-coverage.xml

@@ -53,20 +53,20 @@ fi
 # Common variables
 WAZUH_USER=${WAZUH_USER:-'wazuh'}
 WAZUH_GROUP=${WAZUH_GROUP:-'wazuh'}
-OSSEC_CONTROL_PATH="/var/ossec/bin/wazuh-control"
-OSSEC_PATH="/var/ossec/"
+OSSEC_CONTROL_PATH=${OSSEC_CONTROL_PATH:-"/var/ossec/bin/wazuh-control"}
+OSSEC_PATH=${OSSEC_PATH:-"/var/ossec/"}
 
 # Determine Linux distribution and package manager
 if [ -f /etc/debian_version ]; then
     PACKAGE_MANAGER="apt"
-    REPO_FILE="/etc/apt/sources.list.d/wazuh.list"
-    GPG_KEY_FILE="/usr/share/keyrings/wazuh.gpg"
+    REPO_FILE=${REPO_FILE:-"/etc/apt/sources.list.d/wazuh.list"}
+    GPG_KEY_FILE=${GPG_KEY_FILE:-"/usr/share/keyrings/wazuh.gpg"}
 elif [ -f /etc/redhat-release ]; then
     PACKAGE_MANAGER="yum"
-    REPO_FILE="/etc/yum.repos.d/wazuh.repo"
+    REPO_FILE=${REPO_FILE:-"/etc/yum.repos.d/wazuh.repo"}
 elif [ -f /etc/SuSE-release ] || [ -f /etc/zypp/repos.d ]; then
     PACKAGE_MANAGER="zypper"
-    REPO_FILE="/etc/zypp/repos.d/wazuh.repo"
+    REPO_FILE=${REPO_FILE:-"/etc/zypp/repos.d/wazuh.repo"}
 else
     error_exit "Unsupported Linux distribution"
 fi
@@ -154,7 +154,7 @@ cleanup_repo() {
 # Clean up any remaining Wazuh files
 cleanup_files() { 
     info_message "Cleaning up remaining Wazuh files"
-    if ! maybe_sudo rm -rf /var/ossec; then
+    if ! maybe_sudo rm -rf "$OSSEC_PATH"; then
         error_exit "Failed to remove Wazuh directory"
     fi
     info_message "Linux cleanup completed."
