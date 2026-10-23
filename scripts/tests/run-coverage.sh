@@ -2,14 +2,14 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 OUTPUT_DIR="${1:-$REPO_ROOT/coverage}"
 
 mkdir -p "$OUTPUT_DIR"
 cd "$REPO_ROOT"
 
 echo "==> Running Bats unit tests under kcov..."
-kcov --include-pattern="$REPO_ROOT/scripts/,$REPO_ROOT/lib/,$REPO_ROOT/install.sh" "$OUTPUT_DIR/kcov" bats tests/test-scripts.bats
+kcov --include-pattern="$REPO_ROOT/scripts/,$REPO_ROOT/lib/,$REPO_ROOT/install.sh" --exclude-pattern="$REPO_ROOT/scripts/tests/" "$OUTPUT_DIR/kcov" bats scripts/tests/test-scripts.bats
 
 SONAR_XML=$(find "$OUTPUT_DIR/kcov" -name "sonarqube.xml" | head -n1)
 if [[ -z "$SONAR_XML" || ! -f "$SONAR_XML" ]]; then
