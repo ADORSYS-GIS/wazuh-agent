@@ -91,7 +91,8 @@ Nothing to roll back. (In case of transient CI blocking due to template outages,
 
 | Claim | Where |
 | :--- | :--- |
-| Passing SAST matrix workflow | [`docs/images/workflows/01-github-actions-sast-pass.png`](../images/workflows/01-github-actions-sast-pass.png) |
+| Passing SAST matrix workflow (visual artifact) | [`docs/images/workflows/01-github-actions-sast-pass.png`](../images/workflows/01-github-actions-sast-pass.png) |
+| Active GitHub Actions runs | [SAST Workflow Runs](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/sast.yml) |
 | PSScriptAnalyzer zero findings | Issue `ADORSYS-GIS/wazuh-agent#260` / PR `ADORSYS-GIS/wazuh-agent#261` |
 | Reusable templates repository | `ADORSYS-GIS/adorsys-ci-cd-templates` |
 
