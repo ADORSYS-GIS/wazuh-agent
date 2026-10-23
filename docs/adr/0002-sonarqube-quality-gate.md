@@ -86,8 +86,11 @@ Nothing to roll back.
 
 | Claim | Where |
 | :--- | :--- |
+| Passing SonarQube scan & Quality Gate | [`docs/images/workflows/02-github-actions-sonarqube-pass.png`](../images/workflows/02-github-actions-sonarqube-pass.png) |
 | SonarQube instance | `https://sonarqube.sol-adorsys.com` |
 | Project key registration | SonarQube project `wazuh-agent` |
+
+![SonarQube Scan and Quality Gate Passing Execution](../images/workflows/02-github-actions-sonarqube-pass.png)
 
 ## References
 
@@ -100,5 +103,8 @@ Nothing to roll back.
 
 | Kind | Tracking | Status | What it covers |
 | :--- | :--- | :--- | :--- |
+| Issue | ADORSYS-GIS/wazuh-agent#241 | Closed | Add SonarQube workflow for code quality analysis |
+| PR | ADORSYS-GIS/wazuh-agent#242 | Merged 2026-09-04 | Initial SonarQube workflow implementation (`.github/workflows/sonarqube.yml`) |
+| PR | ADORSYS-GIS/wazuh-agent#267 | Open | Bats test suite, coverage reporting, and SonarQube quality gate verification |
 | Issue | ADORSYS-GIS/wazuh-agent#265 | Open | Audit-readiness: Implement SAST & SonarQube ADRs with Central Playbook Integration |
-| PR | ADORSYS-GIS/wazuh-agent#266 | Open | In-repo ADRs, visual evidence, and documentation standard alignment |
+| PR | ADORSYS-GIS/wazuh-agent#266 | Open | In-repo ADR documentation, visual evidence, and docs standard alignment |

@@ -108,5 +108,8 @@ Nothing to roll back. (In case of transient CI blocking due to template outages,
 
 | Kind | Tracking | Status | What it covers |
 | :--- | :--- | :--- | :--- |
+| PR | ADORSYS-GIS/wazuh-agent#259 | Merged 2026-10-08 | Added SAST workflow (`.github/workflows/sast.yml`) integrating ShellCheck, PSScriptAnalyzer, and Bandit |
+| Issue | ADORSYS-GIS/wazuh-agent#260 | Closed | Remediate PSScriptAnalyzer SAST warnings across PowerShell scripts |
+| PR | ADORSYS-GIS/wazuh-agent#261 | Merged 2026-10-20 | Resolved all PSScriptAnalyzer findings to achieve zero warnings baseline |
 | Issue | ADORSYS-GIS/wazuh-agent#265 | Open | Audit-readiness: Implement SAST & SonarQube ADRs with Central Playbook Integration |
-| PR | ADORSYS-GIS/wazuh-agent#266 | Open | In-repo ADRs, visual evidence, and documentation standard alignment |
+| PR | ADORSYS-GIS/wazuh-agent#266 | Open | In-repo ADR documentation, visual evidence, and docs standard alignment |
