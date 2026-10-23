@@ -39,12 +39,12 @@ jobs:
     uses: ADORSYS-GIS/adorsys-ci-cd-templates/.github/workflows/sonarqube.yml@8617a17cfc5f5a8897c2a3806bb543c20b4b57e0 # main
     with:
       project-key: wazuh-agent
-      runner: ubuntu-22.04
+      runner: arc-runner-set
       generic-coverage-report-paths: "coverage/sonar-coverage.xml"
       coverage-artifact-name: "wazuh-agent-coverage-report"
       coverage-artifact-path: "coverage"
       exclusions: "**/coverage/**"
-      extra-sonar-args: -Dsonar.coverage.exclusions="scripts/tests/**,**/*.yaml,**/*.yml,scripts/macos/**,scripts/server/**,scripts/windows/**,files/**,scripts/linux/ca-install.sh,scripts/shared/ca-helpers.sh,scripts/linux/setup-docker.sh,**/*.ps1,**/*.psm1"
+      extra-sonar-args: -Dsonar.coverage.exclusions=scripts/tests/**,**/*.yaml,**/*.yml,scripts/macos/**,scripts/server/**,scripts/windows/**,files/**,scripts/linux/ca-install.sh,scripts/shared/ca-helpers.sh,scripts/linux/setup-docker.sh,**/*.ps1,**/*.psm1
     secrets:
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
