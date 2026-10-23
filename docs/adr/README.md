@@ -10,8 +10,8 @@ decision. The canonical writing guidance is the central ADR guide:
 
 | ID | Title | Status | Date | Relations | Formerly |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| [ADR-0001](0001-sast-pr-enforcement.md) | Pre-Merge Static Application Security Testing (SAST) Enforcement | `Accepted` | 2026-10-20 | - | - |
-| [ADR-0002](0002-sonarqube-quality-gate.md) | SonarQube Centralized Quality Gate & Compliance Standards | `Accepted` | 2026-10-20 | - | - |
+| [ADR-0001](0001-sast-pr-enforcement.md) | Pre-Merge Static Application Security Testing (SAST) Enforcement | `Accepted` | 2026-10-20 | N/A | N/A |
+| [ADR-0002](0002-sonarqube-quality-gate.md) | SonarQube Centralized Quality Gate & Compliance Standards | `Accepted` | 2026-10-20 | N/A | N/A |
 
 ---
 

@@ -25,18 +25,18 @@ For our compliance roadmap (including ISO 27001 / TÜV Hessen certifications), a
 
 ## Decision
 
-We will integrate `wazuh-agent` into the centralized SonarQube instance (`https://sonarqube.sol-adorsys.com`) using the reusable SonarQube workflow from `ADORSYS-GIS/adorsys-ci-cd-templates`.
+We will integrate `wazuh-agent` into our centralized SonarQube instance (configured securely via repository secret `SONAR_HOST_URL`) using the reusable SonarQube workflow from `ADORSYS-GIS/adorsys-ci-cd-templates`.
 
 The enforcement mechanism operates via `.github/workflows/sonarqube.yml`:
-1. **Target Branches**:
-   - Analysis runs on all pushes to `develop` and `main`, as well as manual triggers (`workflow_dispatch`).
+1. **Target Triggers & Branches**:
+   - Analysis runs on pull requests and pushes targeting `develop` and `main`, as well as manual triggers (`workflow_dispatch`).
 2. **Quality Gate Compliance**:
    - The repository must maintain a **Passing Quality Gate** on `main` prior to release tagging.
    - Enforces zero open vulnerabilities, zero open security hotspots, and code smell remediation.
-3. **Central Secret Management**:
-   - Authentication is governed via GitHub Secrets (`SONAR_HOST_URL`, `SONAR_TOKEN`), executing on self-hosted runners (`arc-runner-set`).
+3. **Secret Management & Runners**:
+   - Authentication is governed via GitHub Secrets (`SONAR_HOST_URL`, `SONAR_TOKEN`), executing on standard GitHub runners (`ubuntu-22.04` for unit testing and `ubuntu-latest` for scanning).
 4. **Scan Scope & Exclusions**:
-   - Adheres to the shared CI template default exclusions (`**/node_modules/**, **/dist/**, **/build/**, **/coverage/**`), ensuring all hand-written Shell and PowerShell code remains scanned while generated artifacts are omitted.
+   - Excludes generated test coverage artifacts (`**/coverage/**`), ensuring all hand-written Shell and PowerShell code remains scanned.
    - Standardized in the centralized [SonarQube Scan Exclusions Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sonarqube-scan-exclusions.md).
 
 ## Options considered
@@ -72,7 +72,7 @@ The enforcement mechanism operates via `.github/workflows/sonarqube.yml`:
 
 - [x] `.github/workflows/sonarqube.yml` configured and active.
 - [x] Runner secrets `SONAR_HOST_URL` and `SONAR_TOKEN` mapped.
-- [x] Scans reporting to `https://sonarqube.sol-adorsys.com` project `wazuh-agent`.
+- [x] Scans reporting to centralized SonarQube project `wazuh-agent`.
 
 ### Revisit when
 
@@ -88,7 +88,7 @@ Nothing to roll back.
 | :--- | :--- |
 | Passing SonarQube scan & Quality Gate (visual artifact) | [`docs/images/workflows/02-github-actions-sonarqube-pass.png`](../images/workflows/02-github-actions-sonarqube-pass.png) |
 | Active GitHub Actions runs | [SonarQube Workflow Runs](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/sonarqube.yml) |
-| SonarQube instance | `https://sonarqube.sol-adorsys.com` |
+| SonarQube instance | Governed via repository secret `SONAR_HOST_URL` |
 | Project key registration | SonarQube project `wazuh-agent` |
 
 ![SonarQube Scan and Quality Gate Passing Execution](../images/workflows/02-github-actions-sonarqube-pass.png)
@@ -96,7 +96,7 @@ Nothing to roll back.
 ## References
 
 - Workflow Definition: [`.github/workflows/sonarqube.yml`](../../.github/workflows/sonarqube.yml)
-- SonarQube Server: [https://sonarqube.sol-adorsys.com](https://sonarqube.sol-adorsys.com)
+- SonarQube Server: Configured via repository secret `SONAR_HOST_URL`
 - Master Security Specification: [Wazuh SAST Integration Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sast-integration.md)
 - SonarQube Scan Exclusions Specification: [SonarQube Scan Exclusions Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sonarqube-scan-exclusions.md)
 
