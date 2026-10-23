@@ -51,7 +51,7 @@ jobs:
       coverage-artifact-name: "wazuh-agent-coverage-report"
       coverage-artifact-path: "coverage"
       exclusions: "**/coverage/**,**/node_modules/**,**/dist/**,**/build/**"
-      extra-sonar-args: -Dsonar.coverage.exclusions="tests/**,scripts/tests/**,**/*.tf,**/*.yaml,**/*.yml,**/*.hcl"
+      extra-sonar-args: -Dsonar.coverage.exclusions="tests/**,scripts/tests/**,**/*.tf,**/*.yaml,**/*.yml,**/*.hcl,scripts/macos/**,scripts/server/**,scripts/windows/**,files/**,scripts/linux/ca-install.sh,scripts/shared/ca-helpers.sh,scripts/linux/setup-docker.sh,**/*.ps1,**/*.psm1"
     secrets:
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

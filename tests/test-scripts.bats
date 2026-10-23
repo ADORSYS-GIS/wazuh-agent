@@ -589,6 +589,28 @@ EOF
     [[ "$output" =~ "Wazuh agent uninstallation completed successfully" ]]
 }
 
+@test "scripts/linux/uninstall.sh: exits cleanly when no Wazuh components are detected" {
+    create_smart_curl
+    export OSSEC_PATH="$TEST_TMPDIR/nonexistent_wazuh"
+    export OSSEC_CONTROL_PATH="$TEST_TMPDIR/nonexistent_wazuh/bin/wazuh-control"
+    export REPO_FILE="$TEST_TMPDIR/wazuh.list"
+    export GPG_KEY_FILE="$TEST_TMPDIR/wazuh.gpg"
+
+    cat << 'EOF' > "$MOCK_BIN/dpkg"
+#!/bin/sh
+exit 1
+EOF
+    cat << 'EOF' > "$MOCK_BIN/ps"
+#!/bin/sh
+exit 1
+EOF
+    chmod +x "$MOCK_BIN/dpkg" "$MOCK_BIN/ps"
+
+    run bash scripts/linux/uninstall.sh
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "Wazuh agent does not exist, skipping" ]]
+}
+
 # =============================================================================
 # Additional verify.sh & utils.sh helpers tests
 # =============================================================================
