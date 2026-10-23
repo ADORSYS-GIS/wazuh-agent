@@ -279,7 +279,7 @@ This repository enforces automated security scanning and code quality standards 
 - **Architecture Decisions**: Documented in [`docs/adr/`](docs/adr/README.md):
   - [ADR-0001: Pre-Merge SAST Enforcement](docs/adr/0001-sast-pr-enforcement.md)
   - [ADR-0002: SonarQube Centralized Quality Gate](docs/adr/0002-sonarqube-quality-gate.md)
-- **Central Compliance Specification**: For full scanner matrices, rule profiles, and global policies, see the [Wazuh SAST Integration Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sast-integration.md) in `wazuh-playbook`.
+- **Central Compliance Specification**: For full scanner matrices, rule profiles, and global policies, see the [Wazuh SAST Integration Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sast-integration.md) and [SonarQube Scan Exclusions Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sonarqube-scan-exclusions.md) in `wazuh-playbook`.
 - **Documentation**: See [`docs/README.md`](docs/README.md) for the SDLC documentation map.
 
 ## Contributing

@@ -17,5 +17,6 @@ decision. The canonical writing guidance is the central ADR guide:
 
 ## Centralized Specifications
 
-For comprehensive scanner details, rule profiles, and global SIEM security policies, refer to the master specification:
+For comprehensive scanner details, rule profiles, and global SIEM security policies, refer to the master specifications:
 - [Wazuh SAST Integration Guide (`wazuh-playbook`)](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sast-integration.md)
+- [SonarQube Scan Exclusions Guide (`wazuh-playbook`)](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sonarqube-scan-exclusions.md)

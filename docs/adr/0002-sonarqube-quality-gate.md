@@ -35,6 +35,9 @@ The enforcement mechanism operates via `.github/workflows/sonarqube.yml`:
    - Enforces zero open vulnerabilities, zero open security hotspots, and code smell remediation.
 3. **Central Secret Management**:
    - Authentication is governed via GitHub Secrets (`SONAR_HOST_URL`, `SONAR_TOKEN`), executing on self-hosted runners (`arc-runner-set`).
+4. **Scan Scope & Exclusions**:
+   - Adheres to the shared CI template default exclusions (`**/node_modules/**, **/dist/**, **/build/**, **/coverage/**`), ensuring all hand-written Shell and PowerShell code remains scanned while generated artifacts are omitted.
+   - Standardized in the centralized [SonarQube Scan Exclusions Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sonarqube-scan-exclusions.md).
 
 ## Options considered
 
@@ -91,6 +94,7 @@ Nothing to roll back.
 - Workflow Definition: [`.github/workflows/sonarqube.yml`](../../.github/workflows/sonarqube.yml)
 - SonarQube Server: [https://sonarqube.sol-adorsys.com](https://sonarqube.sol-adorsys.com)
 - Master Security Specification: [Wazuh SAST Integration Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sast-integration.md)
+- SonarQube Scan Exclusions Specification: [SonarQube Scan Exclusions Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sonarqube-scan-exclusions.md)
 
 ## Solution implementation
 
