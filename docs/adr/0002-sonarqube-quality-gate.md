@@ -9,7 +9,6 @@
 | **Document ID** | ADR-0002 |
 | **Status** | `Accepted` |
 | **Date** | 2026-10-20 |
-| **Recorded** | 2026-10-20 |
 | **Deciders** | SIEM Security Engineering Team |
 | **Governs** | `.github/workflows/sonarqube.yml`, `sonar-project.properties` |
 | **Amends** | N/A |

@@ -9,7 +9,6 @@
 | **Document ID** | ADR-0001 |
 | **Status** | `Accepted` |
 | **Date** | 2026-10-20 |
-| **Recorded** | 2026-10-20 |
 | **Deciders** | SIEM Security Engineering Team |
 | **Governs** | `.github/workflows/sast.yml`, `scripts/linux/`, `scripts/macos/`, `scripts/windows/` |
 | **Amends** | N/A |
