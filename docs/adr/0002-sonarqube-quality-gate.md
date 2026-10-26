@@ -31,7 +31,7 @@ The enforcement mechanism operates via `.github/workflows/sonarqube.yml`:
    - Analysis runs on pull requests and pushes targeting `develop` and `main`, as well as manual triggers (`workflow_dispatch`).
 2. **Quality Gate Compliance**:
    - The repository must maintain a **Passing Quality Gate** on `main` prior to release tagging.
-   - Enforces zero open vulnerabilities, zero open security hotspots, and code smell remediation.
+   - Enforces the upstream Quality Gate standard (failing on unresolved bugs, vulnerabilities, and blocker/critical issues per `adorsys-ci-cd-templates`).
 3. **Secret Management & Runners**:
    - Authentication is governed via GitHub Secrets (`SONAR_HOST_URL`, `SONAR_TOKEN`), executing on standard GitHub runners (`ubuntu-22.04` for unit testing and `ubuntu-latest` for scanning).
 4. **Scan Scope & Exclusions**:
@@ -65,7 +65,7 @@ The enforcement mechanism operates via `.github/workflows/sonarqube.yml`:
 
 ### Accepted limits
 
-- Analysis runs post-merge on protected branches (`develop`, `main`) rather than as a prerequisite check on all external forks.
+- Analysis runs on internal pull requests and pushes targeting protected branches (`develop`, `main`). External fork pull requests cannot execute the gate pre-merge due to secret isolation in GitHub Actions.
 
 ### Done when
 
