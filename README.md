@@ -1,7 +1,7 @@
 # Wazuh Agent Setup 
 
 [![CI/CD Pipeline](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/release.yaml/badge.svg?branch=main)](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/release.yaml)
-[![CI/CD Pipeline](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/release.yaml/badge.svg?branch=main)](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/release.yaml)
+[![Static Application Security Testing](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/sast.yml/badge.svg)](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/sast.yml)
 [![SonarQube](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/sonarqube.yml/badge.svg)](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/sonarqube.yml)
 
 This repository provides an automated, **verified** setup script for installing the Wazuh Agent along with essential security tools. The installer verifies script integrity using SHA256 checksums before execution.
@@ -269,6 +269,18 @@ irm https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/scripts/windo
 ```
 
 ---
+
+## Security & Quality Gates
+
+This repository enforces automated security scanning and code quality standards on every pull request and release branch:
+
+- **Static Application Security Testing (SAST)**: Automated multi-language scanning runs via [`.github/workflows/sast.yml`](.github/workflows/sast.yml) (ShellCheck for Linux/macOS scripts, PSScriptAnalyzer for Windows PowerShell, and Bandit for Python utilities), reporting inline annotations via Reviewdog.
+- **SonarQube Quality Gate**: Governs overall code smells, security hotspots, and release readiness via [`.github/workflows/sonarqube.yml`](.github/workflows/sonarqube.yml).
+- **Architecture Decisions**: Documented in [`docs/adr/`](docs/adr/README.md):
+  - [ADR-0001: Pre-Merge SAST Enforcement](docs/adr/0001-sast-pr-enforcement.md)
+  - [ADR-0002: SonarQube Centralized Quality Gate](docs/adr/0002-sonarqube-quality-gate.md)
+- **Central Compliance Specification**: For full scanner matrices, rule profiles, and global policies, see the [Wazuh SAST Integration Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sast-integration.md) and [SonarQube Scan Exclusions Guide](https://github.com/ADORSYS-GIS/wazuh-playbook/blob/main/SOC-Documentation/sonarqube-scan-exclusions.md) in `wazuh-playbook`.
+- **Documentation**: See [`docs/README.md`](docs/README.md) for the SDLC documentation map.
 
 ## Contributing
 
