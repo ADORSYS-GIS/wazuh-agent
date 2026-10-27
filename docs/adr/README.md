@@ -12,6 +12,7 @@ decision. The canonical writing guidance is the central ADR guide:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | [ADR-0001](0001-sast-pr-enforcement.md) | Pre-Merge Static Application Security Testing (SAST) Enforcement | `Accepted` | 2026-10-20 | N/A | N/A |
 | [ADR-0002](0002-sonarqube-quality-gate.md) | SonarQube Centralized Quality Gate & Compliance Standards | `Accepted` | 2026-10-20 | N/A | N/A |
+| [ADR-0003](0003-generate-sbom-in-ci.md) | Generate CycloneDX SBOM in CI | `Proposed` | 2026-10-26 | N/A | N/A |
 
 ---
 
