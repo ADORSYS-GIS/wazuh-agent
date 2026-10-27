@@ -130,7 +130,7 @@ The installer automatically:
 | `WAZUH_AGENT_VERSION` | No | `4.14.6-1` | Wazuh Agent version |
 | `WAZUH_AGENT_NAME` | No | `$(hostname)` | Agent registration name |
 
-See [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) for the complete reference.
+See [docs/reference/ENVIRONMENT_VARIABLES.md](docs/reference/ENVIRONMENT_VARIABLES.md) for the complete reference.
 
 ---
 
@@ -156,9 +156,9 @@ See [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) for the compl
 
 For step-by-step instructions with screenshots:
 
-- [Linux Enrollment Guide](Agent%20Enrollment/linux-agent.md)
-- [macOS Enrollment Guide](Agent%20Enrollment/macos-agent.md)
-- [Windows Enrollment Guide](Agent%20Enrollment/windows-agent.md)
+- [Linux Enrollment Guide](docs/operations/enrollment/linux-agent.md)
+- [macOS Enrollment Guide](docs/operations/enrollment/macos-agent.md)
+- [Windows Enrollment Guide](docs/operations/enrollment/windows-agent.md)
 
 ---
 

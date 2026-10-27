@@ -1,31 +1,35 @@
-# Linux Enrollment Guide
+# macOS Enrollment Guide
 
-This guide walks you through the process of enrolling a Linux system with the Wazuh Manager. By following these steps, you will install and configure necessary components, ensuring secure communication between the Wazuh Agent and the Wazuh Manager.
+This guide walks you through the process of enrolling a macOS system with the Wazuh Manager. By following these steps, you will install and configure necessary components, ensuring secure communication between the Wazuh Agent and the Wazuh Manager.
 
-## Linux-Specific Scripts
+## MacOS-Specific Scripts
 
-The installer now uses Linux-specific scripts located in the `scripts/linux/` directory:
+The installer now uses macOS-specific scripts located in the `scripts/macos/` directory:
 
 ```
-scripts/linux/
-├── setup-agent.sh      # Full setup for Linux
+scripts/macos/
+├── setup-agent.sh      # Full setup for macOS
 ├── install.sh          # Core installation
 ├── uninstall.sh        # Core uninstallation
 ├── uninstall-agent.sh  # Complete uninstallation
 └── deps.sh             # Dependencies
 ```
 
-You can use either the bootstrap installer (recommended) or run the Linux-specific scripts directly.
+You can use either the bootstrap installer (recommended) or run the macOS-specific scripts directly.
 
 ## Prerequisites
 
 - **Administrator Privileges:** Ensure you have sudo access.
 
+- **Homebrew**: Have Homebrew installed
+
 - **Dependencies**: Have **curl** installed. You can install it with:
 
   ```bash
-  sudo apt install -y curl
+  brew install curl
   ```
+
+- **Internet Connectivity:** Verify that the system is connected to the internet.
 
 ## Step by Step Process
 
@@ -42,21 +46,21 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/instal
 ```
 
 **What happens:**
-1. Detects Linux operating system
-2. Downloads the Linux-specific setup script (`scripts/linux/setup-agent.sh`)
+1. Detects macOS operating system
+2. Downloads the macOS-specific setup script (`scripts/macos/setup-agent.sh`)
 3. Verifies the SHA256 checksum matches
 4. Only executes if verification passes
 
-### Method 2: Direct Linux Script Usage
+### Method 2: Direct macOS Script Usage
 
-You can also run the Linux-specific scripts directly:
+You can also run the macOS-specific scripts directly:
 
 ```bash
 # Set your Wazuh Manager address
 export WAZUH_MANAGER="wazuh.your-company.com"
 
-# Run the Linux-specific setup script directly
-./scripts/linux/setup-agent.sh
+# Run the macOS-specific setup script directly
+./scripts/macos/setup-agent.sh
 ```
 
 #### Installation Options
@@ -79,34 +83,22 @@ export WAZUH_MANAGER="wazuh.your-company.com"
 curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -n
 ```
 
-**Bootstrap Installer - With Trivy for container vulnerability scanning:**
+**Direct macOS Script - Default (Suricata IDS mode):**
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -t
+./scripts/macos/setup-agent.sh
 ```
 
-**Direct Linux Script - Default (Suricata IDS mode):**
+**Direct macOS Script - With Suricata in IPS mode:**
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash
+./scripts/macos/setup-agent.sh -s ips
 ```
 
-**Direct Linux Script - With Suricata in IPS mode:**
+**Direct macOS Script - With Snort instead of Suricata:**
 ```bash
 export WAZUH_MANAGER="wazuh.your-company.com"
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -s ips
-```
-
-**Direct Linux Script - With Snort instead of Suricata:**
-```bash
-export WAZUH_MANAGER="wazuh.your-company.com"
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -n
-```
-
-**Direct Linux Script - With Trivy for container vulnerability scanning:**
-```bash
-export WAZUH_MANAGER="wazuh.your-company.com"
-curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/install.sh | bash -s -- -s ids -t
+./scripts/macos/setup-agent.sh -n
 ```
 
 **Show all options:**
@@ -120,27 +112,27 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/instal
 Monitors your endpoint and sends data to the Wazuh Manager.
 The agent is installed and configured to connect to the specified manager (WAZUH_MANAGER).
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-11-23.png" width="500" height="200">
+   <img src="./images/mac/Screenshot from 2025-01-06 09-08-51.png">
 
 **2. OAuth2 Authentication Client:** Adds certificate-based OAuth2 authentication for secure communications.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-12-06.png" width="500" height="200">
+   <img src="./images/mac/Screenshot from 2025-01-06 09-09-46.png">
 
 **3. Wazuh Agent Status:** Provides real-time health and connection status of the agent.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-13-06.png" width="500" height="200">
+   <img src="./images/mac/Screenshot from 2025-01-06 09-12-00.png">
 
 **4. Yara:** Enables advanced file-based malware detection by integrating Yara rules into Wazuh.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-14-00.png" width="500" height="200">
+   <img src="./images/mac/Screenshot from 2025-01-06 09-14-15.png">
 
 **5. Suricata (or Snort):**
 Adds network intrusion detection capabilities to monitor suspicious traffic.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot%20from%202024-12-16%2012-58-37.png" width="500" height="200">
+   <img src="./images/mac/Screenshot from 2025-01-06 09-15-09.png">
 
 **6. USB DLP Scripts:**
-Active Response scripts for USB device control (mass storage blocking, BadUSB detection).
+Active Response scripts for USB device control (mass storage ejection, BadUSB detection).
 
 
 ### Step 2: Enroll Agent to Manager
@@ -150,39 +142,38 @@ Active Response scripts for USB device control (mass storage blocking, BadUSB de
 Run the following command to start the enrollment process:
 
 ```bash
-sudo /var/ossec/bin/wazuh-cert-oauth2-client o-auth2
+sudo /Library/Ossec/bin/wazuh-cert-oauth2-client o-auth2
 ```
 
 This command will generate a URL. Copy the link and paste it into your web browser.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-26-25.png" width="500" height="180">
+   <img src="./images/mac/Screenshot from 2025-01-06 11-14-33.png">
 
 #### 2. Authentication via browser
 
 - **i. Login:** You will be prompted to log in page, Log in using **Active directories: `Adorsys GIS` or `adorsys GmbH & CO KG`**, which will generate an authentication token using Keycloak.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-14.png" width="400" height="300">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-28-14.png" width="400" height="300">
 
 - **ii. Two-Factor Authentication:** For first-time logins, authentication via an authenticator is required.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-29-08.png" width="400" height="300">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-29-08.png" width="400" height="300">
 
 - **iii. Token generation:** After a successful authentication, a token will be generated. Copy the token and return to the command line.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-45.png" width="400" height="300">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-28-45.png" width="400" height="300">
 
 #### 3. Complete the Enrollment
 
 Return to the command line, paste the token, and follow the prompts to complete the enrollment process.
-
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-30-06.png" width="600" height="250">
+<img src="./images/mac/Screenshot from 2025-01-06 09-16-49.png">
 
 #### 4. Reboot your Device
 
 Reboot your device to apply the changes.
 
 
-### Step 3: Validate the Installation
+### Step 3: Validate Agent Installation
 
 After completing the agent enrollment, verify that the agent is properly connected and functioning:
 
@@ -190,7 +181,8 @@ After completing the agent enrollment, verify that the agent is properly connect
 
 Look for the Wazuh icon in the system tray to confirm that the agent is running and connected.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2025-01-10 11-56-49.png" width="400" height="200">
+   <img src="./images/linux/Screenshot from 2025-01-10 11-59-18.png">
+
 
 #### 2. Validate Other Tools Installation
 
@@ -198,7 +190,7 @@ Look for the Wazuh icon in the system tray to confirm that the agent is running 
 
 ```bash
 yara -v
-sudo ls -l /var/ossec/ruleset/yara/rules
+sudo ls -l /Library/Ossec/ruleset/yara/rules
 ```
 
 - Suricata (or Snort)
@@ -212,8 +204,8 @@ snort -V
 - USB DLP Scripts
 
 ```bash
-ls -la /var/ossec/active-response/bin/disable-usb-storage.sh
-ls -la /var/ossec/active-response/bin/alert-usb-hid.sh
+ls -la /Library/Ossec/active-response/bin/disable-usb-storage-macos.sh
+ls -la /Library/Ossec/active-response/bin/alert-usb-hid.sh
 ```
 
 #### 3. Check the Wazuh Manager Dashboard:
@@ -240,7 +232,7 @@ If you see "Checksum verification FAILED":
 - If the **wazuh agent status app** doesn't show you as `Active` and `Connected`, check the logs for examination
 
    ```bash
-   sudo tail -f /var/ossec/logs/ossec.log
+   sudo tail -f /Library/Ossec/logs/ossec.log
    ```
 
 
@@ -265,8 +257,7 @@ Shell into the **master manager node** and use this command to remove agent from
   /var/ossec/bin/manage_agents -r <AGENT_ID>
   ```
 
-
 ### Additional Resources
 
 - [Wazuh Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html#wazuh-agent)
-- [Environment Variables Reference](/docs/ENVIRONMENT_VARIABLES.md)
+- [Environment Variables Reference](../../../reference/ENVIRONMENT_VARIABLES.md)
