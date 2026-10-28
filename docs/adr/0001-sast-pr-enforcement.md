@@ -4,21 +4,22 @@
 
 ## Metadata
 
-| Field | Value |
-| :--- | :--- |
-| **Document ID** | ADR-0001 |
-| **Status** | `Accepted` |
-| **Date** | 2026-10-20 |
-| **Deciders** | SIEM Security Engineering Team |
-| **Governs** | `.github/workflows/sast.yml`, `scripts/linux/`, `scripts/macos/`, `scripts/windows/` |
-| **Amends** | N/A |
-| **Amended by** | N/A |
-| **Supersedes** | N/A |
-| **Superseded by** | N/A |
+| Field             | Value                                                                                |
+| :---------------- | :----------------------------------------------------------------------------------- |
+| **Document ID**   | ADR-0001                                                                             |
+| **Status**        | `Accepted`                                                                           |
+| **Date**          | 2026-10-20                                                                           |
+| **Deciders**      | SIEM Security Engineering Team                                                       |
+| **Governs**       | `.github/workflows/sast.yml`, `scripts/linux/`, `scripts/macos/`, `scripts/windows/` |
+| **Amends**        | N/A                                                                                  |
+| **Amended by**    | N/A                                                                                  |
+| **Supersedes**    | N/A                                                                                  |
+| **Superseded by** | N/A                                                                                  |
 
 ## Context
 
 The `wazuh-agent` repository contains critical client-side automation and deployment logic spanning multiple scripting languages:
+
 - **Bash** (`install.sh`, Linux/macOS agent configuration scripts)
 - **PowerShell** (`Install.ps1`, Windows enrollment and service setup scripts)
 - **Python** (Auxiliary integration and verification tools)
@@ -32,6 +33,7 @@ We required an automated, reproducible security verification gate that runs on e
 We will enforce automated **Static Application Security Testing (SAST)** on all pull requests and pushes to `main` and `develop` by consuming standardized reusable workflows from `ADORSYS-GIS/adorsys-ci-cd-templates`.
 
 The enforcement mechanism operates via `.github/workflows/sast.yml`:
+
 1. **Multi-Language Matrix Scanning**:
    - **ShellCheck** (`sast-shell.yml`): Analyzes `install.sh` and shell utilities.
    - **PSScriptAnalyzer** (`sast-powershell.yml`): Scans `Install.ps1` for PowerShell best practices and security rules.
@@ -44,11 +46,11 @@ The enforcement mechanism operates via `.github/workflows/sast.yml`:
 
 ## Options considered
 
-| Option | Verdict | Why (one line) |
-| :--- | :--- | :--- |
-| Reusable CI workflows via `adorsys-ci-cd-templates` | Adopted | Centralizes scanner configuration, eliminates drift, and provides inline Reviewdog PR annotations. |
-| Run scanners locally via pre-commit hooks only | Rejected | Cannot be mechanically enforced; relies on developer discipline; cannot serve as auditable proof for ISO 27001 auditors. |
-| Bespoke scanner installation in repository CI | Rejected | Redundant maintenance across 10+ Wazuh repositories; high drift risk. |
+| Option                                              | Verdict  | Why (one line)                                                                                                           |
+| :-------------------------------------------------- | :------- | :----------------------------------------------------------------------------------------------------------------------- |
+| Reusable CI workflows via `adorsys-ci-cd-templates` | Adopted  | Centralizes scanner configuration, eliminates drift, and provides inline Reviewdog PR annotations.                       |
+| Run scanners locally via pre-commit hooks only      | Rejected | Cannot be mechanically enforced; relies on developer discipline; cannot serve as auditable proof for ISO 27001 auditors. |
+| Bespoke scanner installation in repository CI       | Rejected | Redundant maintenance across 10+ Wazuh repositories; high drift risk.                                                    |
 
 ## Consequences
 
@@ -57,15 +59,18 @@ The enforcement mechanism operates via `.github/workflows/sast.yml`:
 ### Impact
 
 **Benefits**
+
 - Consistent, auditable static security checks across Linux, Windows, and macOS installation scripts.
 - Immediate feedback directly on PR diffs via Reviewdog annotations.
 - Satisfies ISO 27001 requirements for secure systems development and automated verification.
 
 **Costs**
+
 - PR authors must address scanner warnings before merge.
 - Workflow requires `checks: write` permissions for GitHub Actions to post review comments.
 
 **Risks**
+
 - Upstream changes to `adorsys-ci-cd-templates` breaking the workflow; mitigated by pinning reusable workflows.
 
 ### Accepted limits
@@ -88,11 +93,11 @@ Nothing to roll back.
 
 ## Evidence
 
-| Claim | Where |
-| :--- | :--- |
+| Claim                                          | Where                                                                                                          |
+| :--------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
 | Passing SAST matrix workflow (visual artifact) | [`docs/images/workflows/01-github-actions-sast-pass.png`](../images/workflows/01-github-actions-sast-pass.png) |
-| Active GitHub Actions runs | [SAST Workflow Runs](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/sast.yml) |
-| Reusable templates repository | `ADORSYS-GIS/adorsys-ci-cd-templates` |
+| Active GitHub Actions runs                     | [SAST Workflow Runs](https://github.com/ADORSYS-GIS/wazuh-agent/actions/workflows/sast.yml)                    |
+| Reusable templates repository                  | `ADORSYS-GIS/adorsys-ci-cd-templates`                                                                          |
 
 ![SAST Workflow Execution](../images/workflows/01-github-actions-sast-pass.png)
 
@@ -105,10 +110,10 @@ Nothing to roll back.
 
 ## Solution implementation
 
-| Kind | Tracking | Status | What it covers |
-| :--- | :--- | :--- | :--- |
-| PR | ADORSYS-GIS/wazuh-agent#259 | Merged 2026-10-08 | Added SAST workflow (`.github/workflows/sast.yml`) integrating ShellCheck, PSScriptAnalyzer, and Bandit |
-| Issue | ADORSYS-GIS/wazuh-agent#260 | Closed | Remediate PSScriptAnalyzer SAST warnings across PowerShell scripts |
-| PR | ADORSYS-GIS/wazuh-agent#261 | Merged 2026-10-20 | Resolved all PSScriptAnalyzer findings to achieve zero warnings baseline |
-| Issue | ADORSYS-GIS/wazuh-agent#265 | Open | Audit-readiness: Implement SAST & SonarQube ADRs with Central Playbook Integration |
-| PR | ADORSYS-GIS/wazuh-agent#266 | Open | In-repo ADR documentation, visual evidence, and docs standard alignment |
+| Kind  | Tracking                    | Status            | What it covers                                                                                          |
+| :---- | :-------------------------- | :---------------- | :------------------------------------------------------------------------------------------------------ |
+| PR    | ADORSYS-GIS/wazuh-agent#259 | Merged 2026-10-08 | Added SAST workflow (`.github/workflows/sast.yml`) integrating ShellCheck, PSScriptAnalyzer, and Bandit |
+| Issue | ADORSYS-GIS/wazuh-agent#260 | Closed            | Remediate PSScriptAnalyzer SAST warnings across PowerShell scripts                                      |
+| PR    | ADORSYS-GIS/wazuh-agent#261 | Merged 2026-10-20 | Resolved all PSScriptAnalyzer findings to achieve zero warnings baseline                                |
+| Issue | ADORSYS-GIS/wazuh-agent#265 | Open              | Audit-readiness: Implement SAST & SonarQube ADRs with Central Playbook Integration                      |
+| PR    | ADORSYS-GIS/wazuh-agent#266 | Open              | In-repo ADR documentation, visual evidence, and docs standard alignment                                 |
