@@ -260,4 +260,4 @@ Shell into the **master manager node** and use this command to remove agent from
 ### Additional Resources
 
 - [Wazuh Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html#wazuh-agent)
-- [Environment Variables Reference](../../../reference/ENVIRONMENT_VARIABLES.md)
+- [Environment Variables Reference](../../reference/ENVIRONMENT_VARIABLES.md)

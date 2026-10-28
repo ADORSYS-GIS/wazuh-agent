@@ -313,4 +313,4 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agen
 ### Additional Resources
 
 - [Wazuh Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html#wazuh-agent)
-- [Environment Variables Reference](../../../reference/ENVIRONMENT_VARIABLES.md)
+- [Environment Variables Reference](../../reference/ENVIRONMENT_VARIABLES.md)
