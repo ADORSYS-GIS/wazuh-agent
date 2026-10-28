@@ -40,7 +40,7 @@ Does this PR have security implications? (script execution, permissions, secrets
 
 How was this tested?
 
-- [ ] `bats tests/`
+- [ ] `./scripts/tests/run-coverage.sh` or `bats scripts/tests/test-scripts.bats`
 - [ ] Manual testing on Linux
 - [ ] Manual testing on macOS
 - [ ] Manual testing on Windows
