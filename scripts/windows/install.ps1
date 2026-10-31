@@ -39,6 +39,9 @@ catch {
 
 $WAZUH_MANAGER = if ($env:WAZUH_MANAGER) { $env:WAZUH_MANAGER } else { "wazuh.example.com" }
 $WAZUH_AGENT_VERSION = if ($env:WAZUH_AGENT_VERSION) { $env:WAZUH_AGENT_VERSION } else { "4.14.6-1" }
+# Agent group(s) requested at enrollment; the windows group carries the
+# company SCA policies and agent config for Windows.
+$WAZUH_AGENT_GROUP = if ($env:WAZUH_AGENT_GROUP) { $env:WAZUH_AGENT_GROUP } else { "default,windows" }
 
 # Variables
 $AgentFileName = "wazuh-agent-$WAZUH_AGENT_VERSION.msi"
@@ -78,6 +81,7 @@ function Install-Agent {
         "/i $MsiPath"
         "/q"
         "WAZUH_MANAGER=`"$WAZUH_MANAGER`""
+        "WAZUH_AGENT_GROUP=`"$WAZUH_AGENT_GROUP`""
     )
 
     # Install the Wazuh agent
@@ -97,6 +101,23 @@ function Install-Agent {
         InfoMessage "Manager address updated successfully in ossec.conf."
     } catch {
         ErrorMessage "Failed to update manager address: $($_.Exception.Message)"
+        return
+    }
+
+    # Allow command rules in SCA policies received from the manager (company
+    # baseline, e.g. the BitLocker check). Without this option Wazuh ignores
+    # every 'c:' rule in them. The manager must be trusted.
+    try {
+        $LocalOptionsPath = Join-Path -Path $OSSEC_PATH -ChildPath "local_internal_options.conf"
+        $lines = @()
+        if (Test-Path -Path $LocalOptionsPath) {
+            $lines = @(Get-Content -Path $LocalOptionsPath | Where-Object { $_ -notmatch '^sca\.remote_commands=' })
+        }
+        $lines += "sca.remote_commands=1"
+        Set-Content -Path $LocalOptionsPath -Value $lines -Encoding ASCII
+        InfoMessage "Enabled sca.remote_commands in local_internal_options.conf."
+    } catch {
+        ErrorMessage "Failed to enable sca.remote_commands: $($_.Exception.Message)"
         return
     }
 

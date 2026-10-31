@@ -7,7 +7,7 @@ setup() {
     mkdir -p "$MOCK_BIN" "$SYSBIN"
 
     # Link host standard utilities into sysbin (without curl/jq/apt/yum/apk/brew)
-    for cmd in chmod mkdir date uname id mktemp rm touch env sh bash cat sed awk grep sleep head tail cp mv tr dirname wc sha256sum shasum cut sort echo printf which [; do
+    for cmd in chmod mkdir date uname id mktemp rm touch env sh bash cat sed awk grep sleep head tail cp mv tr dirname wc sha256sum shasum cut sort echo printf which tee cmp [; do
         p="$(which "$cmd" 2>/dev/null || true)"
         [ -n "$p" ] && ln -s "$p" "$SYSBIN/$cmd"
     done
@@ -709,4 +709,99 @@ EOF
     run download_and_verify_file "https://example.com/target.sh" "$DEST" "missing.sh" "target" "" "$CHECKSUM_FILE"
     [ "$status" -eq 1 ]
     [[ "$output" =~ "No checksum found for target" ]]
+}
+
+@test "scripts/shared/utils.sh: configure_enrollment_group adds enrollment block after </server>" {
+    . scripts/shared/utils.sh
+    CONF="$TEST_TMPDIR/ossec.conf"
+    cat > "$CONF" << 'XML'
+<ossec_config>
+  <client>
+    <server>
+      <address>wazuh.example.com</address>
+    </server>
+  </client>
+</ossec_config>
+XML
+
+    run configure_enrollment_group "$CONF" "default,macos"
+    [ "$status" -eq 0 ]
+    grep -q "<groups>default,macos</groups>" "$CONF"
+    # wazuh-cert-oauth2 anchors its certificate paths on <agent_name>
+    grep -q "<agent_name></agent_name>" "$CONF"
+    [ "$(grep -c '<enrollment>' "$CONF")" -eq 1 ]
+    # enrollment must come after the server block
+    [ "$(grep -n '</server>' "$CONF" | cut -d: -f1)" -lt "$(grep -n '<enrollment>' "$CONF" | cut -d: -f1)" ]
+}
+
+@test "scripts/shared/utils.sh: configure_enrollment_group replaces groups in existing enrollment block" {
+    . scripts/shared/utils.sh
+    CONF="$TEST_TMPDIR/ossec.conf"
+    cat > "$CONF" << 'XML'
+<ossec_config>
+  <client>
+    <server>
+      <address>wazuh.example.com</address>
+    </server>
+    <enrollment>
+      <agent_name></agent_name>
+      <groups>default</groups>
+      <agent_certificate_path>etc/sslagent.cert</agent_certificate_path>
+    </enrollment>
+  </client>
+</ossec_config>
+XML
+
+    run configure_enrollment_group "$CONF" "default,linux"
+    [ "$status" -eq 0 ]
+    [ "$(grep -c '<groups>' "$CONF")" -eq 1 ]
+    grep -q "<groups>default,linux</groups>" "$CONF"
+    grep -q "<agent_certificate_path>etc/sslagent.cert</agent_certificate_path>" "$CONF"
+    [ "$(grep -c '<enrollment>' "$CONF")" -eq 1 ]
+}
+
+@test "scripts/shared/utils.sh: configure_enrollment_group is idempotent" {
+    . scripts/shared/utils.sh
+    CONF="$TEST_TMPDIR/ossec.conf"
+    printf '<ossec_config>\n  <client>\n    <server>\n    </server>\n  </client>\n</ossec_config>\n' > "$CONF"
+
+    configure_enrollment_group "$CONF" "default,macos"
+    cp "$CONF" "$TEST_TMPDIR/first.conf"
+    run configure_enrollment_group "$CONF" "default,macos"
+    [ "$status" -eq 0 ]
+    cmp -s "$CONF" "$TEST_TMPDIR/first.conf"
+}
+
+@test "scripts/shared/utils.sh: configure_enrollment_group fails when ossec.conf has no server block" {
+    . scripts/shared/utils.sh
+    CONF="$TEST_TMPDIR/ossec.conf"
+    printf '<ossec_config>\n</ossec_config>\n' > "$CONF"
+    cp "$CONF" "$TEST_TMPDIR/orig.conf"
+
+    run configure_enrollment_group "$CONF" "default,macos"
+    [ "$status" -ne 0 ]
+    cmp -s "$CONF" "$TEST_TMPDIR/orig.conf"
+}
+
+@test "scripts/shared/utils.sh: enable_sca_remote_commands sets option once" {
+    . scripts/shared/utils.sh
+    OPTS="$TEST_TMPDIR/local_internal_options.conf"
+    printf '# local options\nsca.remote_commands=0\nlogcollector.remote_commands=0\n' > "$OPTS"
+
+    run enable_sca_remote_commands "$OPTS"
+    [ "$status" -eq 0 ]
+    run enable_sca_remote_commands "$OPTS"
+    [ "$status" -eq 0 ]
+    [ "$(grep -c '^sca.remote_commands=' "$OPTS")" -eq 1 ]
+    grep -q '^sca.remote_commands=1$' "$OPTS"
+    grep -q '^logcollector.remote_commands=0$' "$OPTS"
+}
+
+@test "scripts/shared/utils.sh: enable_sca_remote_commands creates missing file" {
+    . scripts/shared/utils.sh
+    OPTS="$TEST_TMPDIR/new_local_internal_options.conf"
+
+    run enable_sca_remote_commands "$OPTS"
+    [ "$status" -eq 0 ]
+    [ "$(cat "$OPTS")" = "sca.remote_commands=1" ]
 }
