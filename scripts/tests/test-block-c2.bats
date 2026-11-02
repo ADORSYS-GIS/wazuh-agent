@@ -69,6 +69,7 @@ pick() {
     grep -q -- "-I OUTPUT -d 203.0.113.7" "$TEST_TMPDIR/fw.log"
     grep -q -- "-I INPUT -s 203.0.113.7" "$TEST_TMPDIR/fw.log"
     grep -q "add: blocked 203.0.113.7 (rule 100013" "$BLOCK_C2_LOG"
+    grep -Eq '^[0-9]{4}/[0-9]{2}/[0-9]{2} [0-9:]{8} active-response/bin/block-c2.sh: \{"version":1,.*"command":"add",.*"data":\{"srcip":"203.0.113.7"\}\}$' "$BLOCK_C2_LOG"
 }
 
 @test "add: abort from execd means already blocked, no firewall change" {
@@ -84,6 +85,7 @@ pick() {
     [ "$status" -eq 0 ]
     [ "$(cat "$TEST_TMPDIR/rules")" = "0" ]
     grep -q "delete: unblocked 203.0.113.7" "$BLOCK_C2_LOG"
+    grep -q '"command":"delete".*"data":{"srcip":"203.0.113.7"}' "$BLOCK_C2_LOG"
 }
 
 @test "no public address: logs and exits without touching the firewall" {

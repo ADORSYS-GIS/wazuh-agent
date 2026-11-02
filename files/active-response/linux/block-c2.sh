@@ -21,6 +21,13 @@ log() {
     printf '%s %s: %s\n' "$(date '+%Y/%m/%d %H:%M:%S')" "$NAME" "$*" >> "$LOGFILE" 2>/dev/null
 }
 
+# One line in the format of Wazuh's own scripts, so the manager decodes it (ar_log_json) and rules 100025 / 100026
+# raise "blocked" / "unblocked" alerts: <date> active-response/bin/block-c2.sh: {json}
+report() { # report add|delete <ip> <rule>
+    printf '%s active-response/bin/block-c2.sh: {"version":1,"origin":{"name":"%s","module":"active-response"},"command":"%s","parameters":{"program":"active-response/bin/block-c2.sh","rule":"%s"},"data":{"srcip":"%s"}}\n' \
+        "$(date '+%Y/%m/%d %H:%M:%S')" "$NAME" "$1" "$3" "$2" >> "$LOGFILE" 2>/dev/null
+}
+
 # First value of a JSON string field, e.g. json_field "$msg" dest_ip. Enough for Wazuh's flat Suricata fields.
 json_field() {
     printf '%s' "$1" | sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" | head -n 1
@@ -140,10 +147,21 @@ main() {
                 log "add: $target already blocked, skipped"
                 exit 0
             fi
-            if fw add "$target"; then log "add: blocked $target (rule $rule, src $src, dest $dst)"; else log "add: FAILED to block $target"; exit 1; fi
+            if fw add "$target"; then
+                log "add: blocked $target (rule $rule, src $src, dest $dst)"
+                report add "$target" "$rule"
+            else
+                log "add: FAILED to block $target"
+                exit 1
+            fi
             ;;
         delete)
-            if fw delete "$target"; then log "delete: unblocked $target (rule $rule)"; else log "delete: $target was not blocked"; fi
+            if fw delete "$target"; then
+                log "delete: unblocked $target (rule $rule)"
+                report delete "$target" "$rule"
+            else
+                log "delete: $target was not blocked"
+            fi
             ;;
         *)
             log "unknown command '$cmd'"
