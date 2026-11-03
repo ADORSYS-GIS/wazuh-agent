@@ -7,7 +7,7 @@
 | Field             | Value                                                                                                                                                                                                                                                                                                                                        |
 | :---------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Document ID**   | ADR-0004                                                                                                                                                                                                                                                                                                                                     |
-| **Status**        | `Proposed`                                                                                                                                                                                                                                                                                                                                   |
+| **Status**        | `Accepted`                                                                                                                                                                                                                                                                                                                                   |
 | **Date**          | 2026-11-03                                                                                                                                                                                                                                                                                                                                   |
 | **Deciders**      | SIEM Security Engineering Team                                                                                                                                                                                                                                                                                                               |
 | **Governs**       | `files/active-response/linux/block-c2.sh`; the block-c2 install step in `scripts/linux/setup-agent.sh`; in ADORSYS-GIS/wazuh-helm: the `block-c2` `<command>` and `<active-response>` in `charts/wazuh/files/configs/template.config.conf.xml`, rules 100013, 100025, 100026 in `charts/wazuh/files/configs/rules/rules.suricata-custom.xml` |
@@ -72,12 +72,13 @@ We will:
 
 - A false positive on a shared address (CDN, cloud load balancer) cuts that machine off every site behind the address for 10 minutes. The blast radius is one agent.
 - Another firewall tool on the host (`firewalld` reload, `ufw` reset) can flush the rules early. The block then ends without a 100026 alert.
-- If the agent restarts before the timeout, execd may not run `delete`, and the rule stays until the host's firewall is reloaded or the machine reboots. This is not yet tested; see Done when.
+- If execd is killed or crashes during a block, the pending `delete` is lost and the rule stays until it is lifted by hand, the same address is blocked and unblocked again, or the host reboots. A clean agent restart is not affected: execd runs the pending `delete` as it stops, so the block ends early and is reported.
 
 ### Accepted limits
 
 - Linux only. On macOS and Windows agents, execd logs that the script is missing and nothing is blocked. Their firewalls (`pf`, Windows Firewall) need their own scripts, and that is a separate decision.
 - Only Suricata rule 100013 triggers it. Agents without Suricata, or C2 that Suricata doesn't recognise, get no block.
+- A block left behind by an execd crash is not cleaned up automatically. The runbook covers finding and lifting it. An automatic sweep would be a change to the script's design.
 - The rules don't survive a reboot. That is on purpose: the block is short-lived containment, not a permanent deny list.
 
 ### Done when
@@ -85,9 +86,9 @@ We will:
 - [x] End-to-end test on the dev test VM: rule 100013 → 100025 (blocked `203.0.113.7`) → 100026 after 600 s.
 - [ ] ADORSYS-GIS/wazuh-agent#276 merged and a release published that contains `block-c2.sh` and its checksum.
 - [ ] Installed from that release and tested on an `iptables` host (Ubuntu) and an `nft`-only host (Debian 12 or RHEL 9).
-- [ ] Agent restart during an active block tested, and what happened written down in the runbook.
+- [x] Agent restart during an active block tested, and what happened written down in the runbook.
 - [ ] 7 days on dev with no block of a private, protected or legitimate business address.
-- [ ] Runbook in `docs/operations/` that shows how to list and lift a `block-c2` block by hand.
+- [x] Runbook in `docs/operations/` that shows how to list and lift a `block-c2` block by hand.
 - [ ] Manager config and rules 100025/100026 merged to ADORSYS-GIS/wazuh-helm `main` and live in prod.
 
 ### Revisit when
@@ -118,6 +119,7 @@ We will:
 | Script's target selection, protected ranges, firewall and report format                                                                       | [block-c2.sh @ 944d0b6](https://github.com/ADORSYS-GIS/wazuh-agent/blob/944d0b65d095c3d5e82bbece32138a3b95518b6f/files/active-response/linux/block-c2.sh)                                           |
 | Installer downloads and checks the script against `checksums.sha256`                                                                          | [setup-agent.sh#L361 @ 944d0b6](https://github.com/ADORSYS-GIS/wazuh-agent/blob/944d0b65d095c3d5e82bbece32138a3b95518b6f/scripts/linux/setup-agent.sh#L361)                                         |
 | Dev end-to-end: 100013, then 100025 at 2026-11-02 20:56 UTC, 100026 at 21:06 UTC, agent `Yannick-Siewe-604ac3`, IP `203.0.113.7` (TEST-NET-3) | dev indexer, `wazuh-alerts-4.x-2026.11.02`, `rule.id` 100013/100025/100026                                                                                                                          |
+| Clean agent restart ends a block early and reports it; an execd crash leaves it in place; a later block of the same address clears it         | [docs/testing/block-c2-test-plan.md](../testing/block-c2-test-plan.md), cases E2-E4                                                                                                                 |
 | Prod raised no rule 100013 alert between 2026-10-27 and 2026-11-03                                                                            | prod indexer, `wazuh-alerts-*`, `rule.id: 100013`                                                                                                                                                   |
 
 ## References
@@ -132,6 +134,6 @@ We will:
 | Kind  | Tracking                    | Status            | What it covers                                                       |
 | :---- | :-------------------------- | :---------------- | :------------------------------------------------------------------- |
 | Issue | ADORSYS-GIS/wazuh#2283      | Open              | Web filtering 4.x work, under which C2 containment was started       |
-| PR    | ADORSYS-GIS/wazuh-agent#276 | Open              | `block-c2.sh`, installer step, bats tests                            |
+| PR    | ADORSYS-GIS/wazuh-agent#276 | Merged 2026-11-03 | `block-c2.sh`, installer step, bats tests                            |
 | PR    | ADORSYS-GIS/wazuh-helm#567  | Merged 2026-11-02 | `block-c2` command and active response, dev (`feat/shuffle-soar`)    |
 | PR    | ADORSYS-GIS/wazuh-helm#568  | Merged 2026-11-02 | Rules 100025/100026 for block and unblock, dev (`feat/shuffle-soar`) |
