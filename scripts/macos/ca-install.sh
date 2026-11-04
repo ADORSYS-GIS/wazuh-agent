@@ -131,7 +131,7 @@ fi
 
 # -----------------------------------------------------------------------------
 # Keychain scan: remove retired CAs (by SHA-1 hash), detect the pinned CA.
-# Sets PINNED_FOUND=1 when a cert matching the pin is already trusted.
+# Sets PINNED_FOUND=1 when a cert matching the pinned SHA-256 is in the store.
 # -----------------------------------------------------------------------------
 PINNED_FOUND=0
 keychain_scan() {
@@ -162,28 +162,52 @@ keychain_scan() {
 
 # -----------------------------------------------------------------------------
 # Install into the macOS system keychain
+#
+# check_cert above already pinned the source file's SHA-256 fingerprint.
+# Here we install it and then confirm the fingerprint that actually landed in
+# the keychain matches that same pin.
+#
+# macOS applies system trust settings asynchronously via trustd, so
+# add-trusted-cert can fail transiently right after import touches the
+# keychain. The real `security` error is printed (not suppressed) and the
+# trust write is retried, since a re-run otherwise appears to "work" only
+# because the daemon finished in the background.
 # -----------------------------------------------------------------------------
 info "Installing into system keychain (${KEYCHAIN})..."
 
 keychain_scan
 
 if [ "${PINNED_FOUND}" -eq 1 ]; then
-  info "Company Root CA already trusted in system keychain ✔"
+  info "Company Root CA already present in system keychain ✔"
 else
   if ! security import "${CA_FILE}" -k "${KEYCHAIN}" -t cert >/dev/null 2>&1; then
     die "Failed to import certificate into system keychain. Run with sudo."
   fi
-  if ! security add-trusted-cert -d \
-    -r trustRoot \
-    -k "${KEYCHAIN}" \
-    "${CA_FILE}" >/dev/null 2>&1; then
-    die "Failed to mark certificate as trusted. Run with sudo."
+
+  trusted=0
+  for attempt in 1 2 3; do
+    if err=$(security add-trusted-cert -d -r trustRoot -k "${KEYCHAIN}" \
+                "${CA_FILE}" 2>&1); then
+      trusted=1
+      break
+    fi
+    warn "add-trusted-cert failed (attempt ${attempt}/3): ${err}"
+    sleep 2
+  done
+
+  if [ "${trusted}" -ne 1 ]; then
+    case "${err}" in
+      *"not permitted"*|*"not authorized"*|*"User interaction is not allowed"*)
+        die "Failed to mark certificate as trusted — permission denied. Run with sudo." ;;
+    esac
+    die "Failed to mark certificate as trusted after 3 attempts."
   fi
+
   info "Certificate imported and marked as trusted root. ✔"
 fi
 
 # -----------------------------------------------------------------------------
-# Verify AFTER install
+# Verify AFTER install — by fingerprint, matching the pin checked earlier
 # -----------------------------------------------------------------------------
 keychain_scan
 

@@ -3,17 +3,24 @@
 # Provides checksum verification for secure script downloads
 #
 
+<#
+.SYNOPSIS
+    Verifies SHA256 checksum of a file
+
+.DESCRIPTION
+    Computes the SHA256 hash of the specified file and compares it to the
+    expected hash value, returning $true when they match and $false otherwise.
+
+.PARAMETER FilePath
+    Path to the file to verify
+
+.PARAMETER ExpectedHash
+    Expected SHA256 hash value
+
+.RETURNS
+    $true if checksum matches, $false otherwise
+#>
 function Test-FileChecksum {
-    <#
-    .SYNOPSIS
-        Verifies SHA256 checksum of a file
-    .PARAMETER FilePath
-        Path to the file to verify
-    .PARAMETER ExpectedHash
-        Expected SHA256 hash value
-    .RETURNS
-        $true if checksum matches, $false otherwise
-    #>
     param(
         [Parameter(Mandatory=$true)]
         [string]$FilePath,
@@ -39,19 +46,28 @@ function Test-FileChecksum {
     return $true
 }
 
+<#
+.SYNOPSIS
+    Downloads a file and optionally verifies its checksum
+
+.DESCRIPTION
+    Downloads a file from the specified URL to the local destination path and,
+    when an expected SHA256 hash is provided, verifies the downloaded file's
+    checksum before returning.
+
+.PARAMETER Url
+    URL to download from
+
+.PARAMETER Destination
+    Local path to save the file
+
+.PARAMETER ExpectedHash
+    Optional SHA256 hash to verify (skip verification if not provided)
+
+.RETURNS
+    $true if download and verification succeed, $false otherwise
+#>
 function Invoke-VerifiedDownload {
-    <#
-    .SYNOPSIS
-        Downloads a file and optionally verifies its checksum
-    .PARAMETER Url
-        URL to download from
-    .PARAMETER Destination
-        Local path to save the file
-    .PARAMETER ExpectedHash
-        Optional SHA256 hash to verify (skip verification if not provided)
-    .RETURNS
-        $true if download and verification succeed, $false otherwise
-    #>
     param(
         [Parameter(Mandatory=$true)]
         [string]$Url,
@@ -83,17 +99,24 @@ function Invoke-VerifiedDownload {
     }
 }
 
+<#
+.SYNOPSIS
+    Fetches checksum from remote checksums file
+
+.DESCRIPTION
+    Downloads the specified remote checksums file and searches it for the line
+    matching the given filename, returning the SHA256 checksum value.
+
+.PARAMETER ChecksumsUrl
+    URL of the checksums file
+
+.PARAMETER Filename
+    Name of the file to look up
+
+.RETURNS
+    The checksum string if found, $null otherwise
+#>
 function Get-RemoteChecksum {
-    <#
-    .SYNOPSIS
-        Fetches checksum from remote checksums file
-    .PARAMETER ChecksumsUrl
-        URL of the checksums file
-    .PARAMETER Filename
-        Name of the file to look up
-    .RETURNS
-        The checksum string if found, $null otherwise
-    #>
     param(
         [Parameter(Mandatory=$true)]
         [string]$ChecksumsUrl,
@@ -121,15 +144,21 @@ function Get-RemoteChecksum {
     }
 }
 
+<#
+.SYNOPSIS
+    Validates WAZUH_MANAGER address format
+
+.DESCRIPTION
+    Validates that the WAZUH_MANAGER address is not empty or a default
+    placeholder and matches a valid hostname or IP address pattern.
+
+.PARAMETER Manager
+    Manager address (hostname or IP)
+
+.RETURNS
+    $true if valid, $false otherwise
+#>
 function Test-WazuhManagerAddress {
-    <#
-    .SYNOPSIS
-        Validates WAZUH_MANAGER address format
-    .PARAMETER Manager
-        Manager address (hostname or IP)
-    .RETURNS
-        $true if valid, $false otherwise
-    #>
     param(
         [Parameter(Mandatory=$true)]
         [string]$Manager
@@ -160,15 +189,21 @@ function Test-WazuhManagerAddress {
     return $false
 }
 
+<#
+.SYNOPSIS
+    Validates version string format
+
+.DESCRIPTION
+    Validates that a version string matches the expected Wazuh version format
+    X.Y.Z or X.Y.Z-N.
+
+.PARAMETER Version
+    Version string (e.g., 4.13.1-1, 0.3.11)
+
+.RETURNS
+    $true if valid, $false otherwise
+#>
 function Test-VersionFormat {
-    <#
-    .SYNOPSIS
-        Validates version string format
-    .PARAMETER Version
-        Version string (e.g., 4.13.1-1, 0.3.11)
-    .RETURNS
-        $true if valid, $false otherwise
-    #>
     param(
         [Parameter(Mandatory=$true)]
         [string]$Version
@@ -190,17 +225,24 @@ function Test-VersionFormat {
     return $true
 }
 
+<#
+.SYNOPSIS
+    Checks network connectivity to a host
+
+.DESCRIPTION
+    Tests connectivity to the specified host by attempting TCP connections to
+    common Wazuh ports and falling back to a ping test.
+
+.PARAMETER HostAddress
+    Hostname or IP to check
+
+.PARAMETER TimeoutSeconds
+    Connection timeout in seconds (default: 5)
+
+.RETURNS
+    $true if reachable, $false otherwise
+#>
 function Test-HostConnectivity {
-    <#
-    .SYNOPSIS
-        Checks network connectivity to a host
-    .PARAMETER Host
-        Hostname or IP to check
-    .PARAMETER TimeoutSeconds
-        Connection timeout in seconds (default: 5)
-    .RETURNS
-        $true if reachable, $false otherwise
-    #>
     param(
         [Parameter(Mandatory=$true)]
         [string]$HostAddress,
@@ -245,4 +287,4 @@ function Test-HostConnectivity {
 }
 
 # Export functions
-Export-ModuleMember -Function Test-FileChecksum, Invoke-VerifiedDownload, Get-RemoteChecksum, Test-WazuhManagerAddress, Test-VersionFormat, Test-HostConnectivity
+Export-ModuleMember -Function *

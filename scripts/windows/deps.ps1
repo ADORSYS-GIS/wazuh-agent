@@ -10,7 +10,7 @@ try {
     $ChecksumsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
     $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/shared/utils.ps1"
 
-    $global:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $script:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
     $UtilsPath = Join-Path $UtilsTmp "utils.ps1"
 
     Invoke-WebRequest -Uri $ChecksumsURL -OutFile $ChecksumsPath -ErrorAction Stop
@@ -37,7 +37,7 @@ catch {
     exit 1
 }
 
-function Ensure-Dependencies {
+function Confirm-Dependency {
     InfoMessage "Ensuring dependencies are installed (curl, jq)"
 
     # Check if curl is available
@@ -228,7 +228,7 @@ function IsVCppInstalled {
 IsVCppInstalled
 Install-Python
 Install-GnuSed
-Ensure-Dependencies
+Confirm-Dependency
 Install-BurntToastModule
 
 

@@ -1,11 +1,19 @@
 # Common Paths
+# NOTE: $OSSEC_PATH, $OSSEC_CONF_PATH and $APP_DATA are intentionally exported as
+# script-scope variables. They are consumed by other scripts in this repo that
+# dot-source this file (setup-agent.ps1, install.ps1, setup-docker.ps1), so they
+# are NOT unused even though PSScriptAnalyzer cannot see the cross-file usage.
+# The suppression below is scoped to the variables only.
 $OSSEC_PATH = "C:\Program Files (x86)\ossec-agent\"
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
 $OSSEC_CONF_PATH = Join-Path -Path $OSSEC_PATH -ChildPath "ossec.conf"
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
 $APP_DATA = "C:\ProgramData\ossec-agent\"
 
 # Function for logging with timestamp
-# [Diagnostics.CodeAnalysis.SuppressMessageAttribute] removed for compatibility
+# Write-Host is intentional here for colored console output; suppression below.
 function Log {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param (
         [Parameter(Mandatory)]
         [string]$Level,
@@ -19,26 +27,28 @@ function Log {
 
 function InfoMessage {
     param ([string]$Message)
-    Log "[INFO]" $Message "Cyan"
+    Log -Level "[INFO]" -Message $Message -Color "Cyan"
 }
 
 function WarningMessage {
     param ([string]$Message)
-    Log "[WARNING]" $Message "Yellow"
+    Log -Level "[WARNING]" -Message $Message -Color "Yellow"
 }
 
 function SuccessMessage {
     param ([string]$Message)
-    Log "[SUCCESS]" $Message "Green"
+    Log -Level "[SUCCESS]" -Message $Message -Color "Green"
 }
 
 function ErrorMessage {
     param ([string]$Message)
-    Log "[ERROR]" $Message "Red"
+    Log -Level "[ERROR]" -Message $Message -Color "Red"
 }
 
 # [Diagnostics.CodeAnalysis.SuppressMessageAttribute] removed for compatibility
+# Write-Host is intentional here for colored section separators; suppression below.
 function SectionSeparator {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param (
         [string]$SectionName
     )
@@ -98,7 +108,9 @@ function Test-Checksum {
     return $true
 }
 
+# Function name kept for compatibility with dot-sourcing callers; verb not renamed.
 function Download-File {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '')]
     param(
         [string]$Url,
         [string]$Destination,
@@ -131,7 +143,9 @@ function Download-File {
     ErrorExit "Failed to download $Description from $Url after $MaxRetries attempts"
 }
 
+# Function name kept for compatibility with dot-sourcing callers; verb not renamed.
 function Verify-FileChecksumWithPattern {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '')]
     param(
         [string]$Destination,
         [string]$ChecksumFile,
@@ -153,14 +167,16 @@ function Verify-FileChecksumWithPattern {
     InfoMessage "$FileName checksum verification passed."
 }
 
+# Function name kept for compatibility with dot-sourcing callers; verb not renamed.
 function Download-And-VerifyFile {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '')]
     param(
         [string]$Url,
         [string]$Destination,
         [string]$ChecksumPattern,
         [string]$FileName = "Unknown file",
-        [string]$ChecksumFile = $global:ChecksumsPath,
-        [string]$ChecksumUrl = $global:ChecksumsURL
+        [string]$ChecksumFile = $script:ChecksumsPath,
+        [string]$ChecksumUrl = $script:ChecksumsURL
     )
 
     Download-File -Url $Url -Destination $Destination -Description $FileName

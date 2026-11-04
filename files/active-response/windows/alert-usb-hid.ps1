@@ -15,6 +15,10 @@
     as blocking HID devices would disable legitimate keyboards and mice.
 #>
 
+# The $user and $srcip parameters are part of the Wazuh active-response
+# positional argument contract (action, user, srcip, alertid, ruleid).
+# They must remain so that $alertid and $ruleid bind to the correct positions.
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '')]
 param (
     [string]$action,
     [string]$user,
@@ -28,14 +32,14 @@ $evidenceDir = "C:\Program Files (x86)\ossec-agent\active-response\usb-evidence"
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 $fileTimestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 
-function Write-Log {
+function Write-AgentLog {
     param([string]$message)
     "$timestamp - USB-HID-DLP - $message" | Out-File -Append -FilePath $logFile
 }
 
 try {
     if ($action -eq "add") {
-        Write-Log "ACTION: USB HID device alert triggered (Rule: $ruleid, Alert: $alertid)"
+        Write-AgentLog "ACTION: USB HID device alert triggered (Rule: $ruleid, Alert: $alertid)"
 
         # Create evidence directory if it doesn't exist
         if (-not (Test-Path $evidenceDir)) {
@@ -78,17 +82,17 @@ $($keyboards | Format-List DeviceID, Name, Description, Layout | Out-String)
         $evidenceContent += $usbHistory | Format-Table -AutoSize | Out-String
 
         $evidenceContent | Out-File -FilePath $evidenceFile -Encoding UTF8
-        Write-Log "Evidence saved to: $evidenceFile"
+        Write-AgentLog "Evidence saved to: $evidenceFile"
 
         # Count HID devices for anomaly detection
         $hidCount = ($hidDevices | Measure-Object).Count
         $keyboardCount = ($keyboards | Measure-Object).Count
 
-        Write-Log "DEVICE COUNT: $hidCount HID devices, $keyboardCount keyboards detected"
+        Write-AgentLog "DEVICE COUNT: $hidCount HID devices, $keyboardCount keyboards detected"
 
         # Alert on anomaly (more than expected keyboards)
         if ($keyboardCount -gt 2) {
-            Write-Log "ANOMALY: Multiple keyboards ($keyboardCount) detected - possible BadUSB attack"
+            Write-AgentLog "ANOMALY: Multiple keyboards ($keyboardCount) detected - possible BadUSB attack"
         }
 
         # Create Windows Event Log entry for SIEM/audit
@@ -127,15 +131,15 @@ Evidence has been collected for forensic analysis.
         }
         Write-EventLog @eventParams -ErrorAction SilentlyContinue
 
-        Write-Log "SUCCESS: USB HID alert processed and evidence collected"
+        Write-AgentLog "SUCCESS: USB HID alert processed and evidence collected"
 
     } elseif ($action -eq "delete") {
-        Write-Log "ACTION: USB HID alert cleared (Rule: $ruleid)"
+        Write-AgentLog "ACTION: USB HID alert cleared (Rule: $ruleid)"
     }
 
     exit 0
 
 } catch {
-    Write-Log "ERROR: Failed to process USB HID alert - $($_.Exception.Message)"
+    Write-AgentLog "ERROR: Failed to process USB HID alert - $($_.Exception.Message)"
     exit 1
 }

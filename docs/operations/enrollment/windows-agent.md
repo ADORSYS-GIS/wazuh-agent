@@ -112,31 +112,31 @@ $env:WAZUH_MANAGER = "wazuh.your-company.com"
 
 During the dependency installation, a pop-up for GNU sed installation will appear.
 
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-11.png">
+   <img src="./images/windows/Screenshot from 2025-01-20 13-47-11.png">
 
 
 **Please choose the options shown in the images below to install GNU sed**
 
    #### i. Accept GNU's license agreement
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-16.png">
+   <img src="./images/windows/Screenshot from 2025-01-20 13-47-16.png">
 
    #### ii. Install sed in the default location (C:\Program Files (x86)\GnuWin32)
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-20.png">
+   <img src="./images/windows/Screenshot from 2025-01-20 13-47-20.png">
 
    #### iii. Select Full Installation with both binaries and documentation
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-24.png">
+   <img src="./images/windows/Screenshot from 2025-01-20 13-47-24.png">
 
    #### iv. Click Next
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-28.png">
+   <img src="./images/windows/Screenshot from 2025-01-20 13-47-28.png">
 
    #### v. Uncheck both additional icon options
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-20 13-47-35.png">
+   <img src="./images/windows/Screenshot from 2025-01-20 13-47-35.png">
 
    #### vi. GNU Sed installation complete
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-21 16-29-27.png">
+   <img src="./images/windows/Screenshot from 2025-01-21 16-29-27.png">
 
 **The installation will now continue**
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-36-39.png">
+   <img src="./images/windows/Screenshot from 2025-01-07 13-36-39.png">
 
 
 ### Step 3: Suricata/Snort Installation
@@ -144,13 +144,13 @@ During the dependency installation, a pop-up for GNU sed installation will appea
 For Snort, a pop-up window will appear for installation. Follow these steps:
 
    #### i. Click OK to continue and install Npcap
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-09.png">
+   <img src="./images/windows/Screenshot from 2025-01-07 13-35-09.png">
 
    #### ii. Click Finish once Npcap installation is complete
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-35-15.png">
+   <img src="./images/windows/Screenshot from 2025-01-07 13-35-15.png">
 
    #### iii. Installation will continue
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 13-39-23.png">
+   <img src="./images/windows/Screenshot from 2025-01-07 13-39-23.png">
 
 
 ### Step 4: Restart PowerShell
@@ -175,15 +175,15 @@ This command will generate a URL. Copy the link and paste it into your web brows
 
 - **i. Login:** Log in using **Active directories: `Adorsys GIS` or `adorsys GmbH & CO KG`**, which will generate an authentication token using Keycloak.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-14.png">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-28-14.png">
 
 - **ii. Two-Factor Authentication:** For first-time logins, authentication via an authenticator is required.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-29-08.png">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-29-08.png">
 
 - **iii. Token generation:** After successful authentication, a token will be generated.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-45.png">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-28-45.png">
 
 
 #### 3. Complete the Enrollment
@@ -204,7 +204,7 @@ After completing the agent enrollment, verify that the agent is properly connect
 
 Look for the Wazuh icon in the system tray to confirm that the agent is running and connected.
 
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 14-44-53.png">
+   <img src="./images/windows/Screenshot from 2025-01-07 14-44-53.png">
 
 
 #### 2. Verify Agent Logs:
@@ -222,7 +222,7 @@ Get-Content 'C:\Program Files (x86)\ossec-agent\ossec.log' -Tail 20
 Get-Service -Name "Wazuh"
 ```
 
-   <img src="/Agent Enrollment/images/windows/Screenshot from 2025-01-07 14-54-19.png">
+   <img src="./images/windows/Screenshot from 2025-01-07 14-54-19.png">
 
 
 #### 4. Validate USB DLP Scripts:
@@ -313,4 +313,4 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agen
 ### Additional Resources
 
 - [Wazuh Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html#wazuh-agent)
-- [Environment Variables Reference](/docs/ENVIRONMENT_VARIABLES.md)
+- [Environment Variables Reference](../../reference/ENVIRONMENT_VARIABLES.md)

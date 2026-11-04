@@ -1,6 +1,8 @@
 name: SonarQube
 
 on:
+  pull_request:
+    branches: [develop, main]
   push:
     branches: [develop, main]
   workflow_dispatch:
@@ -9,11 +11,40 @@ permissions:
   contents: read
 
 jobs:
+  test:
+    name: Run Unit Tests & Generate Coverage
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Bats and Kcov
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq bats kcov
+
+      - name: Run Bats Tests with Coverage
+        run: ./scripts/tests/run-coverage.sh
+
+      - name: Upload Coverage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wazuh-agent-coverage-report
+          path: coverage/sonar-coverage.xml
+          retention-days: 1
+
   scan:
-    uses: ADORSYS-GIS/adorsys-ci-cd-templates/.github/workflows/sonarqube.yml@58803c3f7817d539cfd8dfcde18bf16ed17ad480 # main
+    name: SonarQube Scan
+    needs: test
+    uses: ADORSYS-GIS/adorsys-ci-cd-templates/.github/workflows/sonarqube.yml@8617a17cfc5f5a8897c2a3806bb543c20b4b57e0 # main
     with:
       project-key: wazuh-agent
-      runner: arc-runner-set
+      runner: ubuntu-latest
+      generic-coverage-report-paths: "coverage/sonar-coverage.xml"
+      coverage-artifact-name: "wazuh-agent-coverage-report"
+      coverage-artifact-path: "coverage"
+      exclusions: "**/coverage/**"
+      extra-sonar-args: -Dsonar.coverage.exclusions=scripts/tests/**,**/*.yaml,**/*.yml,scripts/macos/**,scripts/server/**,scripts/windows/**,files/**,scripts/linux/ca-install.sh,scripts/shared/ca-helpers.sh,scripts/linux/setup-docker.sh,**/*.ps1,**/*.psm1
     secrets:
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
