@@ -132,7 +132,7 @@ jobs:
 
       - name: Run Release Please
         id: release
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@v5
         with:
           # Use PAT to bypass org restrictions on GITHUB_TOKEN creating PRs
           token: ${{ secrets.RELEASE_PAT }}
