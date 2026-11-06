@@ -291,9 +291,25 @@ jobs:
         run: |
           echo "Debug: WAZUH_AGENT_REPO_REF is $WAZUH_AGENT_REPO_REF"
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            sudo -E bash ./scripts/linux/setup-agent.sh
+            sudo env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" \
+              WAZUH_AGENT_STATUS_REPO_REF="$WAZUH_AGENT_STATUS_REPO_REF" \
+              WAZUH_YARA_REPO_REF="$WAZUH_YARA_REPO_REF" \
+              WAZUH_SURICATA_REPO_REF="$WAZUH_SURICATA_REPO_REF" \
+              WAZUH_SNORT_REPO_REF="$WAZUH_SNORT_REPO_REF" \
+              WAZUH_TRIVY_REPO_REF="$WAZUH_TRIVY_REPO_REF" \
+              WAZUH_CERT_OAUTH2_REPO_REF="$WAZUH_CERT_OAUTH2_REPO_REF" \
+              YARA_INSTALLATION_TYPE="$YARA_INSTALLATION_TYPE" \
+              bash ./scripts/linux/setup-agent.sh
           else
-            sudo -E bash ./scripts/macos/setup-agent.sh
+            sudo env WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" \
+              WAZUH_AGENT_STATUS_REPO_REF="$WAZUH_AGENT_STATUS_REPO_REF" \
+              WAZUH_YARA_REPO_REF="$WAZUH_YARA_REPO_REF" \
+              WAZUH_SURICATA_REPO_REF="$WAZUH_SURICATA_REPO_REF" \
+              WAZUH_SNORT_REPO_REF="$WAZUH_SNORT_REPO_REF" \
+              WAZUH_TRIVY_REPO_REF="$WAZUH_TRIVY_REPO_REF" \
+              WAZUH_CERT_OAUTH2_REPO_REF="$WAZUH_CERT_OAUTH2_REPO_REF" \
+              YARA_INSTALLATION_TYPE="$YARA_INSTALLATION_TYPE" \
+              bash ./scripts/macos/setup-agent.sh
           fi
 
   # ============================================
