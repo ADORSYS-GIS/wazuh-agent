@@ -358,6 +358,16 @@ maybe_sudo chmod 750 "$AR_BIN_DIR/disable-usb-storage.sh" "$AR_BIN_DIR/alert-usb
 success_message "USB DLP Active Response scripts installed successfully."
 info_message "Finished USB DLP setup step."
 
+# Network containment: block the remote end of malware / C2 traffic (Suricata rule 100013)
+info_message "Installing the C2 containment Active Response script..."
+if ! download_and_verify_file "$USB_DLP_BASE_URL/block-c2.sh" "$TMP_FOLDER/block-c2.sh" "files/active-response/linux/block-c2.sh" "block-c2.sh"; then
+    exit 1
+fi
+maybe_sudo cp "$TMP_FOLDER/block-c2.sh" "$AR_BIN_DIR/"
+maybe_sudo chown root:wazuh "$AR_BIN_DIR/block-c2.sh"
+maybe_sudo chmod 750 "$AR_BIN_DIR/block-c2.sh"
+success_message "C2 containment Active Response script installed."
+
 # Step 8: Setup Docker monitoring (only runs if Docker is installed)
 info_message "Setting up Docker monitoring (if Docker is present)..."
 if ! download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/setup-docker.sh" "$TMP_FOLDER/setup-docker.sh" "scripts/linux/setup-docker.sh" "setup-docker.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256"; then
