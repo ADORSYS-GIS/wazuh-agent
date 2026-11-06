@@ -263,7 +263,7 @@ fi
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
-if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-wazuh-agent.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" WAZUH_AGENT_GROUP="${WAZUH_AGENT_GROUP:-}" bash "$TMP_FOLDER/install-wazuh-agent.sh" < /dev/null) 2>&1; then
     error_exit "Failed to install wazuh-agent"
 fi
 

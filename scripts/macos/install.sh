@@ -54,6 +54,9 @@ fi
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.6-1'}
+# Agent group(s) requested at enrollment; the macos group carries the
+# company SCA policies and agent config for this OS.
+WAZUH_AGENT_GROUP=${WAZUH_AGENT_GROUP:-'default,macos'}
 
 # macOS-specific paths
 OSSEC_CONF_PATH="/Library/Ossec/etc/ossec.conf"
@@ -155,6 +158,10 @@ config() {
             else
                 info_message "active-response logs already being monitored in $OSSEC_CONF_PATH"
             fi
+
+    # Enrollment group + SCA policies pushed from the manager
+    configure_enrollment_group "$OSSEC_CONF_PATH" "$WAZUH_AGENT_GROUP"
+    enable_sca_remote_commands "$(dirname "$OSSEC_CONF_PATH")/local_internal_options.conf"
 
     # Download logo
     if [ ! -d "$LOGO_PATH" ]; then
