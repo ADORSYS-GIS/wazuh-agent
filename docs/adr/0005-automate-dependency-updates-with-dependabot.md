@@ -93,5 +93,5 @@ Delete or revert `.github/dependabot.yml`. Dependabot will stop scanning and cea
 
 | Kind   | Tracking                                                                                   | Status | What it covers                                |
 | :----- | :----------------------------------------------------------------------------------------- | :----- | :-------------------------------------------- |
-| Issue  | [ADORSYS-GIS/wazuh-agent#280](https://github.com/ADORSYS-GIS/wazuh-agent/issues/280)       | Open   | Add dependabot configuration to wazuh-agent   |
-| PR     | [ADORSYS-GIS/wazuh-agent#281](https://github.com/ADORSYS-GIS/wazuh-agent/pull/281)         | Open   | Adds .github/dependabot.yml and ADR-0005      |
+| Issue  | [ADORSYS-GIS/wazuh-agent#280](https://github.com/ADORSYS-GIS/wazuh-agent/issues/280)       | Closed | Add dependabot configuration to wazuh-agent   |
+| PR     | [ADORSYS-GIS/wazuh-agent#281](https://github.com/ADORSYS-GIS/wazuh-agent/pull/281)         | Merged | Adds .github/dependabot.yml and ADR-0005      |
