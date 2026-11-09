@@ -15,6 +15,7 @@ decision. The canonical writing guidance is the central ADR guide:
 | [ADR-0003](0003-generate-sbom-in-ci.md)      | Generate CycloneDX SBOM in CI                                    | `Accepted` | 2026-10-26 | N/A       | N/A      |
 | [ADR-0004](0004-block-c2-active-response.md) | Block the Remote End of Malware/C2 Traffic on Linux Agents       | `Accepted` | 2026-11-03 | N/A       | N/A      |
 | [ADR-0005](0005-automate-dependency-updates-with-dependabot.md) | Automate Dependency Updates with Dependabot                      | `Accepted` | 2026-11-06 | N/A       | N/A      |
+| [ADR-0006](0006-blocking-trivy-vulnerability-gate.md) | Blocking Trivy Vulnerability Gate in Release Pipeline            | `Accepted` | 2026-11-09 | N/A       | N/A      |
 
 ---
 
