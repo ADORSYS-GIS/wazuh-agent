@@ -15,7 +15,7 @@ This document describes all environment variables used by the Wazuh Agent instal
 | `WAZUH_MANAGER`       | `wazuh.example.com` | Wazuh Manager address (hostname or IP) |
 | `WAZUH_AGENT_VERSION` | `4.14.6-1`          | Wazuh Agent version to install         |
 | `WAZUH_AGENT_NAME`    | `$(hostname)`       | Agent registration name                |
-| `WAZUH_AGENT_GROUP`   | _(none)_            | Agent group for enrollment             |
+| `WAZUH_AGENT_GROUP`   | `default,<os>`      | Agent group(s) for enrollment (`<os>` = `linux`, `macos` or `windows`); the OS group delivers the company SCA policies |
 
 ## Component Versions
 
