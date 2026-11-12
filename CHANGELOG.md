@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.3](https://github.com/ADORSYS-GIS/wazuh-agent/compare/v1.8.2...v1.8.3) (2026-11-12)
+
+### Features
+
+* **enrollment:** join OS agent group and allow manager-shipped SCA policies ([#274](https://github.com/ADORSYS-GIS/wazuh-agent/pull/274))
+* **active-response:** block the remote end of malware/C2 traffic on Linux (ADR-0004) ([#276](https://github.com/ADORSYS-GIS/wazuh-agent/pull/276))
+* **ci:** make Trivy vulnerability scan blocking with SARIF reporting (ADR-0007) ([#290](https://github.com/ADORSYS-GIS/wazuh-agent/pull/290))
+* **secret-scan:** add Gitleaks secret scanning and CI job (ADR-0006) ([#289](https://github.com/ADORSYS-GIS/wazuh-agent/pull/289))
+* **sbom:** generate CycloneDX SBOM in CI workflow ([#270](https://github.com/ADORSYS-GIS/wazuh-agent/pull/270))
+* **sast:** add Static Application Security Testing workflow and SonarQube integration ([#259](https://github.com/ADORSYS-GIS/wazuh-agent/pull/259), [#266](https://github.com/ADORSYS-GIS/wazuh-agent/pull/266))
+
+### Bug Fixes
+
+* **install:** use gnupg-ring keyring format for Wazuh apt GPG key ([#279](https://github.com/ADORSYS-GIS/wazuh-agent/pull/279))
+* **sast:** resolve PSScriptAnalyzer findings across Windows scripts ([#261](https://github.com/ADORSYS-GIS/wazuh-agent/pull/261))
+
+### Chores & Dependency Updates
+
+* bump framework version to `1.8.3` across all scripts, `version.txt`, and `versions.json`
+* bump `wazuh-agent-status` version from `0.5.4` to `0.5.7`
+* bump `wazuh-agent-installer` (GUI Installer) from `1.2.0` to `1.3.2`
+* add automated Dependabot configuration (ADR-0005) ([#281](https://github.com/ADORSYS-GIS/wazuh-agent/pull/281))
+* add standard issue and PR templates ([#272](https://github.com/ADORSYS-GIS/wazuh-agent/pull/272))
+* migrate documentation to organization SDLC standard ([#271](https://github.com/ADORSYS-GIS/wazuh-agent/pull/271))
+* add Bats test suite and coverage reporting ([#267](https://github.com/ADORSYS-GIS/wazuh-agent/pull/267))
+
 ## [1.9.0-rc.2](https://github.com/ADORSYS-GIS/wazuh-agent/compare/v1.9.0-rc.1...v1.9.0-rc.2) (2026-02-26)
 
 
