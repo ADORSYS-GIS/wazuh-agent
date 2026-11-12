@@ -3,7 +3,7 @@
 set -eu
 
 # Repository ref
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.2'}
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.3'}
 if [ "${WAZUH_AGENT_REPO_VERSION}" = "main" ]; then
     WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"main"}
 else
@@ -75,7 +75,7 @@ LINUX_SCRIPT_PATH="scripts/linux/install.sh"
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.6-1'}
-WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.5.4'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.5.7'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-'test-agent-name'}
 
 
@@ -412,9 +412,9 @@ download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-ag
 info_message "Version file downloaded successfully."
 
 # Step 12: Install GUI Installer
-info_message "Installing Wazuh Agent GUI Installer (v1.2.0)..."
+info_message "Installing Wazuh Agent GUI Installer (v1.3.2)..."
 # TODO: revisit this once the installer update feature is implemented
-if ! curl -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/refs/tags/v1.2.0/install-scripts/ubuntu.sh | bash -s v1.2.0; then
+if ! curl -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/refs/tags/v1.3.2/install-scripts/ubuntu.sh | bash -s v1.3.2; then
     warn_message "Failed to install GUI Installer. It may require manual installation."
 else
     success_message "Wazuh Agent GUI Installer installed successfully."

@@ -22,7 +22,7 @@ on:
 
 env:
   WAZUH_AGENT_REPO_REF: ${{ github.head_ref || github.ref_name }}
-  WAZUH_AGENT_STATUS_REPO_REF: refs/tags/v0.5.4
+  WAZUH_AGENT_STATUS_REPO_REF: refs/tags/v0.5.7
   WAZUH_YARA_REPO_REF: refs/tags/v0.4.2
   WAZUH_SURICATA_REPO_REF: refs/tags/v0.2.2
   WAZUH_SNORT_REPO_REF: main
