@@ -416,9 +416,9 @@ download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-ag
 info_message "Version file downloaded successfully."
 
 # Step 12: Install GUI Installer
-info_message "Installing Wazuh Agent GUI Installer (v1.2.0)..."
+info_message "Installing Wazuh Agent GUI Installer (v1.3.2)..."
 # TODO: revisit this once the installer update feature is implemented
-if ! curl -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/refs/tags/v1.2.0/install-scripts/macos.sh | bash -s v1.2.0; then
+if ! curl -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/refs/tags/v1.3.2/install-scripts/macos.sh | bash -s v1.3.2; then
     warn_message "Failed to install GUI Installer. It may require manual installation."
 else
     success_message "Wazuh Agent GUI Installer installed successfully."
