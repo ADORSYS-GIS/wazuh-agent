@@ -35,7 +35,7 @@
       "max_compatible": "0.3.99"
     },
     "wazuh-cert-oauth2": {
-      "version": "0.4.3",
+      "version": "0.5.0",
       "repository": "ADORSYS-GIS/wazuh-cert-oauth2",
       "min_compatible": "0.2.0",
       "max_compatible": "0.3.99"
