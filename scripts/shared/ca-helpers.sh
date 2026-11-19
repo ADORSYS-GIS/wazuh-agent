@@ -23,30 +23,33 @@ norm_fp() {
 }
 
 cert_fp() {
-  openssl x509 -in "$1" -noout -fingerprint -sha256 2>/dev/null | norm_fp || true
+  local file="$1"
+  openssl x509 -in "$file" -noout -fingerprint -sha256 2>/dev/null | norm_fp || true
 }
 
 cert_subject() {
-  openssl x509 -in "$1" -noout -subject 2>/dev/null \
+  local file="$1"
+  openssl x509 -in "$file" -noout -subject 2>/dev/null \
     | sed 's/^subject=//' | tr '[:upper:]' '[:lower:]' | tr -s ' ' || true
 }
 
 is_ca() {
-  openssl x509 -in "$1" -noout -text 2>/dev/null | grep -q "CA:TRUE"
+  local file="$1"
+  openssl x509 -in "$file" -noout -text 2>/dev/null | grep -q "CA:TRUE"
 }
 
 is_retired_fp() {
   local fp="$1" r
-  [ -n "$fp" ] || return 1
+  [[ -n "$fp" ]] ||  return 1
   for r in "${RETIRED_SHA256[@]}"; do
-    [ "$fp" = "$r" ] && return 0
+    [[ "$fp" = "$r" ]] &&  return 0
   done
   return 1
 }
 
 is_retired_subject() {
   local subj="$1" s
-  [ -n "$subj" ] || return 1
+  [[ -n "$subj" ]] ||  return 1
   for s in "${RETIRED_SUBJECTS[@]}"; do
     [[ "$subj" == *"$s"* ]] && return 0
   done
@@ -56,14 +59,14 @@ is_retired_subject() {
 # Full gate: the file must be a CA cert whose SHA-256 matches the pin.
 check_cert() {
   local file="$1" fp
-  [ -f "${file}" ] || die "File not found: ${file}"
-  [ -s "${file}" ] || die "File is empty: ${file}"
+  [[ -f "${file}" ]] ||  die "File not found: ${file}"
+  [[ -s "${file}" ]] ||  die "File is empty: ${file}"
   head -1 "${file}" | grep -q "BEGIN CERTIFICATE" || die "Not a PEM certificate: ${file}"
   openssl x509 -in "${file}" -noout >/dev/null 2>&1 || die "Not a valid X.509 certificate: ${file}"
   is_ca "${file}" || die "Not a CA certificate (basicConstraints CA:TRUE missing): ${file}"
   fp=$(cert_fp "${file}")
-  [ -n "${fp}" ] || die "Could not compute fingerprint: ${file}"
-  if [ "${fp}" != "${EXPECTED_SHA256}" ]; then
+  [[ -n "${fp}" ]] ||  die "Could not compute fingerprint: ${file}"
+  if [[ "${fp}" != "${EXPECTED_SHA256}" ]] ; then
     die "Fingerprint mismatch — refusing to install.
   expected : ${EXPECTED_SHA256}  (${EXPECTED_CN})
   got      : ${fp}

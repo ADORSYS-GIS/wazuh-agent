@@ -19,6 +19,7 @@ COMMENT="wazuh-block-c2"
 
 log() {
     printf '%s %s: %s\n' "$(date '+%Y/%m/%d %H:%M:%S')" "$NAME" "$*" >> "$LOGFILE" 2>/dev/null
+    return 0
 }
 
 # One line in the format of Wazuh's own scripts, so the manager decodes it (ar_log_json) and rules 100025 / 100026
@@ -26,11 +27,13 @@ log() {
 report() { # report add|delete <ip> <rule>
     printf '%s active-response/bin/block-c2.sh: {"version":1,"origin":{"name":"%s","module":"active-response"},"command":"%s","parameters":{"program":"active-response/bin/block-c2.sh","rule":"%s"},"data":{"srcip":"%s"}}\n' \
         "$(date '+%Y/%m/%d %H:%M:%S')" "$NAME" "$1" "$3" "$2" >> "$LOGFILE" 2>/dev/null
+    return 0
 }
 
 # First value of a JSON string field, e.g. json_field "$msg" dest_ip. Enough for Wazuh's flat Suricata fields.
 json_field() {
     printf '%s' "$1" | sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" | head -n 1
+    return 0
 }
 
 is_ipv4() {
@@ -40,7 +43,10 @@ is_ipv4() {
 }
 
 is_ipv6() {
-    printf '%s' "$1" | grep -Eq '^[0-9A-Fa-f:]+$' && printf '%s' "$1" | grep -q ':'
+    if printf '%s' "$1" | grep -Eq '^[0-9A-Fa-f:]+$' && printf '%s' "$1" | grep -q ':'; then
+        return 0
+    fi
+    return 1
 }
 
 # 0 when the address must never be blocked.
@@ -57,6 +63,7 @@ is_protected() {
         l=$(printf '%s' "$ip" | tr 'A-F' 'a-f')
         case "$l" in
             ::|::1|fe8*|fe9*|fea*|feb*|fc*|fd*|ff*) return 0 ;;
+            *) ;;
         esac
     else
         return 0 # not an IP: never act on it
@@ -77,8 +84,8 @@ protected_hosts() {
 # The remote end: the public address of the flow. Empty when there is none (both sides private or protected).
 pick_target() {
     src="$1"; dst="$2"
-    if [ -n "$dst" ] && ! is_protected "$dst"; then
-        if [ -z "$src" ] || is_protected "$src" || is_local "$src"; then echo "$dst"; return; fi
+    if [ -n "$dst" ] && ! is_protected "$dst" && { [ -z "$src" ] || is_protected "$src" || is_local "$src"; }; then
+        echo "$dst"; return
     fi
     if [ -n "$src" ] && ! is_protected "$src" && ! is_local "$src"; then echo "$src"; return; fi
     if [ -n "$dst" ] && ! is_protected "$dst" && ! is_local "$dst"; then echo "$dst"; return; fi
@@ -86,11 +93,12 @@ pick_target() {
 
 # 0 when the address belongs to this machine.
 is_local() {
+    addr="$1"
     if [ -n "${BLOCK_C2_LOCAL+x}" ]; then
-        for l in $BLOCK_C2_LOCAL; do [ "$l" = "$1" ] && return 0; done
+        for l in $BLOCK_C2_LOCAL; do [ "$l" = "$addr" ] && return 0; done
         return 1
     fi
-    ip -o addr show 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | grep -qx "$1"
+    ip -o addr show 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | grep -qx "$addr"
 }
 
 fw() { # fw add|delete <ip>
