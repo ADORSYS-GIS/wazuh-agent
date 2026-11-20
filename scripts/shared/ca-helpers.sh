@@ -20,22 +20,26 @@ RETIRED_SUBJECTS=(
 # --- Fingerprint / subject helpers -------------------------------------------
 norm_fp() {
   tr -d ':' | tr '[:upper:]' '[:lower:]' | sed 's/^sha256 fingerprint=//'
+  return $?
 }
 
 cert_fp() {
   local file="$1"
   openssl x509 -in "$file" -noout -fingerprint -sha256 2>/dev/null | norm_fp || true
+  return 0
 }
 
 cert_subject() {
   local file="$1"
   openssl x509 -in "$file" -noout -subject 2>/dev/null \
     | sed 's/^subject=//' | tr '[:upper:]' '[:lower:]' | tr -s ' ' || true
+  return 0
 }
 
 is_ca() {
   local file="$1"
   openssl x509 -in "$file" -noout -text 2>/dev/null | grep -q "CA:TRUE"
+  return $?
 }
 
 is_retired_fp() {
@@ -73,4 +77,5 @@ check_cert() {
 If the CA was rotated, update EXPECTED_SHA256 in this script."
   fi
   info "Fingerprint verified ✔  ${fp}"
+  return 0
 }

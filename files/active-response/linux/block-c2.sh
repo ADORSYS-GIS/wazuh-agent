@@ -32,18 +32,22 @@ report() { # report add|delete <ip> <rule>
 
 # First value of a JSON string field, e.g. json_field "$msg" dest_ip. Enough for Wazuh's flat Suricata fields.
 json_field() {
-    printf '%s' "$1" | sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" | head -n 1
+    json_text="$1"
+    field_name="$2"
+    printf '%s' "$json_text" | sed -n "s/.*\"$field_name\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" | head -n 1
     return 0
 }
 
 is_ipv4() {
-    printf '%s' "$1" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$' || return 1
-    for o in $(printf '%s' "$1" | tr '.' ' '); do [ "$o" -le 255 ] || return 1; done
+    ip="$1"
+    printf '%s' "$ip" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$' || return 1
+    for o in $(printf '%s' "$ip" | tr '.' ' '); do [ "$o" -le 255 ] || return 1; done
     return 0
 }
 
 is_ipv6() {
-    if printf '%s' "$1" | grep -Eq '^[0-9A-Fa-f:]+$' && printf '%s' "$1" | grep -q ':'; then
+    ip="$1"
+    if printf '%s' "$ip" | grep -Eq '^[0-9A-Fa-f:]+$' && printf '%s' "$ip" | grep -q ':'; then
         return 0
     fi
     return 1
