@@ -33,11 +33,13 @@ RULEID=$5
 
 log_message() {
     echo "$TIMESTAMP - USB-DLP-macOS - $1" >> "$LOGFILE"
+    return 0
 }
 
 # Function to get external USB disks
 get_external_disks() {
     diskutil list external 2>/dev/null | grep -E "^/dev/disk" | awk '{print $1}'
+    return 0
 }
 
 # Function to collect evidence
@@ -70,6 +72,7 @@ EOF
 
     log_message "Evidence saved to: $EVIDENCE_FILE"
     echo "$EVIDENCE_FILE"
+    return 0
 }
 
 case "$ACTION" in
@@ -82,7 +85,7 @@ case "$ACTION" in
         # Get list of external disks
         EXTERNAL_DISKS=$(get_external_disks)
 
-        if [ -n "$EXTERNAL_DISKS" ]; then
+        if [[ -n "$EXTERNAL_DISKS" ]] ; then
             for disk in $EXTERNAL_DISKS; do
                 log_message "Processing external disk: $disk"
 
@@ -94,14 +97,14 @@ case "$ACTION" in
                 log_message "Unmounting all volumes on $disk"
                 diskutil unmountDisk "$disk" 2>/dev/null
 
-                if [ $? -eq 0 ]; then
+                if [[ $? -eq 0 ]] ; then
                     log_message "SUCCESS: Unmounted all volumes on $disk"
 
                     # Attempt to eject the disk
                     log_message "Ejecting $disk"
                     diskutil eject "$disk" 2>/dev/null
 
-                    if [ $? -eq 0 ]; then
+                    if [[ $? -eq 0 ]] ; then
                         log_message "SUCCESS: Ejected $disk"
                     else
                         log_message "WARNING: Could not eject $disk"
