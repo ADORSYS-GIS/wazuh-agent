@@ -45,15 +45,15 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-FIX_NOPASSWD=false
-RUN_UPGRADE="n"
+FIX_NOPASSWD=true
+SKIP_UPGRADE=false
 for arg in "$@"; do
     case "$arg" in
-        --fix-nopasswd)
-            FIX_NOPASSWD=true
+        --no-fix-nopasswd)
+            FIX_NOPASSWD=false
             ;;
-        --upgrade|-u)
-            RUN_UPGRADE="y"
+        --skip-upgrade)
+            SKIP_UPGRADE=true
             ;;
     esac
 done
@@ -249,7 +249,7 @@ done
 
 if [ "$NOPASSWD_FOUND" = true ]; then
     if [ "$FIX_NOPASSWD" = true ]; then
-        info "Remediating custom NOPASSWD lines (--fix-nopasswd passed)..."
+        info "Remediating custom user NOPASSWD lines (preserving agent/cloud rules)..."
         for f in "${ACTIVE_NOPASSWD_FILES[@]}"; do
             base=$(basename "$f")
             # Preserve wazuh/ossec and cloud/ec2 provisioning to prevent breaking automation and ssh lockout
@@ -269,9 +269,8 @@ if [ "$NOPASSWD_FOUND" = true ]; then
         done
         ok "Custom NOPASSWD entries updated."
     else
-        warn "NOPASSWD entries were detected above."
+        warn "NOPASSWD entries were detected above (--no-fix-nopasswd passed)."
         warn "Note: Automated stripping of NOPASSWD is risky on cloud VMs or endpoints with agent automation."
-        warn "To enforce password for non-agent users, run with: sudo bash $0 --fix-nopasswd"
     fi
 else
     ok "No active NOPASSWD directives detected in sudoers."
@@ -395,17 +394,10 @@ elif command -v yum >/dev/null 2>&1; then
 fi
 
 # -------------------------------------------------------------
-# Optional OS Updates (Check 90001)
+# OS Updates (Check 90001: Ensure no OS updates are pending)
 # -------------------------------------------------------------
-if [ "$RUN_UPGRADE" != "y" ]; then
-    if [ -t 0 ]; then
-        read -r -p "Do you want to update all system packages now (Check 90001: no OS updates pending)? [y/N]: " RUN_UPGRADE || RUN_UPGRADE="n"
-    elif [ -e /dev/tty ] && [ -r /dev/tty ]; then
-        read -r -p "Do you want to update all system packages now (Check 90001: no OS updates pending)? [y/N]: " RUN_UPGRADE < /dev/tty 2>/dev/null || RUN_UPGRADE="n"
-    fi
-fi
-if [[ "$RUN_UPGRADE" =~ ^[Yy]$ ]]; then
-    info "Updating system packages non-interactively..."
+if [ "$SKIP_UPGRADE" = false ]; then
+    info "Updating system packages automatically (Check 90001)..."
     if command -v apt-get >/dev/null 2>&1; then
         DEBIAN_FRONTEND=noninteractive apt-get update -y && \
         DEBIAN_FRONTEND=noninteractive apt-get -y \
@@ -413,13 +405,15 @@ if [[ "$RUN_UPGRADE" =~ ^[Yy]$ ]]; then
             -o Dpkg::Options::="--force-confold" upgrade
     elif command -v dnf >/dev/null 2>&1; then
         dnf upgrade -y
+    elif command -v yum >/dev/null 2>&1; then
+        yum update -y
     fi
     ok "System packages updated."
     if [ -f /var/run/reboot-required ]; then
-        warn "A system reboot is required for applied updates to take full effect (Check 90002 will fail until rebooted)."
+        warn "A system reboot is required for applied updates to take full effect (Check 90002)."
     fi
 else
-    info "Skipping OS package upgrade. Run 'sudo apt update && sudo apt upgrade' manually when convenient."
+    info "Skipping OS package upgrade (--skip-upgrade passed)."
 fi
 
 # -------------------------------------------------------------
@@ -496,7 +490,7 @@ else
     if [ -z "$CUSTOM_NOPASSWD" ]; then
         notice "Check 90003 (CIS 28657) - Scoped agent/cloud NOPASSWD entries present (intentional exemption)"
     else
-        fail "Check 90003 (CIS 28657) - Unapproved custom NOPASSWD detected (run with --fix-nopasswd to enforce)"
+        fail "Check 90003 (CIS 28657) - Unapproved custom NOPASSWD detected in sudoers"
     fi
 fi
 
