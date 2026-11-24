@@ -67,7 +67,7 @@ HELPERS_TMPFILE=$(mktemp /tmp/ca-helpers.XXXXXX.sh)
 
 FETCH_HELPERS_URL="${GITHUB_RAW_URL}/${CA_BRANCH}/${HELPERS_PATH_IN_REPO}"
 HTTP_CODE=$(curl -sS -w "%{http_code}" -o "${HELPERS_TMPFILE}" "${FETCH_HELPERS_URL}" 2>/dev/null) || true
-if [ "${HTTP_CODE}" != "200" ]; then
+if [[ "${HTTP_CODE}" != "200" ]] ; then
   die "Failed to fetch CA helpers (HTTP ${HTTP_CODE}). Check branch '${CA_BRANCH}' and try again."
 fi
 source "${HELPERS_TMPFILE}"
@@ -76,7 +76,7 @@ CERT_NICKNAME="Company Root CA"          # NSS nickname
 CERT_FILENAME="company-root-ca.crt"      # system-store filename
 
 # Run a command with sudo only if not already root
-if [ "$(id -u)" -eq 0 ]; then
+if [[ "$(id -u)" -eq 0 ]] ; then
   maybe_sudo() { "$@"; }
 else
   maybe_sudo() { sudo "$@"; }
@@ -106,17 +106,17 @@ NSSDB="${REAL_USER_HOME}/.pki/nssdb"
 # --- Input: mode + CA certificate --------------------------------------------
 MODE="install"
 CA_FILE=""
-if [ "${1:-}" = "--check" ] || [ "${1:-}" = "-c" ]; then
+if [[ "${1:-}" = "--check" ]] ||  [[ "${1:-}" = "-c" ]] ; then
   MODE="check"
   CA_FILE="${2:-}"
-elif [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+elif [[ "${1:-}" = "--help" ]] ||  [[ "${1:-}" = "-h" ]] ; then
   sed -n '2,45p' "$0" | sed 's/^# \{0,1\}//'
   exit 0
 fi
 
 CA_BRANCH="${CA_BRANCH:-main}"
 
-if [ -n "${CA_FILE}" ] || [ -n "${CA_CRT:-}" ]; then
+if [[ -n "${CA_FILE}" ]] ||  [[ -n "${CA_CRT:-}" ]] ; then
   CA_FILE="${CA_FILE:-${CA_CRT}}"
   info "Using local certificate file: ${CA_FILE}"
   case "${CA_FILE}" in
@@ -133,7 +133,7 @@ else
     die "curl is required but not installed. Please install curl and retry."
   fi
   HTTP_CODE=$(curl -sS -w "%{http_code}" -o "${CERT_TMPFILE}" "${FETCH_URL}" 2>/dev/null) || true
-  if [ "${HTTP_CODE}" != "200" ]; then
+  if [[ "${HTTP_CODE}" != "200" ]] ; then
     die "Failed to fetch certificate (HTTP ${HTTP_CODE}). Check branch '${CA_BRANCH}' and try again."
   fi
   CA_FILE="${CERT_TMPFILE}"
@@ -141,7 +141,7 @@ fi
 
 check_cert "${CA_FILE}"
 
-if [ "${MODE}" = "check" ]; then
+if [[ "${MODE}" = "check" ]] ; then
   info "OK — ${CA_FILE} is the pinned Company Root CA (${EXPECTED_CN})"
   exit 0
 fi
@@ -153,7 +153,7 @@ info "Installing into system certificate store..."
 
 # Remove retired CAs (by fingerprint/subject) from every system CA dir
 for dir in /usr/local/share/ca-certificates /etc/pki/ca-trust/source/anchors; do
-  [ -d "${dir}" ] || continue
+  [[ -d "${dir}" ]] ||  continue
   while IFS= read -r -d '' file; do
     fp=$(cert_fp "${file}")
     subj=$(cert_subject "${file}")
@@ -167,7 +167,7 @@ done
 # Stale hardcoded paths from older installers
 for stale in /usr/local/share/ca-certificates/adorsys-block.crt \
              /usr/local/share/ca-certificates/adorsys-block-page-ca.crt; do
-  if [ -f "${stale}" ]; then
+  if [[ -f "${stale}" ]] ; then
     warn "Removing stale CA: ${stale}"
     maybe_sudo rm -f "${stale}"
   fi
@@ -176,7 +176,7 @@ done
 DEST="/usr/local/share/ca-certificates/${CERT_FILENAME}"
 
 # Idempotent: skip copy+rebuild if the pinned cert is already in place
-if [ "$(cert_fp "${DEST}")" = "${EXPECTED_SHA256}" ]; then
+if [[ "$(cert_fp "${DEST}")" = "${EXPECTED_SHA256}" ]] ; then
   info "System store already has the pinned CA — skipping copy"
 else
   maybe_sudo cp "${CA_FILE}" "${DEST}"
@@ -191,7 +191,7 @@ else
 fi
 
 # Verify AFTER install: fingerprint of what actually landed in the store
-if [ "$(cert_fp "${DEST}")" = "${EXPECTED_SHA256}" ]; then
+if [[ "$(cert_fp "${DEST}")" = "${EXPECTED_SHA256}" ]] ; then
   info "System store verified ✔  ${DEST}"
 else
   die "System store verification failed: ${DEST}"
@@ -231,9 +231,9 @@ nss_cert_subject() {
 nss_has_pinned() {
   local db="$1" nick fp
   while IFS= read -r nick; do
-    [ -n "${nick}" ] || continue
+    [[ -n "${nick}" ]] ||  continue
     fp=$(nss_cert_fp "${db}" "${nick}")
-    [ "${fp}" = "${EXPECTED_SHA256}" ] && return 0
+    [[ "${fp}" = "${EXPECTED_SHA256}" ]] &&  return 0
   done < <(nss_list_nicknames "${db}")
   return 1
 }
@@ -241,16 +241,16 @@ nss_has_pinned() {
 # Install into one NSS db: remove retired entries, add pinned if missing, verify.
 nss_install_db() {
   local db="$1" nick fp subj
-  [ -d "${db}" ] || return 1
+  [[ -d "${db}" ]] ||  return 1
   mkdir -p "${db}"
 
-  if [ ! -f "${db}/cert9.db" ]; then
+  if [[ ! -f "${db}/cert9.db" ]] ; then
     certutil -N -d "sql:${db}" --empty-password -f "${PWFILE}" 2>/dev/null || return 1
   fi
 
   # 1. Remove retired CAs by fingerprint/subject (any nickname)
   while IFS= read -r nick; do
-    [ -n "${nick}" ] || continue
+    [[ -n "${nick}" ]] ||  continue
     fp=$(nss_cert_fp "${db}" "${nick}")
     subj=$(nss_cert_subject "${db}" "${nick}")
     if is_retired_fp "${fp}" || is_retired_subject "${subj}"; then
@@ -292,11 +292,11 @@ info "Checking snap Chromium..."
 SNAP_BASE="${REAL_USER_HOME}/snap/chromium"
 SNAP_CURRENT=""
 
-if [ -d "${SNAP_BASE}" ] && [ -L "${SNAP_BASE}/current" ]; then
+if [[ -d "${SNAP_BASE}" ]] &&  [[ -L "${SNAP_BASE}/current" ]] ; then
   SNAP_CURRENT=$(readlink -f "${SNAP_BASE}/current" 2>/dev/null)
 fi
 
-if [ -z "${SNAP_CURRENT}" ]; then
+if [[ -z "${SNAP_CURRENT}" ]] ; then
   info "snap Chromium not found — skipping"
 else
   SNAP_NSSDB="${SNAP_CURRENT}/.local/share/pki/nssdb"
