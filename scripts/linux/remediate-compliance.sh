@@ -307,23 +307,29 @@ if [ -f "$SSHD_CONFIG" ]; then
         done
     fi
 
-    # Check 90008 explicitly tests: f:/etc/ssh/sshd_config -> r:^\s*PermitRootLogin\s*no
-    if grep -qiE '^\s*PermitRootLogin' "$SSHD_CONFIG"; then
-        sed -i 's/^\s*PermitRootLogin.*/PermitRootLogin no/I' "$SSHD_CONFIG"
+    # Ensure privilege separation directory and host keys exist so sshd -T never fails
+    mkdir -p /run/sshd
+    if command -v ssh-keygen >/dev/null 2>&1; then
+        ssh-keygen -A >/dev/null 2>&1 || true
+    fi
+
+    # Check 90008: replace active or commented (#) PermitRootLogin
+    if grep -qiE '^\s*#?\s*PermitRootLogin' "$SSHD_CONFIG"; then
+        sed -i 's/^\s*#\?\s*PermitRootLogin.*/PermitRootLogin no/I' "$SSHD_CONFIG"
     else
         append_safely "PermitRootLogin no" "$SSHD_CONFIG"
     fi
 
-    # Check 90009: PermitEmptyPasswords no
-    if grep -qiE '^\s*PermitEmptyPasswords' "$SSHD_CONFIG"; then
-        sed -i 's/^\s*PermitEmptyPasswords.*/PermitEmptyPasswords no/I' "$SSHD_CONFIG"
+    # Check 90009: replace active or commented (#) PermitEmptyPasswords
+    if grep -qiE '^\s*#?\s*PermitEmptyPasswords' "$SSHD_CONFIG"; then
+        sed -i 's/^\s*#\?\s*PermitEmptyPasswords.*/PermitEmptyPasswords no/I' "$SSHD_CONFIG"
     else
         append_safely "PermitEmptyPasswords no" "$SSHD_CONFIG"
     fi
 
-    # Check 90011: MaxAuthTries <= 4
-    if grep -qiE '^\s*MaxAuthTries' "$SSHD_CONFIG"; then
-        sed -i 's/^\s*MaxAuthTries.*/MaxAuthTries 4/I' "$SSHD_CONFIG"
+    # Check 90011: replace active or commented (#) MaxAuthTries
+    if grep -qiE '^\s*#?\s*MaxAuthTries' "$SSHD_CONFIG"; then
+        sed -i 's/^\s*#\?\s*MaxAuthTries.*/MaxAuthTries 4/I' "$SSHD_CONFIG"
     else
         append_safely "MaxAuthTries 4" "$SSHD_CONFIG"
     fi
@@ -497,8 +503,14 @@ fi
 # Check 90008, 90009, 90010, 90011: SSH Hardening
 if [ -f /etc/ssh/sshd_config ]; then
     EFFECTIVE_SSH=""
+    SSHD_EXEC_ERR=""
     if command -v sshd >/dev/null 2>&1; then
-        EFFECTIVE_SSH=$(sshd -T 2>/dev/null || true)
+        RAW_SSH_DUMP=$(sshd -T 2>&1 || true)
+        if echo "$RAW_SSH_DUMP" | grep -qi '^permitrootlogin'; then
+            EFFECTIVE_SSH="$RAW_SSH_DUMP"
+        else
+            SSHD_EXEC_ERR=$(echo "$RAW_SSH_DUMP" | head -n 1)
+        fi
     fi
 
     # 90008: PermitRootLogin no
@@ -513,7 +525,7 @@ if [ -f /etc/ssh/sshd_config ]; then
     if [ "$FILE_ROOT_LOGIN" = true ] && [ "$EFFECTIVE_ROOT_LOGIN" = true ]; then
         pass "Check 90008 (CIS 28638) - sshd PermitRootLogin is disabled (effective & file)"
     else
-        fail "Check 90008 (CIS 28638) - PermitRootLogin no missing or overridden in sshd"
+        fail "Check 90008 (CIS 28638) - PermitRootLogin no missing or overridden in sshd${SSHD_EXEC_ERR:+ (sshd -T error: $SSHD_EXEC_ERR)}"
     fi
 
     # 90009: PermitEmptyPasswords no
@@ -528,7 +540,7 @@ if [ -f /etc/ssh/sshd_config ]; then
     if [ "$FILE_EMPTY_PW" = true ] && [ "$EFFECTIVE_EMPTY_PW" = true ]; then
         pass "Check 90009 (CIS 28640) - sshd PermitEmptyPasswords disabled (effective & file)"
     else
-        fail "Check 90009 (CIS 28640) - PermitEmptyPasswords allowed in effective sshd config"
+        fail "Check 90009 (CIS 28640) - PermitEmptyPasswords allowed in effective sshd config${SSHD_EXEC_ERR:+ (sshd -T error: $SSHD_EXEC_ERR)}"
     fi
 
     # 90010: Permissions 0600 root:root
@@ -554,7 +566,7 @@ if [ -f /etc/ssh/sshd_config ]; then
     if [ "$FILE_MAX_AUTH" = true ] && [ "$EFFECTIVE_MAX_AUTH" = true ]; then
         pass "Check 90011 (CIS 28649) - sshd MaxAuthTries configured <= 4 (effective & file)"
     else
-        fail "Check 90011 (CIS 28649) - sshd MaxAuthTries exceeds 4 or could not be determined"
+        fail "Check 90011 (CIS 28649) - sshd MaxAuthTries exceeds 4 or could not be determined${SSHD_EXEC_ERR:+ (sshd -T error: $SSHD_EXEC_ERR)}"
     fi
 else
     pass "Check 90008-90011 - SSH daemon not installed (N/A)"
