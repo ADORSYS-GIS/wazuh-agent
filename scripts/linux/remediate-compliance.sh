@@ -46,10 +46,14 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 FIX_NOPASSWD=false
+RUN_UPGRADE="n"
 for arg in "$@"; do
     case "$arg" in
         --fix-nopasswd)
             FIX_NOPASSWD=true
+            ;;
+        --upgrade|-u)
+            RUN_UPGRADE="y"
             ;;
     esac
 done
@@ -393,8 +397,13 @@ fi
 # -------------------------------------------------------------
 # Optional OS Updates (Check 90001)
 # -------------------------------------------------------------
-echo ""
-read -r -p "Do you want to update all system packages now (Check 90001: no OS updates pending)? [y/N]: " RUN_UPGRADE || RUN_UPGRADE="n"
+if [ "$RUN_UPGRADE" != "y" ]; then
+    if [ -t 0 ]; then
+        read -r -p "Do you want to update all system packages now (Check 90001: no OS updates pending)? [y/N]: " RUN_UPGRADE || RUN_UPGRADE="n"
+    elif [ -e /dev/tty ] && [ -r /dev/tty ]; then
+        read -r -p "Do you want to update all system packages now (Check 90001: no OS updates pending)? [y/N]: " RUN_UPGRADE < /dev/tty 2>/dev/null || RUN_UPGRADE="n"
+    fi
+fi
 if [[ "$RUN_UPGRADE" =~ ^[Yy]$ ]]; then
     info "Updating system packages non-interactively..."
     if command -v apt-get >/dev/null 2>&1; then
