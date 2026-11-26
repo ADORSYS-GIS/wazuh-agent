@@ -210,7 +210,7 @@ trust_cert() {
     fi
   fi
 
-  echo "${err}" >&2
+  echo "${err}"
   return 1
 }
 
@@ -225,7 +225,6 @@ else
     die "Failed to import certificate into system keychain. Run with sudo."
   fi
 
-  trusted=0
   trusted=0
   last_err=""
   for attempt in 1 2 3; do
