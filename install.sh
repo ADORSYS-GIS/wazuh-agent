@@ -89,7 +89,7 @@ verify_checksum() {
     local actual
     actual=$(calculate_hash "$file")
 
-    if [ "$actual" != "$expected" ]; then
+    if [[ "$actual" != "$expected" ]] ; then
         error_message "Checksum verification FAILED!"
         error_message "  Expected: $expected"
         error_message "  Got:      $actual"
@@ -120,7 +120,7 @@ download_file() {
 
 # Cleanup on exit
 cleanup() {
-    if [[ -n "$TMP_DIR" && -d "$TMP_DIR" ]]; then
+    if [[ -n "${TMP_DIR:-}" && -d "${TMP_DIR:-}" ]]; then
         rm -rf "$TMP_DIR"
     fi
 }
@@ -137,7 +137,7 @@ main() {
     echo ""
 
     # Check for WAZUH_MANAGER
-    if [[ -z "$WAZUH_MANAGER" || "$WAZUH_MANAGER" == "wazuh.example.com" ]]; then
+    if [[ -z "${WAZUH_MANAGER:-}" || "${WAZUH_MANAGER:-}" == "wazuh.example.com" ]]; then
         warn_message "WAZUH_MANAGER is not set or using default placeholder"
         warn_message "Please set WAZUH_MANAGER environment variable:"
         warn_message "  export WAZUH_MANAGER=\"your-wazuh-manager.com\""
@@ -158,7 +158,7 @@ main() {
     info_message "Downloading checksums..."
     if ! download_file "$checksums_url" "$TMP_DIR/$CHECKSUMS_FILE"; then
         warn_message "Could not download checksums file"
-        if [ "$SKIP_VERIFY" != "true" ]; then
+        if [[ "${SKIP_VERIFY:-}" != "true" ]] ; then
             error_exit "Verification required. Set SKIP_VERIFY=true to bypass (not recommended)"
         fi
     fi
@@ -184,7 +184,7 @@ main() {
     fi
 
     # Verify checksum
-    if [[ -f "$TMP_DIR/$CHECKSUMS_FILE" && "$SKIP_VERIFY" != "true" ]]; then
+    if [[ -f "$TMP_DIR/$CHECKSUMS_FILE" && "${SKIP_VERIFY:-}" != "true" ]]; then
         info_message "Verifying script integrity..."
 
         # Extract expected checksum for setup-agent.sh (anchored match to avoid partial filename matches)
@@ -202,13 +202,11 @@ main() {
             # Verify utils.sh (anchored match)
             local utils_hash
             utils_hash=$(grep -E "[[:space:]]scripts/shared/utils\.sh$" "$TMP_DIR/$CHECKSUMS_FILE" | awk "$AWK_PRINT_FIELD")
-            if [[ -n "$utils_hash" ]] && [[ -f "$TMP_DIR/utils.sh" ]]; then
-                if ! verify_checksum "$TMP_DIR/utils.sh" "$utils_hash"; then
-                    error_exit "Aborting installation due to checksum mismatch for utils.sh"
-                fi
+            if [[ -n "$utils_hash" ]] && [[ -f "$TMP_DIR/utils.sh" ]] && ! verify_checksum "$TMP_DIR/utils.sh" "$utils_hash"; then
+                error_exit "Aborting installation due to checksum mismatch for utils.sh"
             fi
         fi
-    elif [ "$SKIP_VERIFY" = "true" ]; then
+    elif [[ "${SKIP_VERIFY:-}" = "true" ]] ; then
         warn_message "Skipping verification (SKIP_VERIFY=true)"
     fi
 
@@ -222,7 +220,7 @@ main() {
     echo ""
 
     # Run the script with sudo if not root
-    if [ "$(id -u)" -ne 0 ]; then
+    if [[ "$(id -u)" -ne 0 ]] ; then
         if command -v sudo >/dev/null 2>&1; then
             sudo -E bash "$TMP_DIR/$SCRIPT_NAME" "$@"
         else

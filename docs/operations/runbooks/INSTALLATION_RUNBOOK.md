@@ -484,11 +484,11 @@ Contact your security administrator to remove the agent from the Wazuh Manager d
 
 ## Additional Resources
 
-- [Environment Variables Reference](ENVIRONMENT_VARIABLES.md)
+- [Environment Variables Reference](../../reference/ENVIRONMENT_VARIABLES.md)
 - [Wazuh Official Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html)
-- [Linux Enrollment Guide (with screenshots)](../Agent%20Enrollment/linux-agent.md)
-- [macOS Enrollment Guide (with screenshots)](../Agent%20Enrollment/macos-agent.md)
-- [Windows Enrollment Guide (with screenshots)](../Agent%20Enrollment/windows-agent.md)
+- [Linux Enrollment Guide (with screenshots)](../enrollment/linux-agent.md)
+- [macOS Enrollment Guide (with screenshots)](../enrollment/macos-agent.md)
+- [Windows Enrollment Guide (with screenshots)](../enrollment/windows-agent.md)
 
 ---
 

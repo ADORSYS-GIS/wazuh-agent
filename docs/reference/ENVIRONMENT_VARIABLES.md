@@ -15,15 +15,15 @@ This document describes all environment variables used by the Wazuh Agent instal
 | `WAZUH_MANAGER`       | `wazuh.example.com` | Wazuh Manager address (hostname or IP) |
 | `WAZUH_AGENT_VERSION` | `4.14.6-1`          | Wazuh Agent version to install         |
 | `WAZUH_AGENT_NAME`    | `$(hostname)`       | Agent registration name                |
-| `WAZUH_AGENT_GROUP`   | _(none)_            | Agent group for enrollment             |
+| `WAZUH_AGENT_GROUP`   | `default,<os>`      | Agent group(s) for enrollment (`<os>` = `linux`, `macos` or `windows`); the OS group delivers the company SCA policies |
 
 ## Component Versions
 
 | Variable                     | Default          | Description                          |
 | ---------------------------- | ---------------- | ------------------------------------ |
-| `WAZUH_AGENT_REPO_VERSION`   | `1.8.2`      | Version of this installer repository |
+| `WAZUH_AGENT_REPO_VERSION`   | `1.8.3`      | Version of this installer repository |
 | `WOPS_VERSION`               | `0.4.3`          | Wazuh Cert OAuth2 client version     |
-| `WAZUH_AGENT_STATUS_VERSION` | `0.5.4`          | Wazuh Agent Status tool version      |
+| `WAZUH_AGENT_STATUS_VERSION` | `0.5.7`          | Wazuh Agent Status tool version      |
 | `WAZUH_YARA_VERSION`         | `0.4.2`          | Wazuh Yara integration version       |
 | `WAZUH_SURICATA_VERSION`     | `0.2.2`          | Wazuh Suricata integration version   |
 

@@ -3,7 +3,7 @@
 set -eu
 
 # Repository ref
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.2'}
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.3'}
 if [ "${WAZUH_AGENT_REPO_VERSION}" = "main" ]; then
     WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"main"}
 else
@@ -54,6 +54,9 @@ fi
 OS="Linux"
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.6-1'}
+# Agent group(s) requested at enrollment; the linux group carries the
+# company SCA policies and agent config for this OS.
+WAZUH_AGENT_GROUP=${WAZUH_AGENT_GROUP:-'default,linux'}
 OSSEC_CONF_PATH="/var/ossec/etc/ossec.conf"
 OSSEC_LOG_PATH="/var/ossec/logs"
 LOGO_PATH="/usr/share/pixmaps"
@@ -74,7 +77,7 @@ if [ -f /etc/debian_version ]; then
     PACKAGE_MANAGER="$APT_PACKAGE"
     REPO_FILE="/etc/apt/sources.list.d/wazuh.list"
     GPG_KEYRING="/usr/share/keyrings/wazuh.gpg"
-    GPG_IMPORT_CMD="gpg --no-default-keyring --keyring $GPG_KEYRING --import"
+    GPG_IMPORT_CMD="gpg --no-default-keyring --keyring gnupg-ring:$GPG_KEYRING --import"
 elif [ -f /etc/redhat-release ]; then
     PACKAGE_MANAGER="$YUM_PACKAGE"
     REPO_FILE="/etc/yum.repos.d/wazuh.repo"
@@ -96,7 +99,7 @@ import_keys() {
     fi
 
     if [ "$PACKAGE_MANAGER" = "$APT_PACKAGE" ] && ! [ -f "$GPG_KEYRING" ]; then
-        curl -s $GPG_KEY_URL | gpg --no-default-keyring --keyring $GPG_KEYRING --import && chmod 644 $GPG_KEYRING
+        curl -s $GPG_KEY_URL | gpg --no-default-keyring --keyring gnupg-ring:$GPG_KEYRING --import && chmod 644 $GPG_KEYRING
         info_message "GPG key imported successfully."
     fi
     if ! grep -q "wazuh" $REPO_FILE; then
@@ -257,6 +260,10 @@ config() {
             else
                 info_message "active-response logs already being monitored in $OSSEC_CONF_PATH"
             fi
+
+    # Enrollment group + SCA policies pushed from the manager
+    configure_enrollment_group "$OSSEC_CONF_PATH" "$WAZUH_AGENT_GROUP"
+    enable_sca_remote_commands "$(dirname "$OSSEC_CONF_PATH")/local_internal_options.conf"
 
     # Download logo
     if [ ! -d "$LOGO_PATH" ]; then

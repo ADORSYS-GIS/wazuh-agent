@@ -230,3 +230,81 @@ download_and_verify_file() {
     return 0
 }
 
+
+# Set the agent group(s) requested at enrollment.
+# Agents in an OS group (macos/linux/windows) receive that group's shared
+# agent.conf and SCA policies from the manager (see the wazuh-helm chart,
+# charts/wazuh/files/configs/agents/). Only applies when the agent enrolls;
+# agents that are already registered keep their current groups.
+# The <enrollment> block is created with an <agent_name> line because the
+# wazuh-cert-oauth2 installer (run afterwards) anchors its certificate paths on it.
+# Usage: configure_enrollment_group <ossec_conf_path> <groups>
+configure_enrollment_group() {
+    conf="$1"
+    groups="$2"
+
+    [ -n "$groups" ] || return 0
+
+    if maybe_sudo grep -q "<groups>$groups</groups>" "$conf"; then
+        info_message "Enrollment group already set to '$groups' in $conf"
+        return 0
+    fi
+
+    has_enrollment=no
+    maybe_sudo grep -q "<enrollment>" "$conf" && has_enrollment=yes
+
+    tmp_conf=$(mktemp)
+    maybe_sudo cat "$conf" | awk -v g="$groups" -v has="$has_enrollment" '
+        # Existing <enrollment>: drop any previous <groups>, add ours first.
+        /<enrollment>/ { in_e = 1; print; print "      <groups>" g "</groups>"; next }
+        /<\/enrollment>/ { in_e = 0 }
+        in_e && /<groups>/ { next }
+        { print }
+        # No <enrollment> yet: add one right after the first </server>.
+        has == "no" && !added && /<\/server>/ {
+            print "    <enrollment>"
+            print "      <agent_name></agent_name>"
+            print "      <groups>" g "</groups>"
+            print "    </enrollment>"
+            added = 1
+        }
+    ' > "$tmp_conf" || {
+        rm -f "$tmp_conf"
+        error_exit "Failed to set enrollment group in $conf"
+    }
+
+    if ! grep -q "<groups>$groups</groups>" "$tmp_conf"; then
+        rm -f "$tmp_conf"
+        error_exit "Could not place <groups> in $conf (no <enrollment> or </server> found)"
+    fi
+
+    # cp (not mv) keeps the original file's owner and permissions.
+    maybe_sudo cp "$tmp_conf" "$conf" || {
+        rm -f "$tmp_conf"
+        error_exit "Failed to write $conf"
+    }
+    rm -f "$tmp_conf"
+    info_message "Enrollment group set to '$groups' in $conf"
+}
+
+# Allow command rules in SCA policies received from the manager.
+# The manager ships company SCA policies (e.g. the adorsys disk encryption
+# baseline) to the agent's etc/shared folder; without this option Wazuh
+# ignores every 'c:' rule in them. Note: this lets the manager run SCA
+# commands on the endpoint, so the manager must be trusted.
+# Usage: enable_sca_remote_commands <local_internal_options_path>
+enable_sca_remote_commands() {
+    opts="$1"
+
+    if maybe_sudo grep -q '^sca.remote_commands=1$' "$opts" 2>/dev/null; then
+        info_message "sca.remote_commands already enabled in $opts"
+        return 0
+    fi
+
+    if maybe_sudo [ -f "$opts" ]; then
+        sed_inplace '/^sca\.remote_commands=/d' "$opts" || error_exit "Failed to update $opts"
+    fi
+
+    echo "sca.remote_commands=1" | maybe_sudo tee -a "$opts" > /dev/null || error_exit "Failed to update $opts"
+    info_message "Enabled sca.remote_commands in $opts"
+}

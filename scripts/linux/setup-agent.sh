@@ -3,7 +3,7 @@
 set -eu
 
 # Repository ref
-WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.2'}
+WAZUH_AGENT_REPO_VERSION=${WAZUH_AGENT_REPO_VERSION:-'1.8.3'}
 if [ "${WAZUH_AGENT_REPO_VERSION}" = "main" ]; then
     WAZUH_AGENT_REPO_REF=${WAZUH_AGENT_REPO_REF:-"main"}
 else
@@ -65,9 +65,9 @@ YARA_INSTALLATION_TYPE=${YARA_INSTALLATION_TYPE:-"desktop"}
 SURICATA_ENGINE="suricata"
 
 # Linux-specific OSSEC configuration path
-OSSEC_PATH="/var/ossec/etc"
-OSSEC_CONF_PATH="$OSSEC_PATH/ossec.conf"
-AR_BIN_DIR="/var/ossec/active-response/bin"
+OSSEC_PATH=${OSSEC_PATH:-"/var/ossec/etc"}
+OSSEC_CONF_PATH=${OSSEC_CONF_PATH:-"$OSSEC_PATH/ossec.conf"}
+AR_BIN_DIR=${AR_BIN_DIR:-"/var/ossec/active-response/bin"}
 
 USER=${USER:-"root"}
 GROUP=${GROUP:-"wazuh"}
@@ -75,7 +75,7 @@ LINUX_SCRIPT_PATH="scripts/linux/install.sh"
 
 WAZUH_MANAGER=${WAZUH_MANAGER:-'wazuh.example.com'}
 WAZUH_AGENT_VERSION=${WAZUH_AGENT_VERSION:-'4.14.6-1'}
-WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.5.4'}
+WAZUH_AGENT_STATUS_VERSION=${WAZUH_AGENT_STATUS_VERSION:-'0.5.7'}
 WAZUH_AGENT_NAME=${WAZUH_AGENT_NAME:-'test-agent-name'}
 
 
@@ -175,12 +175,12 @@ while getopts "s:ntbh" opt; do
             exit 0
             ;;
         \?)
-            error_message "Invalid option: -$OPTARG" >&2
+            error_message "Invalid option: -${OPTARG:-?}" >&2
             help_message
             exit 1
             ;;
         :)
-            error_message "Option -$OPTARG requires an argument." >&2
+            error_message "Option -${OPTARG:-?} requires an argument." >&2
             help_message
             exit 1
             ;;
@@ -263,7 +263,7 @@ fi
 
 # Step 1: Download and install Wazuh agent
 info_message "Installing Wazuh agent"
-if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" bash "$TMP_FOLDER/install-wazuh-agent.sh" < /dev/null) 2>&1; then
+if ! (maybe_sudo env OSSEC_CONF_PATH=$OSSEC_CONF_PATH WAZUH_MANAGER="$WAZUH_MANAGER" WAZUH_AGENT_VERSION="$WAZUH_AGENT_VERSION" WAZUH_AGENT_REPO_REF="$WAZUH_AGENT_REPO_REF" WAZUH_AGENT_GROUP="${WAZUH_AGENT_GROUP:-}" bash "$TMP_FOLDER/install-wazuh-agent.sh" < /dev/null) 2>&1; then
     error_exit "Failed to install wazuh-agent"
 fi
 
@@ -285,11 +285,9 @@ info_message "Installing yara"
 maybe_sudo rm -f /usr/local/bin/yara
 
 # Safeguard: If YARA deb package is installed but rules are missing (half-installed state), remove it
-if command_exists dpkg && dpkg -s yara >/dev/null 2>&1; then
-    if [ ! -f "/var/ossec/active-response/bin/yara.sh" ] || [ ! -f "/var/ossec/ruleset/yara/rules/yara_rules.yar" ]; then
-        warn_message "Found half-installed YARA state. Cleaning up..."
-        maybe_sudo apt-get remove -y yara >/dev/null 2>&1 || true
-    fi
+if command_exists dpkg && ! { [ -f "/var/ossec/active-response/bin/yara.sh" ] && [ -f "/var/ossec/ruleset/yara/rules/yara_rules.yar" ]; } && dpkg -s yara >/dev/null 2>&1; then
+    warn_message "Found half-installed YARA state. Cleaning up..."
+    maybe_sudo apt-get remove -y yara >/dev/null 2>&1 || true
 fi
 
 if ! (maybe_sudo env INSTALLATION_TYPE=$YARA_INSTALLATION_TYPE WAZUH_YARA_VERSION="$WAZUH_YARA_VERSION" bash "$TMP_FOLDER/install-yara.sh" < /dev/null) 2>&1; then
@@ -358,6 +356,16 @@ maybe_sudo chmod 750 "$AR_BIN_DIR/disable-usb-storage.sh" "$AR_BIN_DIR/alert-usb
 success_message "USB DLP Active Response scripts installed successfully."
 info_message "Finished USB DLP setup step."
 
+# Network containment: block the remote end of malware / C2 traffic (Suricata rule 100013)
+info_message "Installing the C2 containment Active Response script..."
+if ! download_and_verify_file "$USB_DLP_BASE_URL/block-c2.sh" "$TMP_FOLDER/block-c2.sh" "files/active-response/linux/block-c2.sh" "block-c2.sh"; then
+    exit 1
+fi
+maybe_sudo cp "$TMP_FOLDER/block-c2.sh" "$AR_BIN_DIR/"
+maybe_sudo chown root:wazuh "$AR_BIN_DIR/block-c2.sh"
+maybe_sudo chmod 750 "$AR_BIN_DIR/block-c2.sh"
+success_message "C2 containment Active Response script installed."
+
 # Step 8: Setup Docker monitoring (only runs if Docker is installed)
 info_message "Setting up Docker monitoring (if Docker is present)..."
 if ! download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/scripts/linux/setup-docker.sh" "$TMP_FOLDER/setup-docker.sh" "scripts/linux/setup-docker.sh" "setup-docker.sh" "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/${WAZUH_AGENT_REPO_REF}/checksums.sha256"; then
@@ -402,9 +410,9 @@ download_and_verify_file "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-ag
 info_message "Version file downloaded successfully."
 
 # Step 12: Install GUI Installer
-info_message "Installing Wazuh Agent GUI Installer (v1.2.0)..."
+info_message "Installing Wazuh Agent GUI Installer (v1.3.2)..."
 # TODO: revisit this once the installer update feature is implemented
-if ! curl -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/refs/tags/v1.2.0/install-scripts/ubuntu.sh | bash -s v1.2.0; then
+if ! curl -s https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/refs/tags/v1.3.2/install-scripts/ubuntu.sh | bash -s v1.3.2; then
     warn_message "Failed to install GUI Installer. It may require manual installation."
 else
     success_message "Wazuh Agent GUI Installer installed successfully."

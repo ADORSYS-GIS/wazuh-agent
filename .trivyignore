@@ -1,0 +1,22 @@
+# .trivyignore
+#
+# Trivy Vulnerability Exemption List
+#
+# Use this file to exempt false positives or approved, documented risks
+# from blocking the CI/CD release pipeline.
+#
+# Format:
+#   <CVE-ID or GHSA-ID>
+#
+# Guidelines:
+# 1. Every entry MUST include:
+#    - Date of exemption
+#    - Approver / decider
+#    - Reference Jira/GitHub issue
+#    - Technical rationale (e.g., unreachable code, unexploitable in context, upstream patch pending)
+#    - Target expiration / review date
+# 2. Never suppress vulnerabilities without team review and approval.
+#
+# Example:
+#   # 2026-11-09 | Approver: Security Team | Ref: Issue #288 | Rationale: Dev-only mock artifact
+#   # CVE-2026-00000

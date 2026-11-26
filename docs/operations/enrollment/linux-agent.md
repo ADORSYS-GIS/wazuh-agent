@@ -120,24 +120,24 @@ curl -fsSL https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/main/instal
 Monitors your endpoint and sends data to the Wazuh Manager.
 The agent is installed and configured to connect to the specified manager (WAZUH_MANAGER).
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-11-23.png" width="500" height="200">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-11-23.png" width="500" height="200">
 
 **2. OAuth2 Authentication Client:** Adds certificate-based OAuth2 authentication for secure communications.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-12-06.png" width="500" height="200">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-12-06.png" width="500" height="200">
 
 **3. Wazuh Agent Status:** Provides real-time health and connection status of the agent.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-13-06.png" width="500" height="200">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-13-06.png" width="500" height="200">
 
 **4. Yara:** Enables advanced file-based malware detection by integrating Yara rules into Wazuh.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-14-00.png" width="500" height="200">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-14-00.png" width="500" height="200">
 
 **5. Suricata (or Snort):**
 Adds network intrusion detection capabilities to monitor suspicious traffic.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot%20from%202024-12-16%2012-58-37.png" width="500" height="200">
+   <img src="./images/linux/Screenshot%20from%202024-12-16%2012-58-37.png" width="500" height="200">
 
 **6. USB DLP Scripts:**
 Active Response scripts for USB device control (mass storage blocking, BadUSB detection).
@@ -155,27 +155,27 @@ sudo /var/ossec/bin/wazuh-cert-oauth2-client o-auth2
 
 This command will generate a URL. Copy the link and paste it into your web browser.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-26-25.png" width="500" height="180">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-26-25.png" width="500" height="180">
 
 #### 2. Authentication via browser
 
 - **i. Login:** You will be prompted to log in page, Log in using **Active directories: `Adorsys GIS` or `adorsys GmbH & CO KG`**, which will generate an authentication token using Keycloak.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-14.png" width="400" height="300">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-28-14.png" width="400" height="300">
 
 - **ii. Two-Factor Authentication:** For first-time logins, authentication via an authenticator is required.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-29-08.png" width="400" height="300">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-29-08.png" width="400" height="300">
 
 - **iii. Token generation:** After a successful authentication, a token will be generated. Copy the token and return to the command line.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-28-45.png" width="400" height="300">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-28-45.png" width="400" height="300">
 
 #### 3. Complete the Enrollment
 
 Return to the command line, paste the token, and follow the prompts to complete the enrollment process.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2024-12-20 08-30-06.png" width="600" height="250">
+   <img src="./images/linux/Screenshot from 2024-12-20 08-30-06.png" width="600" height="250">
 
 #### 4. Reboot your Device
 
@@ -190,7 +190,7 @@ After completing the agent enrollment, verify that the agent is properly connect
 
 Look for the Wazuh icon in the system tray to confirm that the agent is running and connected.
 
-   <img src="/Agent Enrollment/images/linux/Screenshot from 2025-01-10 11-56-49.png" width="400" height="200">
+   <img src="./images/linux/Screenshot from 2025-01-10 11-56-49.png" width="400" height="200">
 
 #### 2. Validate Other Tools Installation
 
@@ -269,4 +269,4 @@ Shell into the **master manager node** and use this command to remove agent from
 ### Additional Resources
 
 - [Wazuh Documentation](https://documentation.wazuh.com/current/user-manual/agent/index.html#wazuh-agent)
-- [Environment Variables Reference](/docs/ENVIRONMENT_VARIABLES.md)
+- [Environment Variables Reference](../../reference/ENVIRONMENT_VARIABLES.md)

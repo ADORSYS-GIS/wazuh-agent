@@ -79,7 +79,7 @@ CERT_TMPFILE=$(mktemp /tmp/company-root-ca.XXXXXX.crt)
 
 FETCH_HELPERS_URL="${GITHUB_RAW_URL}/${CA_BRANCH}/${HELPERS_PATH_IN_REPO}"
 HTTP_CODE=$(curl -sS -w "%{http_code}" -o "${HELPERS_TMPFILE}" "${FETCH_HELPERS_URL}" 2>/dev/null) || true
-if [ "${HTTP_CODE}" != "200" ]; then
+if [[ "${HTTP_CODE}" != "200" ]] ; then
   die "Failed to fetch CA helpers (HTTP ${HTTP_CODE}). Check branch '${CA_BRANCH}' and try again."
 fi
 source "${HELPERS_TMPFILE}"
@@ -96,15 +96,15 @@ KEYCHAIN="/Library/Keychains/System.keychain"
 # --- Input: mode + CA certificate --------------------------------------------
 MODE="install"
 CA_FILE=""
-if [ "${1:-}" = "--check" ] || [ "${1:-}" = "-c" ]; then
+if [[ "${1:-}" = "--check" ]] ||  [[ "${1:-}" = "-c" ]] ; then
   MODE="check"
   CA_FILE="${2:-}"
-elif [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+elif [[ "${1:-}" = "--help" ]] ||  [[ "${1:-}" = "-h" ]] ; then
   sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'
   exit 0
 fi
 
-if [ -n "${CA_FILE}" ] || [ -n "${CA_CRT:-}" ]; then
+if [[ -n "${CA_FILE}" ]] ||  [[ -n "${CA_CRT:-}" ]] ; then
   CA_FILE="${CA_FILE:-${CA_CRT}}"
   info "Using local certificate file: ${CA_FILE}"
   case "${CA_FILE}" in
@@ -116,7 +116,7 @@ else
   info "Fetching certificate from GitHub (branch: ${CA_BRANCH})..."
   info "URL: ${FETCH_URL}"
   HTTP_CODE=$(curl -sS -w "%{http_code}" -o "${CERT_TMPFILE}" "${FETCH_URL}" 2>/dev/null) || true
-  if [ "${HTTP_CODE}" != "200" ]; then
+  if [[ "${HTTP_CODE}" != "200" ]] ; then
     die "Failed to fetch certificate (HTTP ${HTTP_CODE}). Check branch '${CA_BRANCH}' and try again."
   fi
   CA_FILE="${CERT_TMPFILE}"
@@ -124,7 +124,7 @@ fi
 
 check_cert "${CA_FILE}"
 
-if [ "${MODE}" = "check" ]; then
+if [[ "${MODE}" = "check" ]] ; then
   info "OK — ${CA_FILE} is the pinned Company Root CA (${EXPECTED_CN})"
   exit 0
 fi
@@ -146,7 +146,7 @@ keychain_scan() {
         fp=$(printf '%s' "${pem}" | openssl x509 -noout -fingerprint -sha256 2>/dev/null | norm_fp || true)
         subj=$(printf '%s' "${pem}" | openssl x509 -noout -subject 2>/dev/null \
           | sed 's/^subject=//' | tr -d ' ' | tr '[:upper:]' '[:lower:]' || true)
-        if [ "${fp}" = "${EXPECTED_SHA256}" ]; then PINNED_FOUND=1; fi
+        if [[ "${fp}" = "${EXPECTED_SHA256}" ]] ; then PINNED_FOUND=1; fi
         if is_retired_fp "${fp}" || is_retired_subject "${subj}"; then
           warn "Removing retired CA from keychain (SHA-1 ${sha1})"
           security delete-certificate -Z "${sha1}" "${KEYCHAIN}" >/dev/null 2>&1 \
@@ -155,7 +155,7 @@ keychain_scan() {
         pem=""
         in_pem=0
         ;;
-      *) [ "${in_pem}" = "1" ] && pem="${pem}${line}"$'\n' ;;
+      *) [[ "${in_pem}" = "1" ]] &&  pem="${pem}${line}"$'\n' ;;
     esac
   done < <(security find-certificate -a -Z -p "${KEYCHAIN}" 2>/dev/null)
 }
@@ -218,13 +218,14 @@ info "Installing into system keychain (${KEYCHAIN})..."
 
 keychain_scan
 
-if [ "${PINNED_FOUND}" -eq 1 ]; then
+if [[ "${PINNED_FOUND}" -eq 1 ]] ; then
   info "Company Root CA already present in system keychain ✔"
 else
   if ! security import "${CA_FILE}" -k "${KEYCHAIN}" -t cert >/dev/null 2>&1; then
     die "Failed to import certificate into system keychain. Run with sudo."
   fi
 
+  trusted=0
   trusted=0
   last_err=""
   for attempt in 1 2 3; do
@@ -245,9 +246,9 @@ else
     sleep 2
   done
 
-  if [ "${trusted}" -ne 1 ]; then
+  if [[ "${trusted}" -ne 1 ]] ; then
     case "${last_err}" in
-      *"not permitted"*|*"not authorized"*)
+      *"not permitted"*|*"not authorized"*|*"User interaction is not allowed"*)
         die "Failed to mark certificate as trusted — permission denied. Run with sudo." ;;
     esac
     die "Failed to mark certificate as trusted after 3 attempts."
@@ -261,7 +262,7 @@ fi
 # -----------------------------------------------------------------------------
 keychain_scan
 
-if [ "${PINNED_FOUND}" -eq 1 ]; then
+if [[ "${PINNED_FOUND}" -eq 1 ]] ; then
   info "Verified in system keychain (fingerprint match) ✔"
 else
   die "Verification failed: pinned CA not found in system keychain"

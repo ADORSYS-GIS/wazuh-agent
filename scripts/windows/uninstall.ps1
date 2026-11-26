@@ -10,7 +10,7 @@ try {
     $ChecksumsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/checksums.sha256"
     $UtilsURL = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent/$WAZUH_AGENT_REPO_REF/scripts/shared/utils.ps1"
 
-    $global:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
+    $script:ChecksumsPath = Join-Path $UtilsTmp "checksums.sha256"
     $UtilsPath = Join-Path $UtilsTmp "utils.ps1"
 
     Invoke-WebRequest -Uri $ChecksumsURL -OutFile $ChecksumsPath -ErrorAction Stop
@@ -77,6 +77,8 @@ function Uninstall-Agent {
 }
 
 function Remove-WazuhService {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
+    param()
     InfoMessage "Stopping Wazuh service if running"
     $service = Get-Service -Name WazuhSvc -ErrorAction SilentlyContinue
 
@@ -113,7 +115,9 @@ function Remove-WazuhService {
 
 
 
-function Cleanup-Files {
+function Remove-WazuhFile {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
+    param()
     InfoMessage "Cleaning up remaining Wazuh files"
 
     # 1. Cleanup Docker Monitoring Task and Environment
@@ -154,6 +158,6 @@ function Cleanup-Files {
 
 Remove-WazuhService
 Uninstall-Agent
-Cleanup-Files
+Remove-WazuhFile
 
 SuccessMessage "Wazuh Agent uninstallation completed successfully"

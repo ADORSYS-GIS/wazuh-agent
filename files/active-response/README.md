@@ -11,6 +11,7 @@ These scripts are automatically deployed to Wazuh agents by the `setup-agent.sh`
 | `disable-usb-storage-macos.sh` | macOS | Ejects USB storage devices via diskutil |
 | `alert-usb-hid.ps1` | Windows | Collects USB HID device forensic evidence |
 | `alert-usb-hid.sh` | Linux/macOS | Collects USB HID device forensic evidence |
+| `linux/block-c2.sh` | Linux | Drops traffic to and from the remote end of malware / C2 traffic (iptables, or nft) until the manager's timeout |
 
 ## Installation Locations
 
@@ -66,3 +67,12 @@ ls -la /Library/Ossec/active-response/bin/alert-usb-hid.sh
 Test-Path "C:\Program Files (x86)\ossec-agent\active-response\bin\disable-usb-storage.ps1"
 Test-Path "C:\Program Files (x86)\ossec-agent\active-response\bin\alert-usb-hid.ps1"
 ```
+
+## Network containment (block-c2)
+
+`linux/block-c2.sh` runs on Suricata rule 100013 (malware or command-and-control traffic). Suricata alerts carry
+`data.src_ip` / `data.dest_ip`, which the stock `firewall-drop` does not read, so this script picks the public end of
+the flow itself. It never blocks private, CGNAT/NetBird (100.64.0.0/10), loopback, link-local or multicast addresses,
+the default gateway, or the DNS servers in `/etc/resolv.conf`. It uses the Wazuh 4.2+ JSON protocol (stdin,
+`check_keys`), and the manager removes the block when its timeout expires. Activity is logged to
+`/var/ossec/logs/active-responses.log`. Tests: `scripts/tests/test-block-c2.bats`.

@@ -6,13 +6,10 @@ param(
 
 # Repository ref
 if (-not $Ref) {
-    if (-not $RepoVersion) { $RepoVersion = '1.8.2' }
+    if (-not $RepoVersion) { $RepoVersion = '1.8.3' }
     $Ref = "refs/tags/v${RepoVersion}"
 }
 
-$ScriptRoot = Split-Path -Path $MyInvocation.MyCommand.Path -Parent
-
-# Decide remote path depending on OS
 $remotePath = 'scripts/windows/setup-agent.ps1'
 
 # Create a temporary folder
@@ -44,8 +41,8 @@ try {
 
     $actual = (Get-FileHash -Path $scriptPath -Algorithm SHA256).Hash.ToLower()
 
-    Write-Host "Expected: $expected"
-    Write-Host "Actual:   $actual"
+    Write-Output "Expected: $expected"
+    Write-Output "Actual:   $actual"
 
     if ($expected -ne $actual) {
         Write-Error "Checksum verification failed for $remotePath"
