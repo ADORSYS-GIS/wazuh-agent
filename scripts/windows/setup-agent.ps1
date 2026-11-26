@@ -360,7 +360,6 @@ function Install-Adorsys-CA {
 function Install-GUI-Installer {
     InfoMessage "Installing Wazuh Agent GUI Installer (v$WAZUH_AGENT_INSTALLER_VERSION)..."
     try {
-        # TODO: revisit this once the installer update feature is implemented
         $guiInstallerUrl = "https://raw.githubusercontent.com/ADORSYS-GIS/wazuh-agent-installer/$WAZUH_AGENT_INSTALLER_REPO_REF/install-scripts/windows.ps1"
         $guiInstallerPath = "$env:TEMP\wazuh-agent-gui-installer.ps1"
         $script:InstallerFiles += $guiInstallerPath
