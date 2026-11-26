@@ -173,6 +173,47 @@ keychain_scan() {
 # trust write is retried, since a re-run otherwise appears to "work" only
 # because the daemon finished in the background.
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Trust-write helper
+#
+# `security add-trusted-cert -d` ALWAYS requires macOS's SecurityAgent to show
+# an authorization dialog to the logged-in user — even when the script already
+# runs as root. When this script is a child of a root process (e.g. the GUI
+# installer app relaunched via `osascript ... with administrator privileges`),
+# it has no access to the user's GUI session, so SecurityAgent cannot display
+# the dialog and fails with:
+#   SecTrustSettingsSetTrustSettings: ... no user interaction was possible.
+#
+# Fix: run the trust command in the logged-in console user's GUI session via
+# `launchctl asuser`, so the system can show its password dialog on screen.
+# If that is unavailable (SSH, login window, non-admin console user), fall back
+# to a direct root invocation.
+# -----------------------------------------------------------------------------
+NO_INTERACTION_RE='no user interaction was possible|user interaction is not allowed|User interaction is not allowed'
+
+trust_cert() {
+  local cert_file="$1" err=""
+
+  if err=$(security add-trusted-cert -d -r trustRoot -k "${KEYCHAIN}" "${cert_file}" 2>&1); then
+    return 0
+  fi
+
+  if echo "${err}" | grep -Eqi "${NO_INTERACTION_RE}"; then
+    warn "Direct trust write had no GUI session — retrying in the console user's session..."
+    local console_uid=""
+    console_uid=$(stat -f %u /dev/console 2>/dev/null || echo "")
+    if [ -n "${console_uid}" ] && [ "${console_uid}" != "0" ]; then
+      if err=$(launchctl asuser "${console_uid}" sudo -u "#${console_uid}" \
+                 security add-trusted-cert -d -r trustRoot -k "${KEYCHAIN}" "${cert_file}" 2>&1); then
+        return 0
+      fi
+    fi
+  fi
+
+  echo "${err}" >&2
+  return 1
+}
+
 info "Installing into system keychain (${KEYCHAIN})..."
 
 keychain_scan
@@ -185,19 +226,28 @@ else
   fi
 
   trusted=0
+  last_err=""
   for attempt in 1 2 3; do
-    if err=$(security add-trusted-cert -d -r trustRoot -k "${KEYCHAIN}" \
-                "${CA_FILE}" 2>&1); then
+    if last_err=$(trust_cert "${CA_FILE}"); then
       trusted=1
       break
     fi
-    warn "add-trusted-cert failed (attempt ${attempt}/3): ${err}"
+    warn "add-trusted-cert failed (attempt ${attempt}/3): ${last_err}"
+    # "no user interaction" is a hard failure (no GUI session for the dialog);
+    # retrying cannot fix it — bail out now with actionable guidance.
+    if echo "${last_err}" | grep -Eqi "${NO_INTERACTION_RE}"; then
+      die "Cannot set trust: macOS could not show the confirmation dialog.
+       This happens when the script runs without access to the user's screen
+       (e.g. over SSH or from a background/root process).
+       Fix: run  sudo bash ca-install.sh  from Terminal.app, or deploy the CA
+       as an MDM configuration profile."
+    fi
     sleep 2
   done
 
   if [ "${trusted}" -ne 1 ]; then
-    case "${err}" in
-      *"not permitted"*|*"not authorized"*|*"User interaction is not allowed"*)
+    case "${last_err}" in
+      *"not permitted"*|*"not authorized"*)
         die "Failed to mark certificate as trusted — permission denied. Run with sudo." ;;
     esac
     die "Failed to mark certificate as trusted after 3 attempts."
