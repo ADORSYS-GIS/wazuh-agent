@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * resolve SonarQube findings across shell scripts (`[` → `[[`, explicit returns, POSIX-safe positional params, merged conditional statements, default `case` branches) ([#294](https://github.com/ADORSYS-GIS/wazuh-agent/issues/294))
 * scope `release-assets` workflow permissions from `write-all` to `contents: write` ([#294](https://github.com/ADORSYS-GIS/wazuh-agent/issues/294))
 * define a constant for the repeated `scripts/linux/install.sh` literal and redirect error messages to stderr in `setup-server.sh` ([#294](https://github.com/ADORSYS-GIS/wazuh-agent/issues/294))
+* remove the remaining obsolete `TODO` comments from Linux, macOS, and Windows setup-agent scripts
 
 ## [1.8.3](https://github.com/ADORSYS-GIS/wazuh-agent/compare/v1.8.2...v1.8.3) (2026-11-12)
 
